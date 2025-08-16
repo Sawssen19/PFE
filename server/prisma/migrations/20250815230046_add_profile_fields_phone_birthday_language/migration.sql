@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "birthday" TEXT DEFAULT NULL,
+ADD COLUMN     "language" TEXT DEFAULT 'fr',
+ADD COLUMN     "phone" TEXT DEFAULT NULL,
+ALTER COLUMN "profileDescription" SET DEFAULT NULL,
+ALTER COLUMN "profilePicture" SET DEFAULT NULL,
+ALTER COLUMN "profileUrl" SET DEFAULT NULL;

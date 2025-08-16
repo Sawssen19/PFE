@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond noir carré avec coins arrondis -->
+  <rect width="200" height="200" rx="20" fill="#000000"/>
+  
+  <!-- Texte "KOLLECTA" en blanc -->
+  <text x="100" y="120" font-family="Arial Black, sans-serif" font-size="32" fill="white" text-anchor="middle">
+    KOLLECTA
+  </text>
+</svg>

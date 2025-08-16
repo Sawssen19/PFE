@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "profileDescription" SET DEFAULT NULL,
+ALTER COLUMN "profilePicture" SET DEFAULT NULL,
+ALTER COLUMN "profileUrl" SET DEFAULT NULL;

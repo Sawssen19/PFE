@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+  firstName         String
+  lastName          String
+  role              Role      @default(USER)
+  isVerified        Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  
+  // ✅ Champs de profil avec types et valeurs par défaut corrects
+  profilePicture     String?   @default(dbgenerated("NULL")) // Forcer NULL par défaut
+  profileUrl         String?   @default(dbgenerated("NULL")) // Forcer NULL par défaut
+  profileDescription String?   @default(dbgenerated("NULL")) // Forcer NULL par défaut
+  profileVisibility  String?   @default("private")            // String avec valeur par défaut
+  
+  // 📱 Nouveaux champs de profil
+  phone              String?   @default(dbgenerated("NULL")) // Numéro de téléphone
+  birthday           String?   @default(dbgenerated("NULL")) // Date de naissance (format ISO)
+  language           String?   @default("fr")                // Langue de communication
+  
+  // 🔐 Champs de vérification d'email
+  verificationToken  String?   // Token de vérification unique
+  verificationExp    DateTime? // Expiration du token de vérification
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  resetToken        String?
+  resetTokenExp     DateTime?
+
+  // Relations
+  accountRequests   AccountRequest[]
+}
+
+model AccountRequest {
+  id            String           @id @default(uuid())
+  userId        String
+  email         String
+  requestType   RequestType
+  reason        String?
+  status        RequestStatus    @default(PENDING)
+  submittedAt   DateTime         @default(now())
+  reviewedAt    DateTime?
+  reviewedBy    String?
+  notes         String?
+
+  // Relations
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPPORT
+}
+
+enum RequestType {
+  DELETION
+  DEACTIVATION
+}
+
+enum RequestStatus {
+  PENDING
+  REVIEWING
+  APPROVED
+  REJECTED
+}
