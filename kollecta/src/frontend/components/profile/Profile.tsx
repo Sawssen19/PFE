@@ -18,6 +18,8 @@ import {
   Share as ShareIcon,
   Verified as VerifiedIcon,
   Info as InfoIcon,
+  Security as SecurityIcon,
+  DocumentScanner as DocumentIcon,
 } from '@mui/icons-material';
 import { selectUser, selectIsAuthenticated } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
@@ -26,6 +28,7 @@ import { profileService } from '../../services/profile/profileService';
 import DefaultAvatar from '../common/DefaultAvatar';
 
 const Profile = () => {
+  console.log('🔧 Profile.tsx - Composant rendu !');
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
@@ -40,9 +43,22 @@ const Profile = () => {
   console.log('🧪 Profile - User profileUrl:', user?.profileUrl);
   console.log('🧪 Profile - User profileDescription:', user?.profileDescription);
   console.log('🧪 Profile - User profileVisibility:', user?.profileVisibility);
+  console.log('🔧 Profile - Bouton suppression visible:', !!profileData?.profilePicture);
+  console.log('🔧 Profile - profilePicture value:', profileData?.profilePicture);
+  console.log('🔧 Profile - profilePicture type:', typeof profileData?.profilePicture);
+  console.log('🔧 Profile - profilePicture length:', profileData?.profilePicture?.length);
+  
+
 
   // Charger les données de profil au chargement du composant
   useEffect(() => {
+    // 🔐 REDIRECTION ADMIN : Si l'utilisateur est admin, le rediriger vers le dashboard admin
+    if (user?.role === 'ADMIN') {
+      console.log('🔐 Utilisateur admin détecté, redirection vers le dashboard admin');
+      navigate('/admin');
+      return;
+    }
+
     const loadProfileData = async () => {
       if (user?.id) {
         // 🧹 NETTOYAGE : Vider le profile state pour éviter l'héritage
@@ -65,7 +81,25 @@ const Profile = () => {
     };
 
     loadProfileData();
-  }, [user?.id, profileData, dispatch]);
+  }, [user?.id, profileData, dispatch, navigate]);
+
+  // 🔄 RAFRAÎCHISSEMENT AUTOMATIQUE : Mettre à jour le profil toutes les 30 secondes
+  useEffect(() => {
+    if (!user?.id || user?.role === 'ADMIN') return;
+
+    const interval = setInterval(async () => {
+      try {
+        console.log('🔄 Rafraîchissement automatique du profil...');
+        const data = await profileService.getProfile(user.id);
+        dispatch(setProfileData(data));
+        console.log('✅ Profil rafraîchi:', data);
+      } catch (error) {
+        console.error('Erreur lors du rafraîchissement automatique:', error);
+      }
+    }, 30000); // 30 secondes
+
+    return () => clearInterval(interval);
+  }, [user?.id, user?.role, dispatch]);
 
   // Fonction pour déterminer si on doit afficher l'avatar par défaut
   const shouldShowDefaultAvatar = () => {
@@ -84,6 +118,13 @@ const Profile = () => {
     return false;
   };
 
+  // 🔧 LOGS DE DÉBOGAGE pour la logique d'avatar
+  console.log('🔧 Profile - shouldShowDefaultAvatar():', shouldShowDefaultAvatar());
+  console.log('🔧 Profile - profileData.profilePicture:', profileData?.profilePicture);
+  console.log('🔧 Profile - Bouton suppression rendu:', !!profileData?.profilePicture);
+
+
+
   const handleShareProfile = () => {
     // Logique pour partager le profil
     if (navigator.share) {
@@ -98,6 +139,27 @@ const Profile = () => {
       // Ici vous pourriez afficher une notification de succès
     }
   };
+
+  // 🔧 NOUVEAU : Fonction de suppression de photo de profil (copiée de Settings.tsx)
+  const handlePhotoDelete = async () => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer votre photo de profil ?')) {
+      try {
+        if (user?.id) {
+          await profileService.deleteProfilePicture(user.id);
+          const updatedProfile = await profileService.getProfile(user.id);
+          dispatch(setProfileData(updatedProfile));
+          // Optionnel : afficher un message de succès
+          console.log('✅ Photo de profil supprimée avec succès');
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la suppression de la photo:', error);
+      }
+    }
+  };
+
+
+
+
 
   // Si pas d'utilisateur, afficher un message d'erreur
   if (!user) {
@@ -158,13 +220,13 @@ const Profile = () => {
                 // Avatar par défaut SVG
                 <DefaultAvatar 
                   size={120} 
-                  firstName={user.firstName} 
-                  lastName={user.lastName} 
+                  firstName={profileData?.firstName || user.firstName} 
+                  lastName={profileData?.lastName || user.lastName} 
                 />
               ) : (
                 // Avatar avec photo personnalisée
                 <Avatar
-                  src={profileData?.profilePicture}
+                  src={profileData?.profilePicture ? `http://localhost:5000${profileData.profilePicture}` : undefined}
                   sx={{
                     width: 120,
                     height: 120,
@@ -176,9 +238,32 @@ const Profile = () => {
                     fontWeight: 600,
                   }}
                 >
-                  {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'S'}
+                  {(profileData?.firstName || user.firstName)?.[0] || 'U'}{(profileData?.lastName || user.lastName)?.[0] || 'S'}
                 </Avatar>
               )}
+
+              {/* 🔧 NOUVEAU : Bouton de suppression visible seulement s'il y a une photo */}
+              {profileData?.profilePicture && (
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={handlePhotoDelete}
+                    sx={{
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#dc2626',
+                      },
+                    }}
+                  >
+                    Supprimer
+                  </Button>
+                </Box>
+              )}
+
+
             </Box>
 
             <Typography
@@ -191,7 +276,7 @@ const Profile = () => {
                 fontSize: { xs: '2rem', md: '2.5rem' },
               }}
             >
-              {user.firstName} {user.lastName}
+              {profileData?.firstName || user.firstName} {profileData?.lastName || user.lastName}
             </Typography>
 
             <Typography
@@ -203,7 +288,7 @@ const Profile = () => {
                 fontSize: '1.1rem',
               }}
             >
-              {user.email}
+              {profileData?.email || user.email}
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -302,21 +387,12 @@ const Profile = () => {
                         Nom complet:
                       </Typography>
                       <Typography variant="body1" sx={{ fontWeight: 600, color: '#1a202c' }}>
-                        {user.firstName} {user.lastName}
+                        {profileData?.firstName || user.firstName} {profileData?.lastName || user.lastName}
                       </Typography>
                     </Box>
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="body2" color="textSecondary" sx={{ minWidth: 120, fontWeight: 500 }}>
-                        Email:
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600, color: '#1a202c' }}>
-                        {user.email}
-                      </Typography>
-                    </Box>
-                  </Grid>
+
 
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -324,13 +400,15 @@ const Profile = () => {
                         Rôle:
                       </Typography>
                       <Chip
-                        label={user.role === 'ADMIN' ? 'Administrateur' : 'Utilisateur'}
-                        color={user.role === 'ADMIN' ? 'error' : 'default'}
+                        label={profileData?.role === 'ADMIN' ? 'Administrateur' : 'Utilisateur'}
+                        color={profileData?.role === 'ADMIN' ? 'error' : 'default'}
                         size="small"
                         sx={{ fontWeight: 600 }}
                       />
                     </Box>
                   </Grid>
+
+
 
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -338,9 +416,9 @@ const Profile = () => {
                         Statut:
                       </Typography>
                       <Chip
-                        icon={user.isVerified ? <VerifiedIcon /> : <InfoIcon />}
-                        label={user.isVerified ? 'Vérifié' : 'En attente'}
-                        color={user.isVerified ? 'success' : 'warning'}
+                        icon={profileData?.status === 'ACTIVE' ? <VerifiedIcon /> : <InfoIcon />}
+                        label={profileData?.status === 'ACTIVE' ? 'Validé' : profileData?.status === 'PENDING' ? 'En attente' : 'Suspendu'}
+                        color={profileData?.status === 'ACTIVE' ? 'success' : profileData?.status === 'PENDING' ? 'warning' : 'error'}
                         size="small"
                         sx={{ fontWeight: 600 }}
                       />
@@ -540,6 +618,131 @@ const Profile = () => {
                     size="small"
                     sx={{ fontWeight: 600 }}
                   />
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* 🆕 NOUVELLE CARTE : Vérification KYC/AML */}
+            <Card
+              elevation={0}
+              sx={{
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                overflow: 'hidden',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                mt: 4, // Ajout du padding manquant entre les cartes
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+                  borderColor: '#667eea',
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  p: 3,
+                }}
+              >
+                <Typography variant="h6" component="h3" sx={{ color: 'white', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SecurityIcon />
+                  Vérification d'identité KYC
+                </Typography>
+              </Box>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+                    Pour votre sécurité et conformité réglementaire, nous devons vérifier votre identité avant l'ouverture de cagnottes et les paiements.
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="body2" color="textSecondary" sx={{ flex: 1, fontWeight: 500 }}>
+                      Statut KYC
+                    </Typography>
+                    <Chip
+                      icon={profileData?.kycVerification?.verificationStatus === 'VERIFIED' ? <VerifiedIcon /> : <InfoIcon />}
+                      label={
+                        profileData?.kycVerification?.verificationStatus === 'VERIFIED' ? 'Vérifié' :
+                        profileData?.kycVerification?.verificationStatus === 'PENDING' ? 'En cours' :
+                        profileData?.kycVerification?.verificationStatus === 'REJECTED' ? 'Rejeté' :
+                        'Non vérifié'
+                      }
+                      color={
+                        profileData?.kycVerification?.verificationStatus === 'VERIFIED' ? 'success' :
+                        profileData?.kycVerification?.verificationStatus === 'PENDING' ? 'warning' :
+                        profileData?.kycVerification?.verificationStatus === 'REJECTED' ? 'error' :
+                        'default'
+                      }
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="body2" color="textSecondary" sx={{ flex: 1, fontWeight: 500 }}>
+                      Documents acceptés
+                    </Typography>
+                    <Chip
+                      label="Carte d'identité / Passeport"
+                      color="default"
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<DocumentIcon />}
+                    onClick={() => navigate('/kyc/verify')}
+                    sx={{
+                      bgcolor: '#667eea',
+                      '&:hover': { bgcolor: '#5a67d8' },
+                      py: 1.5,
+                      borderRadius: '12px',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                    }}
+                  >
+                    Commencer la vérification KYC
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    startIcon={<InfoIcon />}
+                    onClick={() => navigate('/kyc/status')}
+                    sx={{
+                      borderColor: '#667eea',
+                      color: '#667eea',
+                      '&:hover': {
+                        bgcolor: '#667eea',
+                        color: 'white',
+                      },
+                      py: 1.5,
+                      borderRadius: '12px',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      borderWidth: 2,
+                    }}
+                  >
+                    Vérifier le statut
+                  </Button>
+                </Box>
+
+                <Box sx={{ mt: 3, p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
+                    💡 Pourquoi la vérification KYC ?
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary" sx={{ lineHeight: 1.5 }}>
+                    • Conformité réglementaire tunisienne<br/>
+                    • Protection contre la fraude<br/>
+                    • Sécurisation des transactions<br/>
+                    • Obligatoire pour les cagnottes
+                  </Typography>
                 </Box>
               </CardContent>
             </Card>

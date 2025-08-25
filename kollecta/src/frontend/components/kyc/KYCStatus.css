@@ -1,0 +1,425 @@
+/* 🎨 STYLES POUR LE COMPOSANT KYC STATUS */
+
+/* Container principal avec espacement approprié */
+.kyc-status-container {
+  padding-top: 120px;  /* ← Espacement du header */
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.kyc-status {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Header */
+.status-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.status-header h2 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.status-header p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+/* Cartes de statut */
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.status-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.status-card.main-status {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.main-status .status-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.main-status .status-info h3 {
+  color: white;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.main-status .status-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.main-status .status-date {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+/* Cartes secondaires */
+.status-card .card-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.status-card .card-info h4 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.status-card .card-info p {
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
+/* Score de risque */
+.risk-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.risk-level {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Informations de rejet */
+.rejection-info {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid #e74c3c;
+}
+
+.rejection-info h4 {
+  color: #c0392b;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.rejection-info p {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.btn-retry-verification {
+  display: inline-block;
+  background: #e74c3c;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.btn-retry-verification:hover {
+  background: #c0392b;
+}
+
+/* États de vérification */
+.verification-success,
+.verification-pending,
+.verification-expired {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.verification-success {
+  border-left: 4px solid #27ae60;
+}
+
+.verification-pending {
+  border-left: 4px solid #f39c12;
+}
+
+.verification-expired {
+  border-left: 4px solid #e67e22;
+}
+
+.verification-success .success-icon,
+.verification-pending .pending-icon,
+.verification-expired .expired-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.verification-success h3,
+.verification-pending h3,
+.verification-expired h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.verification-success p,
+.verification-pending p,
+.verification-expired p {
+  color: #7f8c8d;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.verification-success ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.verification-success li {
+  color: #27ae60;
+  padding: 0.5rem 0;
+  font-weight: 600;
+}
+
+.btn-update-document {
+  display: inline-block;
+  background: #e67e22;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.btn-update-document:hover {
+  background: #d35400;
+}
+
+/* Actions */
+.status-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.btn-refresh,
+.btn-verify-now {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-refresh:hover,
+.btn-verify-now:hover {
+  background: #2980b9;
+}
+
+/* Footer */
+.status-footer {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #3498db;
+}
+
+.status-footer p {
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.status-footer p:last-child {
+  margin-bottom: 0;
+}
+
+/* États de chargement et d'erreur */
+.kyc-status-loading,
+.kyc-status-error,
+.kyc-status-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.kyc-status-loading p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.kyc-status-error .error-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.kyc-status-error h3 {
+  color: #e74c3c;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.kyc-status-error p {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.btn-retry {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-retry:hover {
+  background: #c0392b;
+}
+
+.kyc-status-empty .empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.kyc-status-empty h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.kyc-status-empty p {
+  color: #7f8c8d;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.btn-verify {
+  display: inline-block;
+  background: #27ae60;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.btn-verify:hover {
+  background: #229954;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .kyc-status-container {
+    padding-top: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .kyc-status-container {
+    padding-top: 90px;
+  }
+  
+  .kyc-status {
+    padding: 1rem;
+  }
+  
+  .status-header h2 {
+    font-size: 2rem;
+  }
+  
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .btn-refresh,
+  .btn-verify-now {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .kyc-status-container {
+    padding-top: 80px;
+  }
+  
+  .status-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .status-card {
+    padding: 1rem;
+  }
+  
+  .verification-success,
+  .verification-pending,
+  .verification-expired {
+    padding: 1.5rem 1rem;
+  }
+} 

@@ -1,23 +1,28 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../../services/auth/authService';
-import { clearProfileData } from './profileSlice';
 
-interface User {
+// Types basés sur la structure réelle du authService
+interface UserResponse {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: string;
   isVerified: boolean;
-  // ✅ Tous les champs de profil explicitement définis
   profilePicture?: string | null;
   profileUrl?: string | null;
   profileDescription?: string | null;
   profileVisibility?: string;
 }
 
+interface AuthResponse {
+  user: UserResponse;
+  token: string;
+  deactivationMessage?: string; // 🎯 Message optionnel pour les comptes désactivés
+}
+
 interface AuthState {
-  user: User | null;
+  user: UserResponse | null;
   token: string | null;
   isLoading: boolean;
   error: string | null;
@@ -25,32 +30,12 @@ interface AuthState {
   deactivationMessage: string | null; // 🎯 Message spécial pour les comptes désactivés
 }
 
-// 🧹 NETTOYAGE INTELLIGENT : Nettoyer seulement les données suspectes
-const currentUser = authService.getCurrentUser();
-const currentToken = localStorage.getItem('token');
-
-// Vérifier si l'utilisateur actuel a des données suspectes
-let cleanUser = currentUser;
-if (currentUser) {
-  // Nettoyer seulement les champs problématiques, pas tout l'utilisateur
-  cleanUser = {
-    id: currentUser.id,
-    email: currentUser.email,
-    firstName: currentUser.firstName,
-    lastName: currentUser.lastName,
-    role: currentUser.role,
-    isVerified: currentUser.isVerified,
-    // Forcer profilePicture à null si suspect
-    profilePicture: null
-  };
-}
-
 const initialState: AuthState = {
-  user: cleanUser,
-  token: currentToken,
+  user: null,
+  token: localStorage.getItem('token'),
   isLoading: false,
   error: null,
-  isAuthenticated: !!(cleanUser && currentToken),
+  isAuthenticated: false,
   deactivationMessage: null, // 🎯 Message spécial pour les comptes désactivés
 };
 
@@ -83,9 +68,8 @@ export const forgotPassword = createAsyncThunk(
   async (email: string, { rejectWithValue }) => {
     try {
       await authService.forgotPassword(email);
-      return true;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Erreur lors de la réinitialisation');
+      return rejectWithValue(error.message || 'Erreur lors de l\'envoi de l\'email');
     }
   }
 );
@@ -100,19 +84,22 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
-    },
-    clearUserData: (state) => {
-      state.user = null;
-      state.token = null;
-      state.isAuthenticated = false;
-      state.error = null;
+      state.deactivationMessage = null; // 🎯 Effacer le message de désactivation
     },
     clearError: (state) => {
       state.error = null;
     },
-    // Action pour mettre à jour les données utilisateur
+    // 🎯 NOUVELLE ACTION : Effacer le message de désactivation
+    clearDeactivationMessage: (state) => {
+      state.deactivationMessage = null;
+    },
+    // 🔄 NOUVELLE ACTION : Mettre à jour l'utilisateur
     updateUser: (state, action) => {
-      state.user = { ...state.user, ...action.payload };
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        // Mettre à jour aussi le localStorage
+        localStorage.setItem('user', JSON.stringify(state.user));
+      }
     },
   },
   extraReducers: (builder) => {
@@ -124,26 +111,17 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        // ✅ UTILISER LES DONNÉES BRUTES DU BACKEND (sans forçage)
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
         
         // 🎯 GESTION DU MESSAGE DE DÉSACTIVATION
-        state.deactivationMessage = action.payload.deactivationMessage || null;
-        
-        console.log('🔍 Utilisateur reçu du backend (Redux - login):', state.user);
-        console.log('🔍 Détail des champs de profil dans Redux (login):');
-        console.log('  - profilePicture:', state.user?.profilePicture);
-        console.log('  - profileUrl:', state.user?.profileUrl);
-        console.log('  - profileDescription:', state.user?.profileDescription);
-        console.log('  - profileVisibility:', state.user?.profileVisibility);
-        console.log('🎯 Message de désactivation:', state.deactivationMessage);
-        
-        // 🧹 NETTOYAGE : Vider le profile state pour éviter l'héritage
-        console.log('🧹 Nettoyage du profile state après login...');
-        // Note: clearProfileData sera appelé dans le composant Profile
+        // Si le backend renvoie un message de désactivation, l'utilisateur peut continuer
+        if (action.payload.deactivationMessage) {
+          state.deactivationMessage = action.payload.deactivationMessage;
+          console.log('🎯 Message de désactivation reçu:', action.payload.deactivationMessage);
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -153,37 +131,13 @@ const authSlice = createSlice({
       .addCase(register.pending, (state) => {
         state.isLoading = true;
         state.error = null;
-        // 🧹 NETTOYAGE CIBLÉ : Nettoyer seulement les données suspectes
-        if (state.user) {
-          state.user = {
-            id: state.user.id,
-            email: state.user.email,
-            firstName: state.user.firstName,
-            lastName: state.user.lastName,
-            role: state.user.role,
-            isVerified: state.user.isVerified,
-            profilePicture: null // Forcer à null
-          };
-        }
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        // ✅ UTILISER LES DONNÉES BRUTES DU BACKEND (sans forçage)
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
-        
-        console.log('🔍 Utilisateur reçu du backend (Redux):', state.user);
-        console.log('🔍 Détail des champs de profil dans Redux:');
-        console.log('  - profilePicture:', state.user?.profilePicture);
-        console.log('  - profileUrl:', state.user?.profileUrl);
-        console.log('  - profileDescription:', state.user?.profileDescription);
-        console.log('  - profileVisibility:', state.user?.profileVisibility);
-        
-        // 🧹 NETTOYAGE : Vider le profile state pour éviter l'héritage
-        console.log('🧹 Nettoyage du profile state après register...');
-        // Note: clearProfileData sera appelé dans le composant Profile
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -205,8 +159,9 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, updateUser, clearUserData } = authSlice.actions;
+export const { logout, clearError, clearDeactivationMessage, updateUser } = authSlice.actions;
 
+// Sélecteurs
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
 export const selectLoading = (state: { auth: AuthState }) => state.auth.isLoading;

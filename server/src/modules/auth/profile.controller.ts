@@ -61,9 +61,29 @@ export class ProfileController {
           profileUrl: true,
           profilePicture: true,
           phone: true,
-          birthday: true,
           language: true,
           createdAt: true,
+          // 🔐 AJOUTER LE STATUT DU COMPTE
+          status: true,
+          isVerified: true,
+          isActive: true,
+          role: true,
+          // 🔍 AJOUTER LES DONNÉES KYC
+          kycVerification: {
+            select: {
+              verificationStatus: true,
+              riskScore: true,
+              verificationDate: true,
+              documentType: true,
+              rejectionReason: true
+            }
+          },
+          amlCheck: {
+            select: {
+              riskLevel: true,
+              lastCheckDate: true
+            }
+          }
         }
       });
 
@@ -72,121 +92,15 @@ export class ProfileController {
         return res.status(404).json({ message: 'Utilisateur non trouvé' });
       }
 
-      // LOGIQUE ULTRA-AGRESSIVE : TOUJOURS nettoyer les photos pour les nouveaux utilisateurs
+      // 🔧 DÉSACTIVÉ : Logique de nettoyage agressif des photos
       let profilePicture = user.profilePicture;
-      let shouldCleanPhoto = false;
-      let reason = '';
       
-      // 1. Vérifier si c'est un nouvel utilisateur (moins de 24h)
-      const isNewUser = Date.now() - user.createdAt.getTime() < 24 * 60 * 60 * 1000;
-      
-      // 2. LOGIQUE INTELLIGENTE : Ne nettoyer que si c'est suspect
-      if (isNewUser && profilePicture !== null) {
-        // Vérifier si la photo est réellement suspecte
-        const suspiciousPatterns = [
-          'default-avatar',
-          'placeholder',
-          'anonymous',
-          'unknown',
-          'temp',
-          'old',
-          'previous'
-        ];
-        
-        const isSuspicious = suspiciousPatterns.some(pattern => 
-          profilePicture!.toLowerCase().includes(pattern)
-        );
-        
-        const hasValidExtension = /\.(jpg|jpeg|png|gif|webp)$/i.test(profilePicture);
-        const seemsLikeOtherUser = profilePicture.includes('profile-') && !profilePicture.includes(userId);
-        
-        if (isSuspicious || !hasValidExtension || seemsLikeOtherUser) {
-          shouldCleanPhoto = true;
-          reason = 'Nouvel utilisateur avec photo suspecte';
-          console.log('🆕 NOUVEL UTILISATEUR DÉTECTÉ - Photo suspecte identifiée');
-        } else {
-          console.log('🆕 NOUVEL UTILISATEUR DÉTECTÉ - Photo valide, pas de nettoyage nécessaire');
-        }
-      }
-      
-      // 3. Vérifications supplémentaires même pour les anciens utilisateurs
-      if (profilePicture && !shouldCleanPhoto) {
-        // Photos qui ne devraient jamais être affichées
-        const suspiciousPatterns = [
-          'default-avatar',
-          'placeholder',
-          'anonymous',
-          'unknown',
-          'temp',
-          'old',
-          'previous'
-        ];
-        
-        const isSuspicious = suspiciousPatterns.some(pattern => 
-          profilePicture!.toLowerCase().includes(pattern)
-        );
-        
-        // Vérifier le format
-        const hasValidExtension = /\.(jpg|jpeg|png|gif|webp)$/i.test(profilePicture);
-        
-        // Vérifier si la photo semble être d'un autre utilisateur
-        const seemsLikeOtherUser = profilePicture.includes('profile-') && 
-                                  !profilePicture.includes(userId);
-        
-        if (isSuspicious || !hasValidExtension || seemsLikeOtherUser) {
-          shouldCleanPhoto = true;
-          reason = `Photo suspecte: isSuspicious=${isSuspicious}, hasValidExtension=${hasValidExtension}, seemsLikeOtherUser=${seemsLikeOtherUser}`;
-        }
-      }
-      
-      // 4. NETTOYAGE AGGRESSIF
-      if (shouldCleanPhoto) {
-        console.log('🚨 NETTOYAGE AGGRESSIF:', {
-          userId,
-          reason,
-          currentPhoto: profilePicture,
-          isNewUser
-        });
-        
-        try {
-          // Forcer la suppression de la photo
-          await prisma.user.update({
-            where: { id: userId },
-            data: { profilePicture: null }
-          });
-          
-          profilePicture = null;
-          console.log('✅ Photo nettoyée avec succès');
-          
-          // VÉRIFICATION POST-NETTOYAGE
-          const verificationUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { profilePicture: true }
-          });
-          
-          if (verificationUser?.profilePicture !== null) {
-            console.error('❌ ÉCHEC: La photo n\'a pas été supprimée!');
-            // Dernière tentative
-            await prisma.user.update({
-              where: { id: userId },
-              data: { profilePicture: null }
-            });
-            profilePicture = null;
-          }
-          
-        } catch (cleanupError) {
-          console.error('❌ Erreur lors du nettoyage:', cleanupError);
-          // En cas d'erreur, forcer profilePicture à null dans la réponse
-          profilePicture = null;
-        }
-      }
+      console.log('🔧 NETTOYAGE COMPLÈTEMENT DÉSACTIVÉ - Photos conservées telles quelles');
+      console.log('📸 Photo de profil actuelle:', profilePicture);
 
       console.log('✅ Profil récupéré avec SUCCÈS:', { 
         ...user, 
         profilePicture,
-        isNewUser,
-        shouldCleanPhoto,
-        reason,
         finalPhoto: profilePicture
       });
 
@@ -201,6 +115,17 @@ export class ProfileController {
           profileDescription: user.profileDescription,
           profileUrl: user.profileUrl,
           profilePicture: profilePicture, // TOUJOUR null si suspect ou nouveau
+          phone: user.phone,
+          // birthday: user.birthday, // Champ non disponible dans le schéma actuel
+          language: user.language,
+          // 🔐 AJOUTER LE STATUT DU COMPTE
+          status: user.status,
+          isVerified: user.isVerified,
+          isActive: user.isActive,
+          role: user.role,
+          // 🔍 AJOUTER LES DONNÉES KYC
+          kycVerification: user.kycVerification,
+          amlCheck: user.amlCheck
         }
       });
     } catch (error) {
@@ -246,7 +171,8 @@ export class ProfileController {
       }
       
       if (profileVisibility !== undefined) {
-        updateData.profileVisibility = Boolean(profileVisibility);
+        // 🔧 CORRECTION : profileVisibility reste une string, pas un boolean
+        updateData.profileVisibility = profileVisibility;
       }
       
       if (profileDescription !== undefined) {
@@ -265,8 +191,20 @@ export class ProfileController {
       }
       
       if (birthday !== undefined) {
-        // Permettre les chaînes vides et null
-        updateData.birthday = birthday === '' ? null : birthday;
+        // 🔧 CORRECTION : Gestion intelligente des dates
+        if (birthday === '' || birthday === null) {
+          updateData.birthday = null;
+        } else if (birthday instanceof Date) {
+          updateData.birthday = birthday;
+        } else if (typeof birthday === 'string' && birthday.trim() !== '') {
+          // Essayer de parser la date
+          const parsedDate = new Date(birthday);
+          if (!isNaN(parsedDate.getTime())) {
+            updateData.birthday = parsedDate;
+          } else {
+            console.warn('⚠️ Date invalide ignorée:', birthday);
+          }
+        }
       }
       
       if (language !== undefined && language !== null && language.trim() !== '') {
@@ -281,6 +219,18 @@ export class ProfileController {
           message: 'Aucune donnée valide à mettre à jour' 
         });
       }
+
+      // 🔧 CORRECTION : Log détaillé avant la mise à jour
+      console.log('📊 Tentative de mise à jour avec Prisma:', {
+        userId,
+        updateData,
+        dataTypes: Object.entries(updateData).map(([key, value]) => ({
+          key,
+          value,
+          type: typeof value,
+          isDate: value instanceof Date
+        }))
+      });
 
       // Mettre à jour le profil avec gestion d'erreur détaillée
       let updatedProfile;
@@ -298,7 +248,7 @@ export class ProfileController {
             profileUrl: true,
             profilePicture: true,
             phone: true,
-            birthday: true,
+            birthday: true, // ✅ Champ birthday maintenant disponible en base
             language: true,
           }
         });
@@ -334,6 +284,9 @@ export class ProfileController {
           profileDescription: updatedProfile.profileDescription,
           profileUrl: updatedProfile.profileUrl,
           profilePicture: updatedProfile.profilePicture,
+          phone: updatedProfile.phone,
+          birthday: updatedProfile.birthday, // ✅ Champ birthday maintenant disponible en base
+          language: updatedProfile.language,
         }
       });
     } catch (error) {

@@ -1,242 +1,160 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Box,
   Container,
+  Box,
   Typography,
-  TextField,
   Button,
-  Paper,
   Alert,
   CircularProgress,
+  Paper,
 } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import {
+  CheckCircle as CheckIcon,
+  Error as ErrorIcon,
+  Email as EmailIcon,
+} from '@mui/icons-material';
+import { authService } from '../../services/auth/authService';
 
-interface VerificationFormInputs {
-  code: string;
-}
-
-const EmailVerification = () => {
-  const navigate = useNavigate();
+const EmailVerification: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  
-  const { register, handleSubmit, formState: { errors } } = useForm<VerificationFormInputs>();
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('');
 
-  // 🔍 Récupérer le token depuis l'URL si présent
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      // Auto-vérification si le token est dans l'URL
-      handleAutoVerification(token);
-    }
-  }, [searchParams]);
+    const verifyEmail = async () => {
+      try {
+        const token = searchParams.get('token');
+        
+        if (!token) {
+          setStatus('error');
+          setMessage('Token de vérification manquant');
+          return;
+        }
 
-  // 🚀 Vérification automatique avec le token de l'URL
-  const handleAutoVerification = async (token: string) => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const response = await axios.post('http://localhost:5000/api/auth/verify-email', {
-        token: token
-      });
-
-      if (response.data.success) {
-        setSuccess('🎉 Email vérifié avec succès ! Redirection vers la page de connexion...');
+        // 🔐 Vérifier l'email avec le token
+        await authService.verifyEmail(token);
+        
+        // ✅ Succès
+        setStatus('success');
+        setMessage('Votre email a été vérifié avec succès !');
+        
+        // 🔄 Mettre à jour le localStorage avec isVerified: true
+        const currentUser = authService.getCurrentUser();
+        if (currentUser) {
+          const updatedUser = { ...currentUser, isVerified: true };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        
+        // 🚀 Rediriger vers le profil après 3 secondes
         setTimeout(() => {
-          navigate('/login');
+          navigate('/profile');
         }, 3000);
+        
+      } catch (error) {
+        console.error('Erreur lors de la vérification:', error);
+        setStatus('error');
+        setMessage(error instanceof Error ? error.message : 'Erreur lors de la vérification');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors de la vérification automatique');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  // 📝 Vérification manuelle avec le code saisi
-  const onSubmit = async (data: VerificationFormInputs) => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const response = await axios.post('http://localhost:5000/api/auth/verify-email', {
-        token: data.code
-      });
+    verifyEmail();
+  }, [searchParams, navigate]);
 
-      if (response.data.success) {
-        setSuccess('🎉 Email vérifié avec succès ! Redirection vers la page de connexion...');
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors de la vérification');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const renderContent = () => {
+    switch (status) {
+      case 'loading':
+        return (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <CircularProgress size={60} sx={{ mb: 2 }} />
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Vérification de votre email...
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Veuillez patienter pendant que nous vérifions votre compte.
+            </Typography>
+          </Box>
+        );
 
-  // 🔄 Renvoyer un nouveau code de vérification
-  const handleResendCode = async () => {
-    if (!email) {
-      setError('Veuillez d\'abord saisir votre email');
-      return;
-    }
+      case 'success':
+        return (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <CheckIcon sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
+            <Typography variant="h4" sx={{ mb: 2, color: 'success.main' }}>
+              ✅ Email vérifié !
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              {message}
+            </Typography>
+            <Alert severity="success" sx={{ mb: 3, textAlign: 'left' }}>
+              <strong>Félicitations !</strong> Votre compte est maintenant vérifié. 
+              Vous allez être redirigé vers votre profil dans quelques secondes.
+            </Alert>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate('/profile')}
+              sx={{ mt: 2 }}
+            >
+              Aller à mon profil maintenant
+            </Button>
+          </Box>
+        );
 
-    setResendLoading(true);
-    setError('');
-    
-    try {
-      await axios.post('http://localhost:5000/api/auth/resend-verification', { email });
-      setSuccess('📧 Un nouveau code de vérification a été envoyé à votre email');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors de l\'envoi du code');
-    } finally {
-      setResendLoading(false);
+      case 'error':
+        return (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <ErrorIcon sx={{ fontSize: 80, color: 'error.main', mb: 2 }} />
+            <Typography variant="h4" sx={{ mb: 2, color: 'error.main' }}>
+              ❌ Erreur de vérification
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              {message}
+            </Typography>
+            <Alert severity="error" sx={{ mb: 3, textAlign: 'left' }}>
+              <strong>Problème :</strong> Nous n'avons pas pu vérifier votre email. 
+              Cela peut être dû à un lien expiré ou invalide.
+            </Alert>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                onClick={() => window.location.reload()}
+              >
+                Réessayer
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => navigate('/login')}
+              >
+                Aller à la connexion
+              </Button>
+            </Box>
+          </Box>
+        );
+
+      default:
+        return null;
     }
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
+    <Container maxWidth="sm">
+      <Box sx={{ py: 8 }}>
         <Paper
           elevation={3}
           sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            p: 4,
+            borderRadius: 3,
+            textAlign: 'center',
           }}
         >
-          <Typography component="h1" variant="h4" gutterBottom sx={{ color: '#02a95c', fontWeight: 'bold' }}>
-            🔐 Vérification de l'email
+          <EmailIcon sx={{ fontSize: 60, color: 'primary.main', mb: 3 }} />
+          <Typography variant="h4" component="h1" sx={{ mb: 4, fontWeight: 600 }}>
+            Vérification de votre email
           </Typography>
-
-          <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 3 }}>
-            Veuillez entrer le code de vérification envoyé à votre adresse email
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
-              {success}
-            </Alert>
-          )}
-
-          {loading ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
-              <CircularProgress sx={{ color: '#02a95c', mb: 2 }} />
-              <Typography variant="body2" color="text.secondary">
-                Vérification en cours...
-              </Typography>
-            </Box>
-          ) : (
-            <>
-              <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: '100%' }}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  label="Code de vérification"
-                  placeholder="Entrez le code reçu par email"
-                  {...register('code', { required: 'Le code est requis' })}
-                  error={!!errors.code}
-                  helperText={errors.code?.message}
-                  sx={{ mb: 3 }}
-                />
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  disabled={loading}
-                  sx={{
-                    bgcolor: '#02a95c',
-                    '&:hover': { bgcolor: '#02884a' },
-                    mb: 2,
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  ✅ Vérifier mon email
-                </Button>
-              </Box>
-
-              <Box sx={{ width: '100%', mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
-                  Vous n'avez pas reçu le code ?
-                </Typography>
-                
-                <TextField
-                  margin="normal"
-                  fullWidth
-                  label="Votre email"
-                  type="email"
-                  placeholder="Entrez votre email pour recevoir un nouveau code"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  sx={{ mb: 2 }}
-                />
-
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={handleResendCode}
-                  disabled={resendLoading || !email}
-                  sx={{
-                    color: '#02a95c',
-                    borderColor: '#02a95c',
-                    '&:hover': { 
-                      borderColor: '#02884a',
-                      bgcolor: 'rgba(2, 169, 92, 0.04)' 
-                    },
-                    py: 1.5,
-                  }}
-                >
-                  {resendLoading ? (
-                    <CircularProgress size={20} sx={{ color: '#02a95c' }} />
-                  ) : (
-                    '🔄 Renvoyer le code'
-                  )}
-                </Button>
-              </Box>
-            </>
-          )}
-
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Button
-              variant="text"
-              onClick={() => navigate('/login')}
-              sx={{
-                color: '#666',
-                '&:hover': { bgcolor: 'rgba(102, 102, 102, 0.04)' },
-              }}
-            >
-              ← Retour à la connexion
-            </Button>
-          </Box>
+          
+          {renderContent()}
         </Paper>
       </Box>
     </Container>

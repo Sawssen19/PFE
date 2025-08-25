@@ -8,61 +8,96 @@ async function main() {
 
   // Supprimer toutes les données existantes
   await prisma.user.deleteMany({});
+  await prisma.accountRequest.deleteMany({});
 
-  // Créer un utilisateur de test
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  console.log('🧹 Données existantes supprimées');
+
+  // Créer l'utilisateur administrateur principal selon le diagramme de classes
+  const adminPassword = await bcrypt.hash('Sy@1511919', 10);
   
-  const testUser = await prisma.user.create({
+  const adminUser = await prisma.user.create({
     data: {
-      email: 'test@example.com',
-      password: hashedPassword,
+      email: 'sawssen.yazidi@sesame.com.tn',
+      password: adminPassword,
       firstName: 'Sawssen',
-      lastName: 'Yz',
-      role: 'USER',
+      lastName: 'Yazidi',
+      role: 'ADMIN',
       isVerified: true,
-      profileVisibility: 'public',
-      profileDescription: 'Développeuse passionnée par les projets innovants',
-      profileUrl: 'https://www.kollecta.com/u/sawssen-yz',
+      isActive: true,
+      profileDescription: 'Administrateur principal de la plateforme Kollecta',
+      profileUrl: 'https://www.kollecta.com/u/sawssen-yazidi',
       profilePicture: null,
+      phone: null,
+      birthday: null,
+      language: 'fr',
     },
   });
 
-  console.log('✅ Utilisateur de test créé:', testUser.email);
+  console.log('✅ Utilisateur administrateur créé:', adminUser.email);
 
-  // Créer quelques utilisateurs supplémentaires
+  // Créer quelques utilisateurs de test supplémentaires
+  const testPassword = await bcrypt.hash('password123', 10);
+  
   const users = [
     {
+      email: 'test@example.com',
+      password: testPassword,
+      firstName: 'Test',
+      lastName: 'User',
+      role: 'USER' as const,
+      isVerified: true,
+      isActive: true,
+      profileDescription: 'Utilisateur de test pour le développement',
+      profileUrl: 'https://www.kollecta.com/u/test-user',
+      profilePicture: null,
+      phone: null,
+      birthday: null,
+      language: 'fr',
+    },
+    {
       email: 'john@example.com',
-      password: hashedPassword,
+      password: testPassword,
       firstName: 'John',
       lastName: 'Doe',
       role: 'USER' as const,
       isVerified: true,
-      profileVisibility: 'public' as const,
+      isActive: true,
       profileDescription: 'Passionné de technologie et d\'innovation',
       profileUrl: 'https://www.kollecta.com/u/john-doe',
+      profilePicture: null,
+      phone: null,
+      birthday: null,
+      language: 'en',
     },
     {
       email: 'jane@example.com',
-      password: hashedPassword,
+      password: testPassword,
       firstName: 'Jane',
       lastName: 'Smith',
       role: 'USER' as const,
       isVerified: true,
-      profileVisibility: 'public' as const,
+      isActive: true,
       profileDescription: 'Designer créative et entrepreneuse',
       profileUrl: 'https://www.kollecta.com/u/jane-smith',
+      profilePicture: null,
+      phone: null,
+      birthday: null,
+      language: 'fr',
     },
     {
-      email: 'admin@kollecta.com',
-      password: hashedPassword,
-      firstName: 'Admin',
+      email: 'support@kollecta.com',
+      password: testPassword,
+      firstName: 'Support',
       lastName: 'Kollecta',
-      role: 'ADMIN' as const,
+      role: 'SUPPORT' as const,
       isVerified: true,
-      profileVisibility: 'public' as const,
-      profileDescription: 'Administrateur de la plateforme Kollecta',
-      profileUrl: 'https://www.kollecta.com/u/admin',
+      isActive: true,
+      profileDescription: 'Équipe de support utilisateur',
+      profileUrl: 'https://www.kollecta.com/u/support',
+      profilePicture: null,
+      phone: null,
+      birthday: null,
+      language: 'fr',
     },
   ];
 
@@ -73,12 +108,25 @@ async function main() {
     console.log('✅ Utilisateur créé:', user.email);
   }
 
-  console.log('🎉 Seeding terminé avec succès !');
-  console.log('\n📋 Comptes de test disponibles :');
-  console.log('Email: test@example.com | Mot de passe: password123');
-  console.log('Email: john@example.com | Mot de passe: password123');
-  console.log('Email: jane@example.com | Mot de passe: password123');
-  console.log('Email: admin@kollecta.com | Mot de passe: password123');
+  console.log('\n🎉 Seeding terminé avec succès !');
+  console.log('\n📋 Comptes disponibles selon le diagramme de classes Sprint 1 :');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🔐 ADMINISTRATEUR PRINCIPAL :');
+  console.log('   Email: sawssen.yazidi@sesame.com.tn');
+  console.log('   Mot de passe: Sy@1511919');
+  console.log('   Rôle: ADMIN');
+  console.log('   Statut: ACTIF & VÉRIFIÉ');
+  console.log('');
+  console.log('👥 UTILISATEURS DE TEST :');
+  console.log('   Email: test@example.com | Mot de passe: password123 | Rôle: USER');
+  console.log('   Email: john@example.com | Mot de passe: password123 | Rôle: USER');
+  console.log('   Email: jane@example.com | Mot de passe: password123 | Rôle: USER');
+  console.log('   Email: support@kollecta.com | Mot de passe: password123 | Rôle: SUPPORT');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('\n💡 L\'utilisateur administrateur correspond au diagramme de classes Sprint 1 :');
+  console.log('   - Rôle: ADMIN (hérite de Utilisateur)');
+  console.log('   - Statut: ACTIF (Statut.ACTIF)');
+  console.log('   - Peut consulterUtilisateurs(), suspendreCompte(), modifierRole()');
 }
 
 main()

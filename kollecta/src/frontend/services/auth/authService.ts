@@ -139,7 +139,7 @@ class AuthService {
   }
 
   async verifyEmail(token: string): Promise<void> {
-    return this.request<void>('GET', `verify-email/${token}`);
+    return this.request<void>('POST', 'verify-email', { token });
   }
 
   async getProfile(): Promise<UserResponse> {

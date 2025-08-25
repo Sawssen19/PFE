@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { EmailService } from '../../services/emailService';
 import crypto from 'crypto';
+import { SmsService } from '../../services/smsService';
 
 // 🔧 SECRET FIXE pour éviter les erreurs JWT
 const JWT_SECRET = 'kollecta-super-secret-jwt-key-2025';
@@ -45,15 +46,18 @@ export class AuthController {
           // 🔐 Champs de vérification d'email
           verificationToken,
           verificationExp,
-          // ✅ Email de vérification requis
-          isVerified: false,
+                      // ✅ Email de vérification requis
+            isVerified: false,
+            // 🔐 Statut initial : PENDING (en attente de vérification email + KYC + approbation admin)
+            status: 'PENDING',
+            isActive: false,
           // Les autres champs utilisent les valeurs par défaut de Prisma
         },
       });
 
       // 📧 Envoyer l'email de vérification avec SendGrid
       try {
-        await EmailService.sendVerificationEmail(email, firstName, verificationToken);
+        await EmailService.sendVerificationEmail(email, verificationToken, firstName);
         console.log('📧 Email de vérification envoyé avec succès via SendGrid à:', email);
       } catch (emailError) {
         console.error('⚠️ Erreur lors de l\'envoi de l\'email de vérification:', emailError);
@@ -176,6 +180,16 @@ export class AuthController {
         return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
       }
 
+      // 🔐 VÉRIFICATION : Bloquer la connexion si l'email n'est pas vérifié
+      if (!user.isVerified) {
+        return res.status(403).json({ 
+          success: false,
+          message: 'Veuillez vérifier votre email pour activer votre compte avant de vous connecter.',
+          blocked: true,
+          requiresVerification: true
+        });
+      }
+
       const token = jwt.sign(
         { userId: user.id },
         JWT_SECRET,
@@ -236,28 +250,107 @@ export class AuthController {
 
   async forgotPassword(req: Request, res: Response) {
     try {
-      const { email } = req.body;
-      const user = await prisma.user.findUnique({ where: { email } });
+      const { email, phone } = req.body;
+      console.log('🔍 Demande de réinitialisation pour:', { email, phone });
+      
+      let user = null;
+      let identifier = '';
+      
+      // Rechercher l'utilisateur par email ou numéro de téléphone
+      if (email) {
+        identifier = email;
+        user = await prisma.user.findUnique({ where: { email } });
+      } else if (phone) {
+        // Nettoyer le numéro de téléphone (supprimer les espaces)
+        const cleanPhone = phone.replace(/\s/g, '');
+        identifier = cleanPhone;
+        console.log('📱 Numéro de téléphone nettoyé:', cleanPhone);
+        
+        // Rechercher avec le numéro nettoyé
+        user = await prisma.user.findFirst({ 
+          where: { 
+            phone: {
+              contains: cleanPhone.replace('+', '') // Recherche partielle sans le +
+            }
+          } 
+        });
+        
+        if (!user) {
+          // Essayer avec le numéro exact
+          user = await prisma.user.findFirst({ where: { phone: cleanPhone } });
+        }
+        
+        if (!user) {
+          // Essayer avec le numéro original (avec espaces)
+          user = await prisma.user.findFirst({ where: { phone: phone } });
+        }
+      } else {
+        return res.status(400).json({ 
+          message: 'Veuillez fournir un email ou un numéro de téléphone.' 
+        });
+      }
       
       if (!user) {
-        return res.status(404).json({ message: 'Utilisateur non trouvé' });
+        console.log('❌ Utilisateur non trouvé pour:', identifier);
+        // Pour des raisons de sécurité, on ne révèle pas si l'identifiant existe ou non
+        return res.status(200).json({ 
+          message: 'Si cet identifiant existe dans notre base de données, vous recevrez un lien de réinitialisation.' 
+        });
       }
 
-      const resetToken = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET || 'default-secret',
-        { expiresIn: '1h' }
-      );
+      console.log('✅ Utilisateur trouvé:', user.id, user.firstName);
+      
+      // Générer un token de réinitialisation unique avec crypto (plus sécurisé que JWT)
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExp = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 heure
+      
+      console.log('🔑 Token généré:', resetToken.substring(0, 10) + '...');
 
       await prisma.user.update({
         where: { id: user.id },
         data: {
           resetToken,
-          resetTokenExp: new Date(Date.now() + 3600000) // 1 heure
+          resetTokenExp
         }
       });
+      
+      console.log('💾 Token sauvegardé en base de données');
 
-      res.json({ message: 'Instructions de réinitialisation envoyées par email' });
+      // Envoyer la réinitialisation par email ou SMS
+      try {
+        if (email) {
+          console.log('📧 Tentative d\'envoi d\'email à:', email);
+          await EmailService.sendPasswordResetEmail(email, user.firstName, resetToken);
+          console.log('📧 Email de réinitialisation envoyé avec succès à:', email);
+          
+          // Réponse pour email
+          return res.status(200).json({ 
+            message: 'Si cet identifiant existe dans notre base de données, vous recevrez un lien de réinitialisation par email.',
+            method: 'email'
+          });
+          
+        } else if (phone) {
+          console.log('📱 Tentative d\'envoi de SMS à:', phone);
+          const smsResult = await SmsService.sendPasswordResetSMS(phone, user.firstName, resetToken);
+          
+          if (smsResult.success) {
+            console.log('📱 SMS de réinitialisation envoyé avec succès à:', phone);
+            // Retourner le lien de réinitialisation dans la réponse
+            return res.status(200).json({
+              message: 'SMS de réinitialisation envoyé avec succès',
+              method: 'SMS',
+              resetUrl: smsResult.resetUrl,
+              token: resetToken,
+              expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 heure
+            });
+          } else {
+            throw new Error('Erreur lors de l\'envoi du SMS de réinitialisation');
+          }
+        }
+      } catch (sendError) {
+        console.error('❌ Erreur lors de l\'envoi de la réinitialisation:', sendError);
+        return res.status(500).json({ message: 'Erreur lors de l\'envoi des instructions de réinitialisation' });
+      }
     } catch (error) {
       console.error('Erreur lors de la réinitialisation du mot de passe:', error);
       res.status(500).json({ message: 'Erreur lors de la réinitialisation du mot de passe' });
@@ -268,18 +361,18 @@ export class AuthController {
     try {
       const { token, newPassword } = req.body;
       
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret') as { userId: string };
-      
-      const user = await prisma.user.findUnique({
+      // Vérifier si le token existe et n'est pas expiré (sans JWT)
+      const user = await prisma.user.findFirst({
         where: { 
-          id: decoded.userId,
           resetToken: token,
           resetTokenExp: { gt: new Date() }
         }
       });
 
       if (!user) {
-        return res.status(400).json({ message: 'Token invalide ou expiré' });
+        return res.status(400).json({ 
+          message: 'Token invalide ou expiré. Veuillez demander un nouveau lien de réinitialisation.' 
+        });
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -293,7 +386,11 @@ export class AuthController {
         }
       });
 
-      res.json({ message: 'Mot de passe réinitialisé avec succès' });
+      console.log('✅ Mot de passe réinitialisé avec succès pour:', user.email);
+
+      res.json({ 
+        message: 'Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.' 
+      });
     } catch (error) {
       console.error('Erreur lors de la réinitialisation du mot de passe:', error);
       res.status(500).json({ message: 'Erreur lors de la réinitialisation du mot de passe' });
@@ -383,7 +480,7 @@ export class AuthController {
       });
 
       // 📧 Envoyer le nouvel email de vérification
-      await EmailService.sendResendVerificationEmail(email, user.firstName, verificationToken);
+              await EmailService.sendResendVerificationEmail(email, verificationToken, user.firstName);
 
       console.log('🔄 Nouveau code de vérification envoyé à:', email);
 
@@ -394,6 +491,75 @@ export class AuthController {
     } catch (error) {
       console.error('Erreur lors du renvoi du code de vérification:', error);
       res.status(500).json({ message: 'Erreur lors de l\'envoi du code' });
+    }
+  }
+
+  // 🔑 VÉRIFICATION DE LA VALIDITÉ D'UN TOKEN DE RÉINITIALISATION
+  async verifyResetToken(req: Request, res: Response) {
+    try {
+      const { token } = req.params;
+
+      // Vérifier si le token existe et n'est pas expiré
+      const user = await prisma.user.findFirst({
+        where: {
+          resetToken: token,
+          resetTokenExp: {
+            gt: new Date() // Token non expiré
+          }
+        }
+      });
+
+      if (!user) {
+        return res.status(400).json({ 
+          valid: false,
+          message: 'Token invalide ou expiré' 
+        });
+      }
+
+      res.status(200).json({ 
+        valid: true,
+        message: 'Token valide' 
+      });
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification du token:', error);
+      res.status(500).json({ 
+        valid: false,
+        message: 'Erreur lors de la vérification du token' 
+      });
+    }
+
+    try {
+      const { token } = req.params;
+
+      // Vérifier si le token existe et n'est pas expiré
+      const user = await prisma.user.findFirst({
+        where: {
+          resetToken: token,
+          resetTokenExp: {
+            gt: new Date() // Token non expiré
+          }
+        }
+      });
+
+      if (!user) {
+        return res.status(400).json({ 
+          valid: false,
+          message: 'Token invalide ou expiré' 
+        });
+      }
+
+      res.status(200).json({ 
+        valid: true,
+        message: 'Token valide' 
+      });
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification du token:', error);
+      res.status(500).json({ 
+        valid: false,
+        message: 'Erreur lors de la vérification du token' 
+      });
     }
   }
 }

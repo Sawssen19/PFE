@@ -11,8 +11,6 @@ const DefaultAvatar: React.FC<DefaultAvatarProps> = ({
   firstName = 'U', 
   lastName = 'S' 
 }) => {
-  const initials = `${firstName?.[0] || 'U'}${lastName?.[0] || 'S'}`;
-  
   return (
     <svg
       width={size}
@@ -20,6 +18,7 @@ const DefaultAvatar: React.FC<DefaultAvatarProps> = ({
       viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className="profile-photo"
     >
       {/* Cercle de fond avec dégradé */}
       <defs>
@@ -47,20 +46,6 @@ const DefaultAvatar: React.FC<DefaultAvatarProps> = ({
         {/* Corps */}
         <path d="M30 85 C30 65 90 65 90 85 L90 95 C90 100 85 105 80 105 L40 105 C35 105 30 100 30 95 Z" />
       </g>
-      
-      {/* Initiales au centre */}
-      <text
-        x="60"
-        y="65"
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="#ffffff"
-        fontSize="24"
-        fontWeight="600"
-        fontFamily="Arial, sans-serif"
-      >
-        {initials}
-      </text>
     </svg>
   );
 };

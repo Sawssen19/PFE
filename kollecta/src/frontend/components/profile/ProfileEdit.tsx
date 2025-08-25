@@ -11,10 +11,6 @@ import {
   Paper,
   InputAdornment,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
   Snackbar,
   Divider,
@@ -45,7 +41,6 @@ const ProfileEdit: React.FC = () => {
   const loading = useSelector((state: RootState) => state.profile.loading);
   
   const [isLoading, setIsLoading] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -115,16 +110,24 @@ const ProfileEdit: React.FC = () => {
     }
   };
 
-  const handlePhotoDelete = () => {
-    setConfirmDelete(true);
-  };
-
-  const confirmPhotoDelete = () => {
-    setFormData(prev => ({
-      ...prev,
-      profilePicture: null
-    }));
-    setConfirmDelete(false);
+  const handlePhotoDelete = async () => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer votre photo de profil ?')) {
+      try {
+        if (user?.id) {
+          await profileService.deleteProfilePicture(user.id);
+          const updatedProfile = await profileService.getProfile(user.id);
+          dispatch(setProfileData(updatedProfile));
+          // Mettre à jour le state local aussi
+          setFormData(prev => ({
+            ...prev,
+            profilePicture: null
+          }));
+          console.log('✅ Photo de profil supprimée avec succès');
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la suppression de la photo:', error);
+      }
+    }
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -369,16 +372,16 @@ const ProfileEdit: React.FC = () => {
                   </Button>
                   {(formData.profilePicture || profile?.profilePicture) && (
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       color="error"
+                      size="small"
                       onClick={handlePhotoDelete}
-                      startIcon={<DeleteIcon />}
-                      sx={{ 
-                        px: 3,
-                        py: 1.5,
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        fontWeight: 600
+                      sx={{
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: '#dc2626',
+                        },
                       }}
                     >
                       Supprimer
@@ -557,55 +560,7 @@ const ProfileEdit: React.FC = () => {
         </Card>
       </Container>
 
-      {/* Dialog de confirmation pour la suppression de photo */}
-      <Dialog 
-        open={confirmDelete} 
-        onClose={() => setConfirmDelete(false)}
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            minWidth: 400
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          textAlign: 'center', 
-          fontWeight: 600,
-          color: '#1a1a1a'
-        }}>
-          Supprimer la photo de profil ?
-        </DialogTitle>
-        <DialogContent>
-          <Typography sx={{ textAlign: 'center', color: '#6c757d' }}>
-            Êtes-vous sûr de vouloir supprimer votre photo de profil ? Cette action ne peut pas être annulée.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, justifyContent: 'center', gap: 2 }}>
-          <Button 
-            onClick={() => setConfirmDelete(false)}
-            variant="outlined"
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600
-            }}
-          >
-            Annuler
-          </Button>
-          <Button 
-            onClick={confirmPhotoDelete} 
-            color="error"
-            variant="contained"
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600
-            }}
-          >
-            Supprimer
-          </Button>
-        </DialogActions>
-      </Dialog>
+
 
       {/* Notification */}
       <Snackbar

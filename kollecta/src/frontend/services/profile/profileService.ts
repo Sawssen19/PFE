@@ -8,7 +8,7 @@ export const profileService = {
     const token = localStorage.getItem('token');
     
     const response = await axios.get(
-      `${API_URL}/users/${userId}/profile`,
+      `${API_URL}/profile/${userId}/profile`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -23,16 +23,24 @@ export const profileService = {
     const token = localStorage.getItem('token');
     
     // Mapper les données pour correspondre au backend
-    const mappedData = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      visibility: data.visibility, // Le backend attend 'visibility'
-      description: data.description,
-      profileUrl: data.profileUrl,
-    };
+    const mappedData: any = {};
+    
+    // Champs de base
+    if (data.firstName !== undefined) mappedData.firstName = data.firstName;
+    if (data.lastName !== undefined) mappedData.lastName = data.lastName;
+    if (data.visibility !== undefined) mappedData.profileVisibility = data.visibility;
+    if (data.description !== undefined) mappedData.profileDescription = data.description;
+    if (data.profileUrl !== undefined) mappedData.profileUrl = data.profileUrl;
+    
+    // Nouveaux champs supportés par le backend
+    if (data.phone !== undefined) mappedData.phone = data.phone;
+    if (data.birthday !== undefined) mappedData.birthday = data.birthday;
+    if (data.language !== undefined) mappedData.language = data.language;
+
+    console.log('📤 Données envoyées au backend:', mappedData);
 
     const response = await axios.put(
-      `${API_URL}/users/${userId}/profile`,
+      `${API_URL}/profile/${userId}/profile`,
       mappedData,
       {
         headers: {
@@ -41,6 +49,8 @@ export const profileService = {
         },
       }
     );
+    
+    console.log('📥 Réponse du backend:', response.data);
     return response.data.data; // Retourner data.data car le backend wrap dans un objet
   },
 
@@ -50,7 +60,7 @@ export const profileService = {
     formData.append('profilePicture', file);
 
     const response = await axios.post(
-      `${API_URL}/users/${userId}/profile-picture`,
+      `${API_URL}/profile/${userId}/profile-picture`,
       formData,
       {
         headers: {
@@ -65,7 +75,7 @@ export const profileService = {
   deleteProfilePicture: async (userId: string): Promise<void> => {
     const token = localStorage.getItem('token');
     await axios.delete(
-      `${API_URL}/users/${userId}/profile-picture`,
+      `${API_URL}/profile/${userId}/profile-picture`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

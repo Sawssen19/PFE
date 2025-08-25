@@ -1,43 +1,45 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import dotenv from 'dotenv';
+import path from 'path';
+
+// Import des routes
 import authRoutes from './modules/auth/auth.routes';
 import profileRoutes from './modules/auth/profile.routes';
-import accountRoutes from './modules/account/accountRoutes';
+import kycRoutes from './modules/kyc/kyc.routes';
+import adminRoutes from './modules/admin/admin.routes';
 
-// Configuration des variables d'environnement
 dotenv.config();
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '5000', 10);
+const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
-}));
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Servir les fichiers statiques uploadés
+// Servir les fichiers statiques
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
-app.get('/api', (req, res) => {
-  res.json({ message: 'API Kollecta fonctionne correctement' });
-});
-
-// Route de test directe
-app.get('/api/test-direct', (req, res) => {
-  res.json({ message: 'Route de test directe fonctionne!' });
-});
-
 app.use('/api/auth', authRoutes);
-app.use('/api/users', profileRoutes);
-app.use('/api/account', accountRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/kyc', kycRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Route de test
+app.get('/', (req, res) => {
+  res.json({ message: 'API KOLLECTA - Serveur KYC/AML actif' });
+});
+
+// Gestion des erreurs
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Erreur interne du serveur' });
+});
 
 app.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
+  console.log(`🚀 Serveur KOLLECTA démarré sur le port ${PORT}`);
+  console.log(`📋 API KYC/AML disponible sur /api/kyc`);
 });
