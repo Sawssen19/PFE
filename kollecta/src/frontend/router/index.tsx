@@ -14,6 +14,8 @@ import { routerConfig } from './config';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
 import ForgotPasswordForm from '../components/auth/ForgotPasswordForm';
+import ResetPassword from '../components/auth/ResetPassword';
+import EmailVerification from '../components/auth/EmailVerification';
 import Profile from '../components/profile/Profile';
 import ProfileEdit from '../components/profile/ProfileEdit';
 import Settings from '../components/profile/Settings';
@@ -24,6 +26,13 @@ import CampaignsList from '../components/donation/CampaignsList';
 import CampaignDetail from '../components/donation/CampaignDetail';
 import CreateCampaign from '../components/donation/CreateCampaign';
 import DiscoverPage from '../components/discover/DiscoverPage';
+import AdminDashboard from '../components/admin/AdminDashboard';
+
+// 🆕 NOUVEAUX : Composants KYC
+import { KYCVerification } from '../components/kyc';
+import { KYCStatus } from '../components/kyc';
+import { KYCSuccess } from '../components/kyc';
+import { KYCError } from '../components/kyc';
 
 // Protected route wrapper
 const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
@@ -85,6 +94,22 @@ export const router = createBrowserRouter(
         }
       />
       <Route
+        path="reset-password"
+        element={
+          <PublicRoute>
+            <ResetPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="verify-email"
+        element={
+          <PublicRoute>
+            <EmailVerification />
+          </PublicRoute>
+        }
+      />
+      <Route
         path="profile"
         element={
           <PrivateRoute>
@@ -132,6 +157,49 @@ export const router = createBrowserRouter(
           </PrivateRoute>
         }
       />
+      <Route
+        path="admin"
+        element={
+          <PrivateRoute>
+            <AdminDashboard />
+          </PrivateRoute>
+        }
+      />
+
+      {/* 🆕 NOUVELLES ROUTES : KYC/AML */}
+      <Route
+        path="kyc/verify"
+        element={
+          <PrivateRoute>
+            <KYCVerification />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="kyc/status"
+        element={
+          <PrivateRoute>
+            <KYCStatus />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="kyc/success"
+        element={
+          <PrivateRoute>
+            <KYCSuccess />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="kyc/error"
+        element={
+          <PrivateRoute>
+            <KYCError />
+          </PrivateRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>
   ),

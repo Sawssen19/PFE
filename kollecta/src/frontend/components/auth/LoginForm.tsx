@@ -125,6 +125,26 @@ const LoginForm = () => {
                 {error}
               </Alert>
             )}
+
+            {/* 🔗 LIEN VERS MOT DE PASSE OUBLIÉ QUAND IL Y A UNE ERREUR */}
+            {error && (
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Mot de passe oublié ?
+                </Typography>
+                <Link 
+                  to="/forgot-password" 
+                  style={{ 
+                    textDecoration: 'none',
+                    color: '#00b289',
+                    fontWeight: 600,
+                    fontSize: '1rem'
+                  }}
+                >
+                  Réinitialiser le mot de passe
+                </Link>
+              </Box>
+            )}
             
 
 

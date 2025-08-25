@@ -8,6 +8,10 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true, // Force l'utilisation du port 3000
+    // ✅ Configuration pour le routing SPA
+    fs: {
+      strict: false,
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
@@ -23,5 +27,18 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src/frontend'),
     },
+  },
+  // ✅ Configuration optimisée pour le routing SPA
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
+  // ✅ Configuration pour le développement SPA
+  preview: {
+    port: 3000,
+    strictPort: true,
   },
 });

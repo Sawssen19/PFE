@@ -3,11 +3,15 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { selectUser } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
-import { setProfileData } from '../../store/slices/profileSlice';
+import { setProfileData, updateProfileData } from '../../store/slices/profileSlice';
+import { updateUser } from '../../store/slices/authSlice';
 import { profileService } from '../../services/profile/profileService';
 import { accountService } from '../../../services/account/accountService';
 import { Info, Eye, EyeOff, Calendar, Globe, Phone, Mail, User, Lock, AlertCircle, CheckCircle, XCircle, Loader2, Shield, Trash2, PowerOff, Users, Bell, Clock, CheckCircle2 } from 'lucide-react';
+import { Button } from '@mui/material';
 import AccountRequestConfirmation from './AccountRequestConfirmation';
+import PhoneInput from '../common/PhoneInput';
+import DefaultAvatar from '../common/DefaultAvatar';
 import './Settings.css';
 
 const Settings = () => {
@@ -115,7 +119,26 @@ const Settings = () => {
     };
 
     loadProfileData();
+    
+
   }, [user?.id, profileData, dispatch]);
+
+  // Synchroniser formData avec profileData quand il change
+  useEffect(() => {
+    if (profileData) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: profileData.firstName || user?.firstName || '',
+        lastName: profileData.lastName || user?.lastName || '',
+        phone: profileData.phone || '',
+        birthday: profileData.birthday || '',
+        language: profileData.language || 'fr',
+        profileDescription: profileData.profileDescription || '',
+        profileUrl: profileData.profileUrl || '',
+        visibility: profileData.profileVisibility || 'public'
+      }));
+    }
+  }, [profileData, user?.firstName, user?.lastName]);
 
   const handleEdit = (field: string) => {
     setEditMode(field);
@@ -128,8 +151,8 @@ const Settings = () => {
   const handleCancel = () => {
     setEditMode(null);
     setFormData({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
+      firstName: profileData?.firstName || user?.firstName || '',
+      lastName: profileData?.lastName || user?.lastName || '',
       email: user?.email || '',
       phone: profileData?.phone || '',
       birthday: profileData?.birthday || '',
@@ -140,6 +163,67 @@ const Settings = () => {
     });
     setEmailChangeData({ newEmail: '', password: '' });
   };
+
+  // 🔧 NOUVEAU : Gestion des photos de profil
+  const handlePhotoChange = () => {
+    // Créer un input file temporaire
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (event) => {
+      const target = event.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        try {
+          setLoading(true);
+          if (user?.id) {
+            const uploadedPhoto = await profileService.uploadProfilePicture(user.id, target.files[0]);
+            // Recharger les données de profil
+            const updatedProfile = await profileService.getProfile(user.id);
+            dispatch(setProfileData(updatedProfile));
+            setMessage({ type: 'success', text: 'Photo de profil mise à jour avec succès' });
+          }
+        } catch (error) {
+          setMessage({ type: 'error', text: 'Erreur lors de la mise à jour de la photo' });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    input.click();
+  };
+
+  const handlePhotoDelete = async () => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer votre photo de profil ?')) {
+      try {
+        setLoading(true);
+        if (user?.id) {
+          await profileService.deleteProfilePicture(user.id);
+          const updatedProfile = await profileService.getProfile(user.id);
+          dispatch(setProfileData(updatedProfile));
+          setMessage({ type: 'success', text: 'Photo de profil supprimée avec succès' });
+        }
+      } catch (error) {
+        setMessage({ type: 'error', text: 'Erreur lors de la suppression de la photo' });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // 🔧 NOUVEAU : Fonction pour corriger l'URL des images
+  const getImageUrl = (imagePath: string | null | undefined): string => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('/uploads/')) {
+      return `http://localhost:5000${imagePath}`;
+    }
+    return imagePath;
+  };
+
+  // 🔧 LOGS DE DÉBOGAGE pour la logique d'avatar
+  console.log('🔧 Settings - profileData:', profileData);
+  console.log('🔧 Settings - profilePicture:', profileData?.profilePicture);
+  console.log('🔧 Settings - Bouton suppression visible:', !!profileData?.profilePicture);
 
   const handleSave = async (field: string) => {
     setLoading(true);
@@ -158,28 +242,42 @@ const Settings = () => {
             updateData = { phone: formData.phone };
             break;
           case 'birthday':
+            console.log('🎂 Sauvegarde de la date de naissance:', formData.birthday);
             updateData = { birthday: formData.birthday };
             break;
           case 'language':
             updateData = { language: formData.language };
             break;
           case 'description':
-            updateData = { profileDescription: formData.profileDescription };
+            updateData = { description: formData.profileDescription };
             break;
           case 'url':
             updateData = { profileUrl: formData.profileUrl };
             break;
           case 'visibility':
-            updateData = { profileVisibility: formData.visibility };
+            updateData = { visibility: formData.visibility };
             break;
         }
 
+        console.log('📤 Données à envoyer:', updateData);
         const updatedProfile = await profileService.updateProfile(user.id, updateData);
+        console.log('📥 Profil mis à jour:', updatedProfile);
+        
         dispatch(setProfileData(updatedProfile));
+        
+        // 🔄 NOUVEAU : Mettre à jour l'état auth si le nom/prénom a changé
+        if (field === 'name') {
+          dispatch(updateUser({
+            firstName: formData.firstName,
+            lastName: formData.lastName
+          }));
+        }
+        
         setMessage({ type: 'success', text: 'Profil mis à jour avec succès' });
         setEditMode(null);
       }
     } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour:', error);
       setMessage({ type: 'error', text: 'Erreur lors de la mise à jour du profil' });
     } finally {
       setLoading(false);
@@ -599,25 +697,57 @@ const Settings = () => {
                   <h3 className="section-title">Photo de profil</h3>
                   <div className="profile-photo-content">
                     <div className="profile-photo">
-                      <img 
-                        src={profileData?.profilePicture || undefined} 
-                        alt="Profile" 
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                      <div className="w-full h-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-2xl font-medium hidden">
-                        {user?.firstName?.[0]}{user?.lastName?.[0]}
-                      </div>
+                      {profileData?.profilePicture ? (
+                        <img 
+                          src={getImageUrl(profileData.profilePicture)} 
+                          alt="Profile" 
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : (
+                        <DefaultAvatar 
+                          size={120} 
+                          firstName={user?.firstName || ''} 
+                          lastName={user?.lastName || ''} 
+                        />
+                      )}
                     </div>
                     <div className="photo-buttons">
-                      <button className="btn-secondary">
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handlePhotoChange}
+                        sx={{
+                          borderColor: '#6b7280',
+                          color: '#6b7280',
+                          '&:hover': {
+                            borderColor: '#00b289',
+                            backgroundColor: '#f0fdfa',
+                          },
+                        }}
+                      >
                         Changer
-                      </button>
-                      <button className="btn-danger">
-                        Supprimer
-                      </button>
+                      </Button>
+                                                                {/* 🔧 NOUVEAU : Bouton de suppression visible seulement s'il y a une photo */}
+                      {profileData?.profilePicture && (
+                        <Button
+                          variant="contained"
+                          color="error"
+                          size="small"
+                          onClick={handlePhotoDelete}
+                          sx={{
+                            backgroundColor: '#ef4444',
+                            color: 'white',
+                            '&:hover': {
+                              backgroundColor: '#dc2626',
+                            },
+                          }}
+                        >
+                          Supprimer
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -653,7 +783,7 @@ const Settings = () => {
                             </div>
                           </div>
                         ) : (
-                          `${user?.firstName || 'Non défini'} ${user?.lastName || 'Non défini'}`
+                          `${profileData?.firstName || user?.firstName || 'Non défini'} ${profileData?.lastName || user?.lastName || 'Non défini'}`
                         )}
                       </div>
                     </div>
@@ -759,7 +889,7 @@ const Settings = () => {
                 </div>
 
                 {/* Phone Section */}
-                <div className={`setting-item ${editMode === 'phone' ? 'editing' : ''}`}>
+                <div className={`setting-item ${editMode === 'phone' ? 'editing' : ''}`} data-edit-mode={editMode === 'phone' ? 'phone' : ''}>
                   <div className="setting-content">
                     <div className="setting-info">
                       <div className="setting-label">
@@ -770,14 +900,11 @@ const Settings = () => {
                       </div>
                       <div className="setting-value">
                         {editMode === 'phone' ? (
-                          <div className="form-group">
-                            <input
-                              type="tel"
-                              value={formData.phone}
-                              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                              placeholder="Numéro de téléphone"
-                            />
-                          </div>
+                          <PhoneInput
+                            value={formData.phone}
+                            onChange={(phone) => setFormData(prev => ({ ...prev, phone: phone }))}
+                            placeholder="Numéro de téléphone"
+                          />
                         ) : (
                           formData.phone || 'Non défini'
                         )}
@@ -1095,38 +1222,125 @@ const Settings = () => {
 
           {activeTab === 'notifications' && (
             <div className="notifications-content">
-              <h3 className="notifications-title">Paramètres de notifications</h3>
-              <p className="notifications-description">
-                Configurez vos préférences de notifications pour rester informé de vos activités.
-              </p>
+              <div className="notifications-header">
+                <div className="notifications-header-content">
+                  <div className="notifications-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="notifications-title">Paramètres de notifications</h3>
+                    <p className="notifications-description">
+                      Configurez vos préférences de notifications pour rester informé de vos activités.
+                    </p>
+                  </div>
+                </div>
+              </div>
               
-              <div className="space-y-4">
-                {Object.entries(notificationSettings).map(([key, value]) => (
-                  <div key={key} className="notification-item">
-                    <div className="notification-info">
-                      <h4>
-                        {key === 'emailNotifications' && 'Notifications par email'}
-                        {key === 'pushNotifications' && 'Notifications push'}
-                        {key === 'marketingEmails' && 'Emails marketing'}
-                        {key === 'donationUpdates' && 'Mises à jour des dons'}
-                      </h4>
-                      <p>
-                        {key === 'emailNotifications' && 'Recevoir des notifications par email'}
-                        {key === 'pushNotifications' && 'Recevoir des notifications sur votre appareil'}
-                        {key === 'marketingEmails' && 'Recevoir des offres et promotions'}
-                        {key === 'donationUpdates' && 'Être informé des nouvelles donations'}
-                      </p>
+              <div className="notifications-grid">
+                <div className="notification-card">
+                  <div className="notification-card-header">
+                    <div className="notification-icon-wrapper email">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <polyline points="22,6 12,13 2,6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                     </div>
-                    <label className="toggle-switch">
+                    <div className="notification-info">
+                      <h4>Notifications par email</h4>
+                      <p>Recevoir des notifications par email</p>
+                    </div>
+                    <label className="modern-toggle-switch">
                       <input
                         type="checkbox"
-                        checked={value}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, [key]: e.target.checked }))}
+                        checked={notificationSettings.emailNotifications}
+                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, emailNotifications: e.target.checked }))}
                       />
-                      <span className="toggle-slider"></span>
+                      <span className="modern-toggle-slider"></span>
                     </label>
                   </div>
-                ))}
+                </div>
+
+                <div className="notification-card">
+                  <div className="notification-card-header">
+                    <div className="notification-icon-wrapper push">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div className="notification-info">
+                      <h4>Notifications push</h4>
+                      <p>Recevoir des notifications sur votre appareil</p>
+                    </div>
+                    <label className="modern-toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.pushNotifications}
+                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, pushNotifications: e.target.checked }))}
+                      />
+                      <span className="modern-toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="notification-card">
+                  <div className="notification-card-header">
+                    <div className="notification-icon-wrapper marketing">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div className="notification-info">
+                      <h4>Emails marketing</h4>
+                      <p>Recevoir des offres et promotions</p>
+                    </div>
+                    <label className="modern-toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.marketingEmails}
+                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, marketingEmails: e.target.checked }))}
+                      />
+                      <span className="modern-toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="notification-card">
+                  <div className="notification-card-header">
+                    <div className="notification-icon-wrapper donation">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div className="notification-info">
+                      <h4>Mises à jour des dons</h4>
+                      <p>Être informé des nouvelles donations</p>
+                    </div>
+                    <label className="modern-toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.donationUpdates}
+                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, donationUpdates: e.target.checked }))}
+                      />
+                      <span className="modern-toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="notifications-footer">
+                <div className="notifications-footer-content">
+                  <div className="notifications-footer-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M12 16v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <p>Vos préférences sont sauvegardées automatiquement</p>
+                </div>
               </div>
             </div>
           )}

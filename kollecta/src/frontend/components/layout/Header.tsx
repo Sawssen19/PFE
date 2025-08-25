@@ -51,7 +51,16 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
-    setIsMobileMenuOpen(false);
+  };
+
+  // 🔧 NOUVEAU : Fonction pour corriger l'URL des images
+  const getImageUrl = (imagePath: string | null | undefined): string => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('/uploads/')) {
+      return `http://localhost:5000${imagePath}`;
+    }
+    return imagePath;
   };
 
   const handleProfileClick = () => {
@@ -280,7 +289,7 @@ const Header: React.FC = () => {
                       <div className="hrt-default-avatar hrt-avatar hrt-avatar--default hrt-avatar--neutral">
                         {profileData?.profilePicture ? (
                           <img 
-                            src={profileData.profilePicture} 
+                            src={getImageUrl(profileData.profilePicture)} 
                             alt="Profile" 
                             className="hrt-profile-avatar"
                             style={{
@@ -321,13 +330,26 @@ const Header: React.FC = () => {
                   </button>
                   <div className="hrt-header-dropdown-content hrt-header-dropdown-content--right">
                     <ul className="hrt-list-unstyled">
-                      <li>
-                        <a className="hrt-base-list-item--body-size hrt-base-list-item" onClick={handleProfileClick}>
-                          <div className="hrt-base-list-item-copy">
-                            <span className="hrt-base-list-item-title">Profil</span>
-                          </div>
-                        </a>
-                      </li>
+                      {/* 🔐 LIEN ADMIN : Afficher le lien vers le dashboard admin pour les administrateurs */}
+                      {user?.role === 'ADMIN' && (
+                        <li>
+                          <a className="hrt-base-list-item--body-size hrt-base-list-item" onClick={() => navigate('/admin')}>
+                            <div className="hrt-base-list-item-copy">
+                              <span className="hrt-base-list-item-title">🛡️ Dashboard Admin</span>
+                            </div>
+                          </a>
+                        </li>
+                      )}
+                      {/* 👤 PROFIL : Afficher seulement pour les utilisateurs non-admin */}
+                      {user?.role !== 'ADMIN' && (
+                        <li>
+                          <a className="hrt-base-list-item--body-size hrt-base-list-item" onClick={handleProfileClick}>
+                            <div className="hrt-base-list-item-copy">
+                              <span className="hrt-base-list-item-title">Profil</span>
+                            </div>
+                          </a>
+                        </li>
+                      )}
                       <li>
                         <a className="hrt-base-list-item--body-size hrt-base-list-item" onClick={() => navigate('/portee')}>
                           <div className="hrt-base-list-item-copy">
