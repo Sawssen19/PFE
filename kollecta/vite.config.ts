@@ -25,7 +25,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src/frontend'),
+      '@': path.resolve(__dirname, './src'),
     },
   },
   // ✅ Configuration optimisée pour le routing SPA

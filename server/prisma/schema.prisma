@@ -8,73 +8,75 @@ datasource db {
 }
 
 model User {
-  id            String      @id @default(uuid())
-  email         String      @unique
-  password      String
-  firstName     String
-  lastName      String
-  role          Role        @default(USER)
-  status        UserStatus  @default(PENDING)
-  verificationToken String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  resetToken    String?
-  resetTokenExp DateTime?
-  // 🆕 COLONNES EXISTANTES DE LA BASE
-  isActive      Boolean     @default(true)
-  isVerified    Boolean     @default(false)
-  language      String      @default("fr")
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String
+  firstName          String
+  lastName           String
+  role               Role             @default(USER)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  resetToken         String?
+  resetTokenExp      DateTime?
+  isVerified         Boolean          @default(false)
   profileDescription String?
-  profileUrl   String?
-  profileVisibility String   @default("PUBLIC")
-  // 🆕 CHAMPS MANQUANTS POUR L'AUTH
-  profilePicture String?
-  phone         String?
-  birthday      DateTime?  // ✅ Date de naissance
-  verificationExp DateTime?
-  // 🆕 RELATIONS EXISTANTES
-  cagnottes     Cagnotte[]  @relation("CagnotteCreator")
-  promises      Promise[]   @relation("PromiseContributor")
-  beneficiaries Cagnotte[]  @relation("CagnotteBeneficiary")
-  // 🆕 NOUVEAU : Relations KYC/AML
-  kycVerification KYCVerification?
-  amlCheck        AMLCheck?
-  kycAuditLogs    KYCAuditLog[]
-  kycAuditAdmin   KYCAuditLog[] @relation("KYCAuditAdmin")
-  // 🆕 RELATION POUR LES DEMANDES DE SUPPRESSION
-  accountRequest  AccountRequest?
+  profilePicture     String?
+  profileUrl         String?
+  profileVisibility  String           @default("PUBLIC")
+  verificationExp    DateTime?
+  verificationToken  String?
+  language           String           @default("fr")
+  phone              String?
+  isActive           Boolean          @default(true)
+  status             UserStatus       @default(PENDING)
+  birthday           DateTime?
+  amlCheck           AMLCheck?
+  accountRequest     AccountRequest?
+  beneficiaries      Cagnotte[]       @relation("CagnotteBeneficiary")
+  cagnottes          Cagnotte[]       @relation("CagnotteCreator")
+  cagnotteReports    CagnotteReport[] @relation("CagnotteReportAdmin")
+  kycAuditAdmin      KYCAuditLog[]    @relation("KYCAuditAdmin")
+  kycAuditLogs       KYCAuditLog[]
+  kycVerification    KYCVerification?
+  promises           Promise[]        @relation("PromiseContributor")
 }
 
 model Cagnotte {
-  id            String     @id @default(uuid())
+  id            String           @id @default(uuid())
   title         String
   description   String
   goalAmount    Float
-  currentAmount Float      @default(0)
-  startDate     DateTime   @default(now())
+  currentAmount Float            @default(0)
+  startDate     DateTime         @default(now())
   endDate       DateTime
-  status        CagnotteStatus @default(ACTIVE)
+  status        CagnotteStatus   @default(DRAFT)
   creatorId     String
-  creator       User       @relation("CagnotteCreator", fields: [creatorId], references: [id])
   beneficiaryId String
-  beneficiary   User       @relation("CagnotteBeneficiary", fields: [beneficiaryId], references: [id])
   categoryId    String
-  category      Category   @relation(fields: [categoryId], references: [id])
+  coverImage    String?
+  coverVideo    String?
+  mediaType     String?
+  mediaFilename String?
+  currentStep   Int              @default(1) // Étape actuelle du wizard (1-5)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  beneficiary   User             @relation("CagnotteBeneficiary", fields: [beneficiaryId], references: [id])
+  category      Category         @relation(fields: [categoryId], references: [id])
+  creator       User             @relation("CagnotteCreator", fields: [creatorId], references: [id])
+  reports       CagnotteReport[]
   promises      Promise[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
 }
 
 model Promise {
-  id            String    @id @default(uuid())
+  id            String        @id @default(uuid())
   amount        Float
   status        PromiseStatus @default(PENDING)
   contributorId String
-  contributor   User      @relation("PromiseContributor", fields: [contributorId], references: [id])
   cagnotteId    String
-  cagnotte      Cagnotte  @relation(fields: [cagnotteId], references: [id])
-  promisedAt    DateTime  @default(now())
+  promisedAt    DateTime      @default(now())
   paidAt        DateTime?
+  cagnotte      Cagnotte      @relation(fields: [cagnotteId], references: [id])
+  contributor   User          @relation("PromiseContributor", fields: [contributorId], references: [id])
 }
 
 model Category {
@@ -82,6 +84,82 @@ model Category {
   name        String     @unique
   description String?
   cagnottes   Cagnotte[]
+}
+
+model KYCVerification {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  documentType       DocumentType
+  documentFrontUrl   String
+  documentBackUrl    String?
+  verificationStatus VerificationStatus @default(PENDING)
+  riskScore          Int                @default(0)
+  verificationDate   DateTime?
+  expiryDate         DateTime?
+  rejectionReason    String?
+  jumioReference     String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id])
+}
+
+model AMLCheck {
+  id                 String    @id @default(uuid())
+  userId             String    @unique
+  ofacStatus         Boolean   @default(false)
+  unStatus           Boolean   @default(false)
+  lastCheckDate      DateTime  @default(now())
+  riskLevel          RiskLevel @default(LOW)
+  suspiciousActivity Boolean   @default(false)
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id])
+}
+
+model KYCAuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   String
+  adminId   String?
+  createdAt DateTime @default(now())
+  admin     User?    @relation("KYCAuditAdmin", fields: [adminId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model AccountRequest {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  email       String
+  requestType String
+  reason      String
+  status      String   @default("PENDING")
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model CagnotteReport {
+  id            String       @id @default(uuid())
+  cagnotteId    String
+  reporterType  ReporterType
+  reason        String
+  description   String
+  reporterName  String
+  reporterEmail String
+  status        ReportStatus @default(PENDING)
+  adminNotes    String?
+  adminId       String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  admin         User?        @relation("CagnotteReportAdmin", fields: [adminId], references: [id])
+  cagnotte      Cagnotte     @relation(fields: [cagnotteId], references: [id])
+
+  @@index([cagnotteId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 enum Role {
@@ -97,59 +175,20 @@ enum UserStatus {
 }
 
 enum CagnotteStatus {
+  DRAFT
   ACTIVE
   CLOSED
   SUCCESS
   FAILED
+  PENDING
+  REJECTED
+  SUSPENDED
 }
 
 enum PromiseStatus {
   PENDING
   PAID
   CANCELLED
-}
-
-// 🆕 NOUVEAU : Modèles KYC/AML pour Sprint 1
-model KYCVerification {
-  id                String           @id @default(uuid())
-  userId            String           @unique
-  user              User             @relation(fields: [userId], references: [id])
-  documentType      DocumentType
-  documentFrontUrl  String
-  documentBackUrl   String?
-  verificationStatus VerificationStatus @default(PENDING)
-  riskScore         Int              @default(0)
-  verificationDate  DateTime?
-  expiryDate        DateTime?
-  rejectionReason   String?
-  jumioReference    String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-}
-
-model AMLCheck {
-  id                String           @id @default(uuid())
-  userId            String           @unique
-  user              User             @relation(fields: [userId], references: [id])
-  ofacStatus        Boolean          @default(false)
-  unStatus          Boolean          @default(false)
-  lastCheckDate     DateTime         @default(now())
-  riskLevel         RiskLevel        @default(LOW)
-  suspiciousActivity Boolean         @default(false)
-  notes             String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-}
-
-model KYCAuditLog {
-  id                String           @id @default(uuid())
-  userId            String
-  user              User             @relation(fields: [userId], references: [id])
-  action            String
-  details           String
-  adminId           String?
-  admin             User?            @relation("KYCAuditAdmin", fields: [adminId], references: [id])
-  createdAt         DateTime         @default(now())
 }
 
 enum DocumentType {
@@ -172,16 +211,15 @@ enum RiskLevel {
   BLOCKED
 }
 
-// 🆕 MODÈLE POUR LES DEMANDES DE SUPPRESSION DE COMPTE
-model AccountRequest {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-  email       String   // Email de l'utilisateur
-  requestType String   // DELETION, DEACTIVATION
-  reason      String
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  submittedAt DateTime @default(now()) // Date de soumission
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+enum ReporterType {
+  DONOR
+  BENEFICIARY
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
 }

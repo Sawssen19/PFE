@@ -470,6 +470,329 @@ export class EmailService {
   }
 
   /**
+   * Send cagnotte creation confirmation email to creator
+   */
+  static async sendCagnotteCreationConfirmationEmail(
+    userEmail: string,
+    firstName: string,
+    cagnotteTitle: string,
+    cagnotteId: string
+  ): Promise<boolean> {
+    try {
+      const subject = '🎯 Votre cagnotte est en attente de vérification - Kollecta';
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0;">🎯 Kollecta</h1>
+            <p style="color: #7f8c8d; margin: 5px 0;">Plateforme de collecte de fonds collaborative</p>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h2 style="color: #2c3e50; margin-top: 0;">✅ Cagnotte créée avec succès !</h2>
+            <p style="font-size: 16px; line-height: 1.6; color: #34495e;">
+              Bonjour <strong>${firstName}</strong>,
+            </p>
+            <p style="font-size: 16px; line-height: 1.6; color: #34495e;">
+              Votre cagnotte "<strong>${cagnotteTitle}</strong>" a été créée avec succès et est maintenant en attente de vérification par notre équipe Kollecta.
+            </p>
+          </div>
+          
+          <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #2980b9; margin-top: 0;">📋 Prochaines étapes</h3>
+            <ul style="color: #34495e; line-height: 1.6;">
+              <li>Notre équipe va examiner votre cagnotte dans les 24-48 heures</li>
+              <li>Vous recevrez un email de confirmation une fois approuvée</li>
+              <li>Votre cagnotte sera alors visible par tous les utilisateurs</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${emailConfig.FRONTEND_URL}/cagnotte/${cagnotteId}" 
+               style="background: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              Voir ma cagnotte
+            </a>
+          </div>
+          
+          <div style="border-top: 1px solid #ecf0f1; padding-top: 20px; margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 14px;">
+            <p>Merci de faire confiance à Kollecta pour votre collecte de fonds !</p>
+            <p>L'équipe Kollecta</p>
+          </div>
+        </div>
+      `;
+
+      const text = `
+        Bonjour ${firstName},
+        
+        Votre cagnotte "${cagnotteTitle}" a été créée avec succès et est maintenant en attente de vérification par notre équipe Kollecta.
+        
+        Prochaines étapes :
+        - Notre équipe va examiner votre cagnotte dans les 24-48 heures
+        - Vous recevrez un email de confirmation une fois approuvée
+        - Votre cagnotte sera alors visible par tous les utilisateurs
+        
+        Voir ma cagnotte : ${emailConfig.FRONTEND_URL}/cagnotte/${cagnotteId}
+        
+        Merci de faire confiance à Kollecta !
+        L'équipe Kollecta
+      `;
+
+      return await this.sendEmail(userEmail, subject, text, html);
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'envoi de l'email de confirmation de cagnotte à ${userEmail}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send cagnotte creation notification email to admin
+   */
+  static async sendCagnotteCreationAdminNotificationEmail(
+    adminEmail: string,
+    creatorFirstName: string,
+    creatorLastName: string,
+    creatorEmail: string,
+    cagnotteTitle: string,
+    cagnotteId: string,
+    goalAmount: number
+  ): Promise<boolean> {
+    try {
+      const subject = '🔔 Nouvelle cagnotte créée - Action requise - Kollecta';
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0;">🔔 Kollecta Admin</h1>
+            <p style="color: #7f8c8d; margin: 5px 0;">Notification d'administration</p>
+          </div>
+          
+          <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+            <h2 style="color: #856404; margin-top: 0;">⚠️ Action requise</h2>
+            <p style="font-size: 16px; line-height: 1.6; color: #856404;">
+              Une nouvelle cagnotte a été créée et nécessite votre validation.
+            </p>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #2c3e50; margin-top: 0;">📋 Détails de la cagnotte</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #34495e;">Titre :</td>
+                <td style="padding: 8px 0; color: #34495e;">${cagnotteTitle}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #34495e;">Créateur :</td>
+                <td style="padding: 8px 0; color: #34495e;">${creatorFirstName} ${creatorLastName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #34495e;">Email :</td>
+                <td style="padding: 8px 0; color: #34495e;">${creatorEmail}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #34495e;">Objectif :</td>
+                <td style="padding: 8px 0; color: #34495e;">${goalAmount} TND</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #34495e;">Statut :</td>
+                <td style="padding: 8px 0; color: #e74c3c; font-weight: bold;">EN ATTENTE</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${emailConfig.FRONTEND_URL}/admin/cagnottes/${cagnotteId}" 
+               style="background: #e74c3c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; margin-right: 10px;">
+              Examiner la cagnotte
+            </a>
+            <a href="${emailConfig.FRONTEND_URL}/admin/cagnottes" 
+               style="background: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              Voir toutes les cagnottes
+            </a>
+          </div>
+          
+          <div style="border-top: 1px solid #ecf0f1; padding-top: 20px; margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 14px;">
+            <p>Merci de traiter cette demande rapidement.</p>
+            <p>Système de notification Kollecta</p>
+          </div>
+        </div>
+      `;
+
+      const text = `
+        Action requise - Nouvelle cagnotte créée
+        
+        Détails de la cagnotte :
+        - Titre : ${cagnotteTitle}
+        - Créateur : ${creatorFirstName} ${creatorLastName}
+        - Email : ${creatorEmail}
+        - Objectif : ${goalAmount} TND
+        - Statut : EN ATTENTE
+        
+        Examiner la cagnotte : ${emailConfig.FRONTEND_URL}/admin/cagnottes/${cagnotteId}
+        Voir toutes les cagnottes : ${emailConfig.FRONTEND_URL}/admin/cagnottes
+        
+        Merci de traiter cette demande rapidement.
+        Système de notification Kollecta
+      `;
+
+      return await this.sendEmail(adminEmail, subject, text, html);
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'envoi de l'email de notification admin à ${adminEmail}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send cagnotte status change notification email to creator
+   */
+  static async sendCagnotteStatusChangeEmail(
+    userEmail: string,
+    firstName: string,
+    cagnotteTitle: string,
+    oldStatus: string,
+    newStatus: string,
+    cagnotteId: string,
+    adminNotes?: string
+  ): Promise<boolean> {
+    try {
+      const statusConfig = this.getStatusConfig(newStatus);
+      const subject = `${statusConfig.icon} ${statusConfig.title} - Votre cagnotte "${cagnotteTitle}" - Kollecta`;
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0;">${statusConfig.icon} Kollecta</h1>
+            <p style="color: #7f8c8d; margin: 5px 0;">Mise à jour de votre cagnotte</p>
+          </div>
+          
+          <div style="background: ${statusConfig.bgColor}; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${statusConfig.borderColor};">
+            <h2 style="color: ${statusConfig.textColor}; margin-top: 0;">${statusConfig.icon} ${statusConfig.title}</h2>
+            <p style="font-size: 16px; line-height: 1.6; color: ${statusConfig.textColor};">
+              Bonjour <strong>${firstName}</strong>,
+            </p>
+            <p style="font-size: 16px; line-height: 1.6; color: ${statusConfig.textColor};">
+              ${statusConfig.message.replace('{cagnotteTitle}', cagnotteTitle)}
+            </p>
+          </div>
+          
+          ${adminNotes ? `
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #2c3e50; margin-top: 0;">📝 Note de l'équipe</h3>
+            <p style="color: #34495e; line-height: 1.6; font-style: italic;">"${adminNotes}"</p>
+          </div>
+          ` : ''}
+          
+          <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #2980b9; margin-top: 0;">📋 Prochaines étapes</h3>
+            <ul style="color: #34495e; line-height: 1.6;">
+              ${statusConfig.nextSteps.map((step: string) => `<li>${step}</li>`).join('')}
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${emailConfig.FRONTEND_URL}/cagnotte/${cagnotteId}" 
+               style="background: ${statusConfig.buttonColor}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              ${statusConfig.buttonText}
+            </a>
+          </div>
+          
+          <div style="border-top: 1px solid #ecf0f1; padding-top: 20px; margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 14px;">
+            <p>Merci de faire confiance à Kollecta !</p>
+            <p>L'équipe Kollecta</p>
+          </div>
+        </div>
+      `;
+
+      const text = `
+        ${statusConfig.title} - Votre cagnotte "${cagnotteTitle}"
+        
+        Bonjour ${firstName},
+        
+        ${statusConfig.message.replace('{cagnotteTitle}', cagnotteTitle)}
+        
+        ${adminNotes ? `Note de l'équipe : "${adminNotes}"` : ''}
+        
+        Prochaines étapes :
+        ${statusConfig.nextSteps.map((step: string) => `- ${step}`).join('\n')}
+        
+        ${statusConfig.buttonText} : ${emailConfig.FRONTEND_URL}/cagnotte/${cagnotteId}
+        
+        Merci de faire confiance à Kollecta !
+        L'équipe Kollecta
+      `;
+
+      return await this.sendEmail(userEmail, subject, text, html);
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'envoi de l'email de changement de statut à ${userEmail}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get status configuration for email templates
+   */
+  private static getStatusConfig(status: string) {
+    const configs: { [key: string]: any } = {
+      'ACTIVE': {
+        icon: '✅',
+        title: 'Cagnotte approuvée !',
+        message: 'Félicitations ! Votre cagnotte "{cagnotteTitle}" a été approuvée et est maintenant visible par tous les utilisateurs.',
+        bgColor: '#d4edda',
+        borderColor: '#28a745',
+        textColor: '#155724',
+        buttonColor: '#28a745',
+        buttonText: 'Voir ma cagnotte',
+        nextSteps: [
+          'Votre cagnotte est maintenant visible par tous les utilisateurs',
+          'Vous pouvez la partager sur les réseaux sociaux',
+          'Les dons peuvent commencer immédiatement'
+        ]
+      },
+      'REJECTED': {
+        icon: '❌',
+        title: 'Cagnotte refusée',
+        message: 'Malheureusement, votre cagnotte "{cagnotteTitle}" n\'a pas été approuvée par notre équipe.',
+        bgColor: '#f8d7da',
+        borderColor: '#dc3545',
+        textColor: '#721c24',
+        buttonColor: '#dc3545',
+        buttonText: 'Voir les détails',
+        nextSteps: [
+          'Consultez les raisons du refus dans votre tableau de bord',
+          'Vous pouvez modifier votre cagnotte et la soumettre à nouveau',
+          'Contactez le support si vous avez des questions'
+        ]
+      },
+      'SUSPENDED': {
+        icon: '⏸️',
+        title: 'Cagnotte suspendue',
+        message: 'Votre cagnotte "{cagnotteTitle}" a été temporairement suspendue.',
+        bgColor: '#fff3cd',
+        borderColor: '#ffc107',
+        textColor: '#856404',
+        buttonColor: '#ffc107',
+        buttonText: 'Voir les détails',
+        nextSteps: [
+          'Consultez les raisons de la suspension',
+          'Contactez le support pour plus d\'informations',
+          'Vous pourrez réactiver votre cagnotte une fois les problèmes résolus'
+        ]
+      }
+    };
+
+    return configs[status] || {
+      icon: '📧',
+      title: 'Mise à jour de votre cagnotte',
+      message: 'Le statut de votre cagnotte "{cagnotteTitle}" a été modifié.',
+      bgColor: '#f8f9fa',
+      borderColor: '#6c757d',
+      textColor: '#495057',
+      buttonColor: '#6c757d',
+      buttonText: 'Voir ma cagnotte',
+      nextSteps: ['Consultez votre tableau de bord pour plus de détails']
+    };
+  }
+
+  /**
    * Send user modification notification email
    */
   static async sendUserModificationEmail(

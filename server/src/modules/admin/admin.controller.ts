@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { EmailService } from '../../services/emailService';
+import cagnottesService from '../cagnottes/cagnottes.service';
 
 const prisma = new PrismaClient();
 
@@ -484,6 +485,387 @@ export class AdminController {
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques:', error);
       res.status(500).json({ message: 'Erreur lors de la récupération des statistiques' });
+    }
+  }
+
+  // 🔐 Récupérer toutes les cagnottes (pour l'admin)
+  async getAllCagnottes(req: Request, res: Response) {
+    try {
+      const cagnottes = await prisma.cagnotte.findMany({
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          category: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      res.json({
+        success: true,
+        data: cagnottes,
+        message: 'Toutes les cagnottes récupérées'
+      });
+    } catch (error) {
+      console.error('Erreur récupération toutes les cagnottes:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erreur lors de la récupération de toutes les cagnottes' 
+      });
+    }
+  }
+
+  // 🔐 Gestion des cagnottes en attente de validation
+  async getPendingCagnottes(req: Request, res: Response) {
+    try {
+      const cagnottes = await prisma.cagnotte.findMany({
+        where: { status: 'PENDING' },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          category: true
+        },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      res.json({
+        success: true,
+        data: cagnottes,
+        message: 'Cagnottes en attente récupérées'
+      });
+    } catch (error) {
+      console.error('Erreur récupération cagnottes en attente:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erreur lors de la récupération des cagnottes en attente' 
+      });
+    }
+  }
+
+  // 🔐 Approuver une cagnotte
+  async approveCagnotte(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const adminId = (req as any).user?.id;
+
+      const existingCagnotte = await prisma.cagnotte.findUnique({
+        where: { id },
+        select: { status: true, title: true, creator: { select: { email: true, firstName: true } } }
+      });
+
+      if (!existingCagnotte) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Cagnotte non trouvée' 
+        });
+      }
+
+      if (existingCagnotte.status !== 'PENDING' && existingCagnotte.status !== 'SUSPENDED') {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Seules les cagnottes en attente ou suspendues peuvent être approuvées' 
+        });
+      }
+
+      const cagnotte = await prisma.cagnotte.update({
+        where: { id },
+        data: { status: 'ACTIVE' },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          category: true
+        }
+      });
+
+      // 📧 Envoyer notification email au créateur
+      try {
+        await cagnottesService.sendCagnotteStatusChangeEmail(id, existingCagnotte.status, 'ACTIVE');
+        console.log(`✅ Email d'approbation envoyé au créateur: ${cagnotte.creator.email}`);
+      } catch (emailError) {
+        console.error('⚠️ Erreur lors de l\'envoi de l\'email d\'approbation:', emailError);
+      }
+      
+      console.log(`✅ Cagnotte "${existingCagnotte.title}" approuvée par l'admin`);
+
+      res.json({
+        success: true,
+        data: cagnotte,
+        message: 'Cagnotte approuvée avec succès'
+      });
+    } catch (error) {
+      console.error('Erreur approbation cagnotte:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erreur lors de l\'approbation de la cagnotte' 
+      });
+    }
+  }
+
+  // 🔐 Rejeter une cagnotte
+  async rejectCagnotte(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const adminId = (req as any).user?.id;
+
+      const existingCagnotte = await prisma.cagnotte.findUnique({
+        where: { id },
+        select: { status: true, title: true, creator: { select: { email: true, firstName: true } } }
+      });
+
+      if (!existingCagnotte) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Cagnotte non trouvée' 
+        });
+      }
+
+      if (existingCagnotte.status !== 'PENDING' && existingCagnotte.status !== 'SUSPENDED') {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Seules les cagnottes en attente ou suspendues peuvent être rejetées' 
+        });
+      }
+
+      const cagnotte = await prisma.cagnotte.update({
+        where: { id },
+        data: { status: 'REJECTED' },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          category: true
+        }
+      });
+
+      // 📧 Envoyer notification email au créateur avec la raison
+      try {
+        await cagnottesService.sendCagnotteStatusChangeEmail(id, existingCagnotte.status, 'REJECTED', reason);
+        console.log(`✅ Email de rejet envoyé au créateur: ${cagnotte.creator.email}`);
+      } catch (emailError) {
+        console.error('⚠️ Erreur lors de l\'envoi de l\'email de rejet:', emailError);
+      }
+      
+      console.log(`❌ Cagnotte "${existingCagnotte.title}" rejetée par l'admin. Raison: ${reason || 'Non spécifiée'}`);
+
+      res.json({
+        success: true,
+        data: cagnotte,
+        message: 'Cagnotte rejetée'
+      });
+    } catch (error) {
+      console.error('Erreur rejet cagnotte:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erreur lors du rejet de la cagnotte' 
+      });
+    }
+  }
+
+  // 🔐 Suspendre une cagnotte
+  async suspendCagnotte(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const adminId = (req as any).user?.id;
+
+      const existingCagnotte = await prisma.cagnotte.findUnique({
+        where: { id },
+        select: { status: true, title: true, creator: { select: { email: true, firstName: true } } }
+      });
+
+      if (!existingCagnotte) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Cagnotte non trouvée' 
+        });
+      }
+
+      // Permettre la suspension même si déjà REJECTED (car on utilise REJECTED pour SUSPENDED)
+      // if (existingCagnotte.status === 'REJECTED') {
+      //   return res.status(400).json({ 
+      //     success: false,
+      //     message: 'Cette cagnotte est déjà rejetée/suspendue' 
+      //   });
+      // }
+
+      const cagnotte = await prisma.cagnotte.update({
+        where: { id },
+        data: { 
+          status: 'SUSPENDED' // Maintenant que SUSPENDED existe dans la DB
+        },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          category: true
+        }
+      });
+
+      // 📧 Envoyer notification email au créateur avec la raison
+      try {
+        await cagnottesService.sendCagnotteStatusChangeEmail(id, existingCagnotte.status, 'SUSPENDED', reason);
+        console.log(`✅ Email de suspension envoyé au créateur: ${cagnotte.creator.email}`);
+      } catch (emailError) {
+        console.error('⚠️ Erreur lors de l\'envoi de l\'email de suspension:', emailError);
+      }
+      
+      console.log(`⏸️ Cagnotte "${existingCagnotte.title}" suspendue par l'admin. Raison: ${reason || 'Non spécifiée'}`);
+
+      res.json({
+        success: true,
+        data: cagnotte,
+        message: 'Cagnotte suspendue avec succès'
+      });
+    } catch (error) {
+      console.error('Erreur suspension cagnotte:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erreur lors de la suspension de la cagnotte' 
+      });
+    }
+  }
+
+  // 🔐 Supprimer une cagnotte
+  async deleteCagnotte(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const adminId = (req as any).user?.id;
+
+      const existingCagnotte = await prisma.cagnotte.findUnique({
+        where: { id },
+        select: { title: true, creator: { select: { email: true, firstName: true } } }
+      });
+
+      if (!existingCagnotte) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Cagnotte non trouvée' 
+        });
+      }
+
+      // Supprimer la cagnotte et toutes ses relations
+      await prisma.cagnotte.delete({
+        where: { id }
+      });
+
+      // TODO: Envoyer notification email au créateur
+      console.log(`🗑️ Cagnotte "${existingCagnotte.title}" supprimée par l'admin`);
+
+      res.json({
+        success: true,
+        message: 'Cagnotte supprimée avec succès'
+      });
+    } catch (error) {
+      console.error('Erreur suppression cagnotte:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erreur lors de la suppression de la cagnotte' 
+      });
+    }
+  }
+
+  // 🔐 Modifier une cagnotte (Admin)
+  async updateCagnotte(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const adminId = (req as any).user?.id;
+      const { title, story, goalAmount, category } = req.body;
+
+      console.log('🔄 Admin modification cagnotte - ID:', id);
+      console.log('🔄 Admin ID:', adminId);
+      console.log('🔄 Données reçues:', { title, story, goalAmount, category });
+
+      const existingCagnotte = await prisma.cagnotte.findUnique({
+        where: { id },
+        select: { title: true, creator: { select: { email: true, firstName: true } } }
+      });
+
+      if (!existingCagnotte) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Cagnotte non trouvée' 
+        });
+      }
+
+      // Préparer les données de mise à jour
+      const updateData: any = {
+        title,
+        description: story,
+        goalAmount: parseFloat(goalAmount)
+      };
+
+      // Gérer la catégorie si elle est fournie
+      if (category) {
+        updateData.category = {
+          connect: {
+            name: category
+          }
+        };
+      }
+
+      const cagnotte = await prisma.cagnotte.update({
+        where: { id },
+        data: updateData,
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          category: true
+        }
+      });
+
+      console.log(`✏️ Cagnotte "${existingCagnotte.title}" modifiée par l'admin`);
+
+      res.json({
+        success: true,
+        data: cagnotte,
+        message: 'Cagnotte modifiée avec succès'
+      });
+    } catch (error) {
+      console.error('Erreur modification cagnotte:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Erreur lors de la modification de la cagnotte' 
+      });
     }
   }
 } 
