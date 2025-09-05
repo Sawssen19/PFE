@@ -5,10 +5,13 @@ import jwt from 'jsonwebtoken';
 import { EmailService } from '../../services/emailService';
 import crypto from 'crypto';
 import { SmsService } from '../../services/smsService';
+import dotenv from 'dotenv';
 
 // 🔧 SECRET FIXE pour éviter les erreurs JWT
 const JWT_SECRET = 'kollecta-super-secret-jwt-key-2025';
 
+// Charger les variables d'environnement avant d'initialiser Prisma
+dotenv.config();
 const prisma = new PrismaClient();
 
 export class AuthController {

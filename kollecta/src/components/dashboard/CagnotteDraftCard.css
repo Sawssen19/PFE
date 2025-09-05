@@ -1,0 +1,39 @@
+.cagnotte-draft-card {
+  border: 2px dashed #00a651;
+  background-color: #f8fff8;
+  margin-bottom: 16px;
+}
+
+.cagnotte-draft-card .MuiCardContent-root {
+  padding: 16px;
+}
+
+.cagnotte-draft-card .progress-bar {
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 4px;
+}
+
+.cagnotte-draft-card .MuiButton-root {
+  text-transform: none;
+  font-weight: 600;
+}
+
+.cagnotte-draft-card .MuiButton-contained {
+  background-color: #00a651;
+}
+
+.cagnotte-draft-card .MuiButton-contained:hover {
+  background-color: #008f47;
+}
+
+.cagnotte-draft-card .MuiButton-outlined {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.cagnotte-draft-card .MuiButton-outlined:hover {
+  border-color: #c82333;
+  background-color: rgba(220, 53, 69, 0.04);
+}

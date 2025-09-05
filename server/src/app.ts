@@ -8,6 +8,7 @@ import authRoutes from './modules/auth/auth.routes';
 import profileRoutes from './modules/auth/profile.routes';
 import kycRoutes from './modules/kyc/kyc.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import cagnottesRoutes from './modules/cagnottes/cagnottes.routes';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/cagnottes', cagnottesRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
@@ -42,4 +44,5 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.listen(PORT, () => {
   console.log(`🚀 Serveur KOLLECTA démarré sur le port ${PORT}`);
   console.log(`📋 API KYC/AML disponible sur /api/kyc`);
+  console.log(`💰 API Cagnottes disponible sur /api/cagnottes`);
 });

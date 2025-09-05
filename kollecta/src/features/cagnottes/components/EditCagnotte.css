@@ -1,0 +1,499 @@
+/* Styles pour le composant EditCagnotte */
+.edit-cagnotte-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.edit-cagnotte-content {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* En-tête */
+.edit-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.edit-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #212529;
+  margin: 0 0 8px 0;
+}
+
+.edit-header p {
+  color: #6c757d;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Barre de progression */
+.progress-bar-container {
+  margin-bottom: 40px;
+  padding: 0 8px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #00a651;
+  transition: width 0.3s ease;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  background-color: #e9ecef;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.progress-steps .step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+  border: 2px solid white;
+}
+
+.progress-steps .step.active {
+  background-color: #00a651;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 166, 81, 0.3);
+}
+
+/* Contenu des étapes */
+.step-content {
+  margin-bottom: 32px;
+}
+
+.step-content .step {
+  padding: 0;
+}
+
+.step-content .step h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0 0 32px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f8f9fa;
+}
+
+/* Formulaires */
+.form-group {
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 16px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* Styles spécifiques pour les inputs */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+  width: 100%;
+  padding: 16px 18px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: white;
+  color: #212529;
+  line-height: 1.5;
+}
+
+/* Styles spécifiques pour le textarea */
+.form-group textarea {
+  width: 100% !important;
+  padding: 16px 18px !important;
+  border: 2px solid #e9ecef !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  background-color: white !important;
+  color: #212529 !important;
+  min-height: 140px !important;
+  max-height: 300px !important;
+  resize: vertical !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+/* Styles ultra-spécifiques pour forcer l'affichage */
+.edit-cagnotte-content .form-group textarea,
+.edit-cagnotte-container .form-group textarea,
+.form-group textarea[rows] {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 140px !important;
+  max-height: 300px !important;
+  resize: vertical !important;
+  overflow-y: auto !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+
+/* Désactiver complètement l'apparence de dropdown */
+.form-group textarea::-ms-expand,
+.form-group textarea::-webkit-select-placeholder,
+.form-group textarea::-moz-placeholder {
+  display: none !important;
+}
+
+/* Forcer l'affichage comme textarea */
+.form-group textarea {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: none !important;
+  background: white !important;
+}
+
+/* Focus et hover pour tous les champs */
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #00a651;
+  box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.1);
+}
+
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover {
+  border-color: #adb5bd;
+}
+
+/* File input */
+.form-group input[type="file"] {
+  padding: 10px;
+  border: 2px dashed #e9ecef;
+  background-color: #f8f9fa;
+  cursor: pointer;
+}
+
+.form-group input[type="file"]:hover {
+  border-color: #00a651;
+  background-color: #f0f8f0;
+}
+
+.help-text {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 8px;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* Radio buttons */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radio-option:hover {
+  border-color: #00a651;
+  background-color: #f8f9fa;
+}
+
+.radio-option input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+
+.radio-option span {
+  font-weight: 500;
+  color: #212529;
+}
+
+/* Aperçu */
+.preview-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e9ecef;
+}
+
+.preview-section h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0 0 16px 0;
+}
+
+.preview-card {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.preview-card h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0 0 12px 0;
+}
+
+.preview-story {
+  color: #495057;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.preview-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.preview-amount {
+  font-weight: 600;
+  color: #00a651;
+  font-size: 16px;
+}
+
+.preview-category {
+  background-color: #e9ecef;
+  color: #495057;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.preview-end-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.end-date-label {
+  font-size: 11px;
+  color: #6c757d;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.end-date-value {
+  font-size: 13px;
+  color: #495057;
+  font-weight: 600;
+}
+
+/* Navigation */
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 16px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 160px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary {
+  background-color: #00a651;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #008f47;
+}
+
+.btn-primary:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: #212529;
+  border: 2px solid #e9ecef;
+}
+
+.btn-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+/* États de chargement et d'erreur */
+.loading,
+.error {
+  text-align: center;
+  padding: 80px 20px;
+  font-size: 18px;
+}
+
+.loading {
+  color: #6c757d;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .edit-cagnotte-container {
+    padding: 16px;
+  }
+  
+  .edit-cagnotte-content {
+    padding: 24px;
+  }
+  
+  .edit-header h1 {
+    font-size: 24px;
+  }
+  
+  .step-content .step h2 {
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+  
+  .form-group {
+    margin-bottom: 24px;
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+  
+  .step-navigation {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    padding: 16px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .edit-cagnotte-container {
+    padding: 12px;
+  }
+  
+  .edit-cagnotte-content {
+    padding: 20px;
+  }
+  
+  .edit-header h1 {
+    font-size: 20px;
+  }
+  
+  .step-content .step h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+} 

@@ -1,0 +1,470 @@
+/* Container principal */
+.my-cagnottes-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 130px 20px 0 20px;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+/* Header de la page */
+.my-cagnottes-header {
+  background: linear-gradient(135deg, #00b289 0%, #009973 100%);
+  color: white;
+  padding: 40px 0;
+  margin: -20px -20px 0 -20px;
+  text-align: center;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.my-cagnottes-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.create-campaign-btn {
+  background: linear-gradient(45deg, #00d4aa, #00b894);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
+}
+
+.create-campaign-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
+}
+
+/* Sections de cagnottes */
+.cagnottes-section {
+  margin-bottom: 50px;
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+.cagnottes-section h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 25px 0;
+  padding-bottom: 15px;
+  border-bottom: 3px solid #e2e8f0;
+  position: relative;
+}
+
+.cagnottes-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(45deg, #00b289, #009973);
+  border-radius: 2px;
+}
+
+/* Grille responsive des cagnottes */
+.cagnottes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+/* Cartes de cagnottes */
+.cagnotte-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  position: relative;
+}
+
+.cagnotte-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.cagnotte-card.draft {
+  border-left: 4px solid #f6ad55;
+}
+
+.cagnotte-card.active {
+  border-left: 4px solid #48bb78;
+}
+
+.cagnotte-card.pending {
+  border-left: 4px solid #ed8936;
+}
+
+.cagnotte-card.rejected {
+  border-left: 4px solid #f56565;
+}
+
+.cagnotte-card.completed {
+  border-left: 4px solid #4299e1;
+}
+
+/* Image de la cagnotte */
+.cagnotte-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f7fafc, #edf2f7);
+}
+
+.cagnotte-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.cagnotte-card:hover .cagnotte-image img {
+  transform: scale(1.05);
+}
+
+.placeholder-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, #f7fafc, #edf2f7);
+  color: #a0aec0;
+}
+
+.placeholder-image svg {
+  width: 60px;
+  height: 60px;
+}
+
+/* Badges de statut */
+.status-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.pending {
+  background: rgba(237, 137, 54, 0.9);
+  color: white;
+}
+
+.status-badge.rejected {
+  background: rgba(245, 101, 101, 0.9);
+  color: white;
+}
+
+.status-badge.completed {
+  background: rgba(66, 153, 225, 0.9);
+  color: white;
+}
+
+.status-badge.draft {
+  background: rgba(246, 173, 85, 0.9);
+  color: white;
+}
+
+/* Contenu de la carte */
+.cagnotte-content {
+  padding: 20px;
+}
+
+.cagnotte-content h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cagnotte-category {
+  color: #00b289;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0 0 15px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Barre de progression */
+.cagnotte-progress {
+  margin: 15px 0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #48bb78, #38a169);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.current-amount {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.goal-amount {
+  color: #718096;
+}
+
+/* Statistiques finales pour les cagnottes terminées */
+.final-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px 0;
+  padding: 12px;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.final-amount {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 1rem;
+}
+
+.final-goal {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+/* Date de création */
+.cagnotte-date {
+  color: #718096;
+  font-size: 0.85rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Bouton pour terminer le brouillon */
+.finish-draft-btn {
+  background: linear-gradient(45deg, #00b289, #009973);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  width: 100%;
+}
+
+.finish-draft-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.3);
+}
+
+/* État vide */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 30px;
+  background: linear-gradient(135deg, #00b289, #009973);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.empty-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  color: #2d3748;
+  margin: 0 0 15px 0;
+}
+
+.empty-state p {
+  color: #718096;
+  margin: 0 0 30px 0;
+  font-size: 1.1rem;
+}
+
+.create-first-btn {
+  background: linear-gradient(45deg, #00d4aa, #00b894);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
+}
+
+.create-first-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
+}
+
+/* États de chargement et d'erreur */
+.loading, .error {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1.2rem;
+  color: #718096;
+}
+
+.error {
+  color: #f56565;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .my-cagnottes-container {
+    padding: 100px 15px 0 15px;
+  }
+  
+  .my-cagnottes-header {
+    margin: -5px -5px 0 -5px;
+    padding: 30px 0;
+  }
+  
+  .my-cagnottes-header h1 {
+    font-size: 2rem;
+  }
+  
+  .cagnottes-section {
+    padding: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .cagnottes-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .cagnottes-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .cagnotte-content {
+    padding: 15px;
+  }
+  
+  .cagnotte-content h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .my-cagnottes-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .create-campaign-btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  
+  .cagnottes-section {
+    padding: 15px;
+  }
+  
+  .cagnotte-image {
+    height: 160px;
+  }
+  
+  .empty-state {
+    padding: 60px 15px;
+  }
+  
+  .empty-icon {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .empty-icon svg {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cagnottes-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.cagnotte-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Amélioration de l'accessibilité */
+.cagnotte-card:focus {
+  outline: 2px solid #00b289;
+  outline-offset: 2px;
+}
+
+.create-campaign-btn:focus,
+.finish-draft-btn:focus,
+.create-first-btn:focus {
+  outline: 2px solid #00b289;
+  outline-offset: 2px;
+} 

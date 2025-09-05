@@ -21,4 +21,13 @@ router.delete('/users/:id', (req, res) => adminController.deleteUser(req, res));
 // Routes de statistiques
 router.get('/stats', (req, res) => adminController.getUserStats(req, res));
 
+// Routes de gestion des cagnottes
+router.get('/cagnottes', (req, res) => adminController.getAllCagnottes(req, res));
+router.get('/cagnottes/pending', (req, res) => adminController.getPendingCagnottes(req, res));
+router.post('/cagnottes/:id/approve', (req, res) => adminController.approveCagnotte(req, res));
+router.post('/cagnottes/:id/reject', (req, res) => adminController.rejectCagnotte(req, res));
+router.post('/cagnottes/:id/suspend', (req, res) => adminController.suspendCagnotte(req, res));
+router.put('/cagnottes/:id', (req, res) => adminController.updateCagnotte(req, res));
+router.delete('/cagnottes/:id', (req, res) => adminController.deleteCagnotte(req, res));
+
 export default router; 
