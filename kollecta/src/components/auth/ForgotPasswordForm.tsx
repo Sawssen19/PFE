@@ -126,7 +126,7 @@ const ForgotPasswordForm: React.FC = () => {
                   width: 80,
                   height: 80,
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  background: 'var(--kollecta-gradient-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -180,8 +180,8 @@ const ForgotPasswordForm: React.FC = () => {
                       variant="contained"
                       fullWidth
                       sx={{
-                        bgcolor: '#28a745',
-                        '&:hover': { bgcolor: '#218838' },
+                        bgcolor: 'var(--kollecta-primary)',
+                        '&:hover': { bgcolor: 'var(--kollecta-primary-dark)' },
                         borderRadius: 2,
                         py: 1.5,
                         fontSize: '1rem',
@@ -223,11 +223,11 @@ const ForgotPasswordForm: React.FC = () => {
                     onClick={handleReset}
                     startIcon={<LockReset />}
                     sx={{
-                      borderColor: '#10b981',
-                      color: '#10b981',
+                      borderColor: 'var(--kollecta-primary)',
+                      color: 'var(--kollecta-primary)',
                       '&:hover': {
-                        borderColor: '#059669',
-                        backgroundColor: 'rgba(16, 185, 129, 0.04)'
+                        borderColor: 'var(--kollecta-primary-dark)',
+                        backgroundColor: 'rgba(0, 178, 137, 0.04)'
                       },
                       borderRadius: 2,
                       px: 3,
@@ -243,11 +243,11 @@ const ForgotPasswordForm: React.FC = () => {
                     to="/login"
                     startIcon={<ArrowBack />}
                     sx={{
-                      bgcolor: '#10b981',
+                      bgcolor: 'var(--kollecta-primary)',
                       '&:hover': { 
-                        bgcolor: '#059669',
+                        bgcolor: 'var(--kollecta-primary-dark)',
                         transform: 'translateY(-2px)',
-                        boxShadow: '0 8px 25px rgba(16, 185, 129, 0.3)'
+                        boxShadow: '0 8px 25px rgba(0, 178, 137, 0.3)'
                       },
                       borderRadius: 2,
                       px: 3,

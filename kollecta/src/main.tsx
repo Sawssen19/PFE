@@ -8,6 +8,9 @@ import store from './store';
 import router from './router/index';
 import './index.css';
 import './styles/globals.css';
+import './styles/layout.css';
+import './styles/colors.css';
+import './styles/action-buttons.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

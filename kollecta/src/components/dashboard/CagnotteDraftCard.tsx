@@ -123,7 +123,7 @@ const CagnotteDraftCard: React.FC<CagnotteDraftCardProps> = ({ onResume, onDelet
               sx={{ 
                 width: `${getProgressPercentage()}%`, 
                 height: '100%', 
-                backgroundColor: '#00a651',
+                backgroundColor: 'var(--kollecta-primary)',
                 transition: 'width 0.3s ease'
               }}
             />

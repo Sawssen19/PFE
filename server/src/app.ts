@@ -9,6 +9,9 @@ import profileRoutes from './modules/auth/profile.routes';
 import kycRoutes from './modules/kyc/kyc.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import cagnottesRoutes from './modules/cagnottes/cagnottes.routes';
+import reportsRoutes from './modules/reports/reports.routes';
+import reportActionsRoutes from './modules/reports/reportActions.routes';
+import notificationsRoutes from './modules/notifications/notifications.routes';
 
 dotenv.config();
 
@@ -29,6 +32,9 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cagnottes', cagnottesRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/reports/actions', reportActionsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Route de test
 app.get('/', (req, res) => {

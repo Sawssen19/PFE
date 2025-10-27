@@ -1,0 +1,155 @@
+/* 🎨 Système de Couleurs Kollecta - Basé sur #00b289 */
+
+:root {
+  /* Couleur primaire de la marque */
+  --kollecta-primary: #00b289;
+  --kollecta-primary-light: #33c2a3;
+  --kollecta-primary-dark: #008f73;
+  --kollecta-primary-darker: #006b56;
+  
+  /* Dégradés basés sur la couleur primaire */
+  --kollecta-gradient-primary: linear-gradient(135deg, #00b289 0%, #008f73 100%);
+  --kollecta-gradient-primary-light: linear-gradient(135deg, #33c2a3 0%, #00b289 100%);
+  --kollecta-gradient-primary-dark: linear-gradient(135deg, #008f73 0%, #006b56 100%);
+  
+  /* Couleurs secondaires harmonisées */
+  --kollecta-success: #00b289;
+  --kollecta-success-light: #33c2a3;
+  --kollecta-success-dark: #008f73;
+  --kollecta-success-gradient: linear-gradient(135deg, #00b289 0%, #008f73 100%);
+  
+  /* Couleurs d'accent */
+  --kollecta-accent-blue: #007bff;
+  --kollecta-accent-red: #dc3545;
+  --kollecta-accent-orange: #fd7e14;
+  --kollecta-accent-purple: #6f42c1;
+  
+  /* Dégradés d'accent */
+  --kollecta-gradient-blue: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  --kollecta-gradient-red: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  --kollecta-gradient-orange: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+  --kollecta-gradient-purple: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+  
+  /* Couleurs neutres */
+  --kollecta-gray-50: #f8f9fa;
+  --kollecta-gray-100: #e9ecef;
+  --kollecta-gray-200: #dee2e6;
+  --kollecta-gray-300: #ced4da;
+  --kollecta-gray-400: #adb5bd;
+  --kollecta-gray-500: #6c757d;
+  --kollecta-gray-600: #495057;
+  --kollecta-gray-700: #343a40;
+  --kollecta-gray-800: #212529;
+  --kollecta-gray-900: #000000;
+  
+  /* Couleurs de texte */
+  --kollecta-text-primary: #212529;
+  --kollecta-text-secondary: #6c757d;
+  --kollecta-text-muted: #adb5bd;
+  --kollecta-text-light: #ffffff;
+  
+  /* Couleurs de fond */
+  --kollecta-bg-primary: #ffffff;
+  --kollecta-bg-secondary: #f8f9fa;
+  --kollecta-bg-dark: #212529;
+  
+  /* Ombres */
+  --kollecta-shadow-sm: 0 1px 3px rgba(0, 178, 137, 0.12);
+  --kollecta-shadow-md: 0 4px 6px rgba(0, 178, 137, 0.1);
+  --kollecta-shadow-lg: 0 10px 15px rgba(0, 178, 137, 0.1);
+  --kollecta-shadow-xl: 0 20px 25px rgba(0, 178, 137, 0.1);
+  
+  /* Bordures */
+  --kollecta-border-light: rgba(0, 178, 137, 0.1);
+  --kollecta-border-medium: rgba(0, 178, 137, 0.2);
+  --kollecta-border-strong: rgba(0, 178, 137, 0.3);
+}
+
+/* 🌟 Classes utilitaires pour les couleurs */
+
+/* Couleur primaire */
+.text-kollecta-primary { color: var(--kollecta-primary) !important; }
+.bg-kollecta-primary { background-color: var(--kollecta-primary) !important; }
+.border-kollecta-primary { border-color: var(--kollecta-primary) !important; }
+
+/* Dégradé primaire */
+.bg-kollecta-gradient { background: var(--kollecta-gradient-primary) !important; }
+.bg-kollecta-gradient-light { background: var(--kollecta-gradient-primary-light) !important; }
+.bg-kollecta-gradient-dark { background: var(--kollecta-gradient-primary-dark) !important; }
+
+/* Couleur de succès (même que primaire) */
+.text-kollecta-success { color: var(--kollecta-success) !important; }
+.bg-kollecta-success { background-color: var(--kollecta-success) !important; }
+.bg-kollecta-success-gradient { background: var(--kollecta-success-gradient) !important; }
+
+/* Hover states */
+.hover-kollecta-primary:hover { 
+  background-color: var(--kollecta-primary-dark) !important; 
+}
+.hover-kollecta-gradient:hover { 
+  background: var(--kollecta-gradient-primary-dark) !important; 
+}
+
+/* Focus states */
+.focus-kollecta-primary:focus {
+  outline: 2px solid var(--kollecta-primary);
+  outline-offset: 2px;
+}
+
+/* 🎯 Classes pour les boutons */
+.btn-kollecta-primary {
+  background: var(--kollecta-gradient-primary);
+  color: white;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-kollecta-primary:hover {
+  background: var(--kollecta-gradient-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--kollecta-shadow-lg);
+}
+
+.btn-kollecta-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--kollecta-shadow-md);
+}
+
+/* 🎨 Classes pour les icônes */
+.icon-kollecta-primary {
+  color: var(--kollecta-primary);
+}
+
+.icon-kollecta-primary:hover {
+  color: var(--kollecta-primary-dark);
+}
+
+/* 📱 Classes responsive pour les couleurs */
+@media (max-width: 768px) {
+  :root {
+    /* Ajustements pour mobile si nécessaire */
+    --kollecta-shadow-sm: 0 1px 2px rgba(0, 178, 137, 0.15);
+    --kollecta-shadow-md: 0 2px 4px rgba(0, 178, 137, 0.12);
+  }
+}
+
+/* 🌈 Classes pour les états spéciaux */
+.kollecta-success-state {
+  background: var(--kollecta-success-gradient);
+  color: white;
+}
+
+.kollecta-warning-state {
+  background: var(--kollecta-gradient-orange);
+  color: white;
+}
+
+.kollecta-error-state {
+  background: var(--kollecta-gradient-red);
+  color: white;
+}
+
+.kollecta-info-state {
+  background: var(--kollecta-gradient-blue);
+  color: white;
+}

@@ -438,8 +438,8 @@ const CreateCampaign: React.FC = () => {
               fullWidth
               disabled={isLoading}
               sx={{
-                bgcolor: '#02a95c',
-                '&:hover': { bgcolor: '#02884a' },
+                bgcolor: '#00b289',
+                '&:hover': { bgcolor: '#008f73' },
                 height: 48
               }}
             >

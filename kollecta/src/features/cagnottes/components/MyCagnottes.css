@@ -2,7 +2,7 @@
 .my-cagnottes-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 130px 20px 0 20px;
+  padding: 0 20px 20px 20px;
   min-height: 100vh;
   background-color: #f8f9fa;
 }
@@ -12,7 +12,7 @@
   background: linear-gradient(135deg, #00b289 0%, #009973 100%);
   color: white;
   padding: 40px 0;
-  margin: -20px -20px 0 -20px;
+  margin: 40px -20px 0 -20px;
   text-align: center;
   border-radius: 0 0 20px 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -73,232 +73,360 @@
   border-radius: 2px;
 }
 
-/* Grille responsive des cagnottes */
-.cagnottes-grid {
+/* Grille responsive des cagnottes - 3 par ligne forcées - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnottes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 25px;
-  margin-top: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 24px;
+  align-items: start;
+  width: 100%;
+  justify-items: center;
 }
 
-/* Cartes de cagnottes */
-.cagnotte-card {
-  background: white;
-  border-radius: 16px;
+/* Pour les grilles limitées - même organisation 3 par ligne */
+.my-cagnottes-page .cagnottes-grid.limited {
+  grid-template-columns: repeat(3, 1fr);
+  max-height: 500px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design - 3 par ligne maintenu */
+@media (max-width: 1200px) {
+  .my-cagnottes-page .cagnottes-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  
+  .my-cagnottes-page .cagnottes-grid.limited {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .my-cagnottes-page .cagnottes-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .my-cagnottes-page .cagnottes-grid.limited {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .my-cagnottes-page .cagnottes-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .my-cagnottes-page .cagnottes-grid.limited {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cartes de cagnottes - Dimensions forcées et uniformes - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 450px;
+  width: 100%;
+  max-width: 320px;
 }
 
-.cagnotte-card:hover {
+.my-cagnottes-page .cagnotte-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-.cagnotte-card.draft {
+/* Styles uniformes pour tous les types de cartes - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-card.draft {
   border-left: 4px solid #f6ad55;
 }
 
-.cagnotte-card.active {
-  border-left: 4px solid #48bb78;
-}
-
-.cagnotte-card.pending {
+.my-cagnottes-page .cagnotte-card.pending {
   border-left: 4px solid #ed8936;
 }
 
-.cagnotte-card.rejected {
+.my-cagnottes-page .cagnotte-card.rejected {
   border-left: 4px solid #f56565;
 }
 
-.cagnotte-card.completed {
+.my-cagnottes-page .cagnotte-card.completed {
   border-left: 4px solid #4299e1;
 }
 
-/* Image de la cagnotte */
-.cagnotte-image {
+.my-cagnottes-page .cagnotte-card.active {
+  border-left: 4px solid #48bb78;
+}
+
+/* Espacement uniforme pour les cartes sans bouton - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-card.active .cagnotte-content,
+.my-cagnottes-page .cagnotte-card.pending .cagnotte-content,
+.my-cagnottes-page .cagnotte-card.rejected .cagnotte-content,
+.my-cagnottes-page .cagnotte-card.completed .cagnotte-content {
+  padding-bottom: 20px;
+}
+
+/* Forcer l'alignement parfait de tous les éléments - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-content > * {
+  width: 100%;
+}
+
+.my-cagnottes-page .cagnotte-content h3 {
+  margin-bottom: 8px;
+}
+
+.my-cagnottes-page .cagnotte-category {
+  margin-bottom: 12px;
+}
+
+.my-cagnottes-page .cagnotte-progress {
+  margin: 12px 0;
+}
+
+.my-cagnottes-page .cagnotte-date {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+/* Image de la cagnotte - Dimensions forcées et uniformes - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-image {
   position: relative;
   height: 200px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #f7fafc, #edf2f7);
-}
-
-.cagnotte-image img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.cagnotte-card:hover .cagnotte-image img {
-  transform: scale(1.05);
-}
-
-.placeholder-image {
+  overflow: hidden;
+  background: #f3f4f6;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.my-cagnottes-page .cagnotte-image img {
+  width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #f7fafc, #edf2f7);
-  color: #a0aec0;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.3s ease;
+  display: block;
+  min-height: 200px;
+  max-height: 200px;
 }
 
-.placeholder-image svg {
-  width: 60px;
-  height: 60px;
+.my-cagnottes-page .cagnotte-card:hover .cagnotte-image img {
+  transform: scale(1.05);
 }
 
-/* Badges de statut */
-.status-badge {
+.my-cagnottes-page .placeholder-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  width: 100%;
+  background: #f3f4f6;
+  color: #9ca3af;
+  min-height: 200px;
+  max-height: 200px;
+}
+
+.my-cagnottes-page .placeholder-image svg {
+  width: 48px;
+  height: 48px;
+}
+
+/* Badges de statut - Style moderne - Spécifique à MyCagnottes */
+.my-cagnottes-page .status-badge {
   position: absolute;
   top: 12px;
   right: 12px;
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 4px 12px;
+  border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.025em;
 }
 
-.status-badge.pending {
+.my-cagnottes-page .status-badge.pending {
   background: rgba(237, 137, 54, 0.9);
   color: white;
 }
 
-.status-badge.rejected {
+.my-cagnottes-page .status-badge.rejected {
   background: rgba(245, 101, 101, 0.9);
   color: white;
 }
 
-.status-badge.completed {
+.my-cagnottes-page .status-badge.completed {
   background: rgba(66, 153, 225, 0.9);
   color: white;
 }
 
-.status-badge.draft {
+.my-cagnottes-page .status-badge.suspended {
+  background: rgba(255, 152, 0, 0.9);
+  color: white;
+}
+
+.my-cagnottes-page .status-badge.draft {
   background: rgba(246, 173, 85, 0.9);
   color: white;
 }
 
-/* Contenu de la carte */
-.cagnotte-content {
-  padding: 20px;
+/* Contenu de la carte - Dimensions forcées - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-content {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 250px;
+  width: 100%;
+  min-height: 250px;
+  max-height: 250px;
 }
 
-.cagnotte-content h3 {
-  font-size: 1.2rem;
+.my-cagnottes-page .cagnotte-content h3 {
+  font-size: 1rem;
   font-weight: 600;
-  color: #2d3748;
+  color: #1f2937;
   margin: 0 0 8px 0;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  flex-shrink: 0;
+  min-height: 2.4rem;
+  max-height: 2.4rem;
 }
 
-.cagnotte-category {
-  color: #00b289;
-  font-size: 0.9rem;
+.my-cagnottes-page .cagnotte-category {
+  color: var(--kollecta-primary);
+  font-size: 0.75rem;
   font-weight: 500;
-  margin: 0 0 15px 0;
+  margin: 0 0 12px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.025em;
+  flex-shrink: 0;
+  height: 1rem;
 }
 
-/* Barre de progression */
-.cagnotte-progress {
-  margin: 15px 0;
+/* Barre de progression - Dimensions forcées - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-progress {
+  margin: 12px 0;
+  flex-shrink: 0;
+  height: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.progress-bar {
+.my-cagnottes-page .progress-bar {
   width: 100%;
   height: 8px;
-  background: #e2e8f0;
-  border-radius: 4px;
+  background: #e5e7eb;
+  border-radius: 9999px;
   overflow: hidden;
   margin-bottom: 8px;
 }
 
-.progress-fill {
+.my-cagnottes-page .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #48bb78, #38a169);
-  border-radius: 4px;
-  transition: width 0.3s ease;
+  background: #10b981;
+  border-radius: 9999px;
+  transition: width 0.8s ease;
 }
 
-.progress-stats {
+.my-cagnottes-page .progress-stats {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
-.current-amount {
+.my-cagnottes-page .current-amount {
   font-weight: 600;
-  color: #2d3748;
+  color: #1f2937;
 }
 
-.goal-amount {
-  color: #718096;
+.my-cagnottes-page .goal-amount {
+  color: #6b7280;
 }
 
-/* Statistiques finales pour les cagnottes terminées */
-.final-stats {
+/* Statistiques finales pour les cagnottes terminées - Spécifique à MyCagnottes */
+.my-cagnottes-page .final-stats {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 15px 0;
+  margin: 12px 0;
   padding: 12px;
   background: #f7fafc;
   border-radius: 8px;
+  flex-shrink: 0;
+  height: 50px;
 }
 
-.final-amount {
+.my-cagnottes-page .final-amount {
   font-weight: 600;
   color: #2d3748;
   font-size: 1rem;
 }
 
-.final-goal {
+.my-cagnottes-page .final-goal {
   color: #718096;
   font-size: 0.9rem;
 }
 
-/* Date de création */
-.cagnotte-date {
-  color: #718096;
-  font-size: 0.85rem;
+/* Date de création - Style uniforme - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-date {
+  color: #6b7280;
+  font-size: 0.75rem;
   margin: 0;
   font-style: italic;
+  flex-shrink: 0;
+  margin-top: auto;
+  height: 1rem;
 }
 
-/* Bouton pour terminer le brouillon */
-.finish-draft-btn {
-  background: linear-gradient(45deg, #00b289, #009973);
+/* Bouton pour terminer le brouillon - Dimensions forcées - Spécifique à MyCagnottes */
+.my-cagnottes-page .finish-draft-btn {
+  background: var(--kollecta-primary);
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 10px 16px;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 15px;
+  margin-top: auto;
   width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
 }
 
-.finish-draft-btn:hover {
+.my-cagnottes-page .finish-draft-btn:hover {
+  background: #047857;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.3);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
 }
 
-/* État vide */
-.empty-state {
+/* État vide - Spécifique à MyCagnottes */
+.my-cagnottes-page .empty-state {
   text-align: center;
   padding: 80px 20px;
   background: white;
@@ -306,7 +434,7 @@
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
 }
 
-.empty-icon {
+.my-cagnottes-page .empty-icon {
   width: 80px;
   height: 80px;
   margin: 0 auto 30px;
@@ -318,24 +446,24 @@
   color: white;
 }
 
-.empty-icon svg {
+.my-cagnottes-page .empty-icon svg {
   width: 40px;
   height: 40px;
 }
 
-.empty-state h3 {
+.my-cagnottes-page .empty-state h3 {
   font-size: 1.5rem;
   color: #2d3748;
   margin: 0 0 15px 0;
 }
 
-.empty-state p {
+.my-cagnottes-page .empty-state p {
   color: #718096;
   margin: 0 0 30px 0;
   font-size: 1.1rem;
 }
 
-.create-first-btn {
+.my-cagnottes-page .create-first-btn {
   background: linear-gradient(45deg, #00d4aa, #00b894);
   color: white;
   border: none;
@@ -348,89 +476,100 @@
   box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
 }
 
-.create-first-btn:hover {
+.my-cagnottes-page .create-first-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
 }
 
-/* États de chargement et d'erreur */
-.loading, .error {
+/* États de chargement et d'erreur - Spécifique à MyCagnottes */
+.my-cagnottes-page .loading, .my-cagnottes-page .error {
   text-align: center;
   padding: 60px 20px;
   font-size: 1.2rem;
   color: #718096;
 }
 
-.error {
+.my-cagnottes-page .error {
   color: #f56565;
 }
 
-/* Responsive Design */
+/* Responsive Design - Spécifique à MyCagnottes */
 @media (max-width: 768px) {
-  .my-cagnottes-container {
+  .my-cagnottes-page .my-cagnottes-container {
     padding: 100px 15px 0 15px;
   }
   
-  .my-cagnottes-header {
+  .my-cagnottes-page .my-cagnottes-header {
     margin: -5px -5px 0 -5px;
     padding: 30px 0;
   }
   
-  .my-cagnottes-header h1 {
+  .my-cagnottes-page .my-cagnottes-header h1 {
     font-size: 2rem;
   }
   
-  .cagnottes-section {
+  .my-cagnottes-page .cagnottes-section {
     padding: 20px;
     margin-bottom: 30px;
   }
   
-  .cagnottes-section h2 {
+  .my-cagnottes-page .cagnottes-section h2 {
     font-size: 1.5rem;
   }
   
-  .cagnottes-grid {
+  .my-cagnottes-page .cagnottes-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 16px;
+    grid-auto-rows: auto;
   }
   
-  .cagnotte-content {
-    padding: 15px;
+  .my-cagnottes-page .cagnotte-card {
+    height: 420px;
   }
   
-  .cagnotte-content h3 {
-    font-size: 1.1rem;
+  .my-cagnottes-page .cagnotte-content {
+    padding: 16px;
+  }
+  
+  .my-cagnottes-page .cagnotte-content h3 {
+    font-size: 1rem;
   }
 }
 
 @media (max-width: 480px) {
-  .my-cagnottes-header h1 {
+  .my-cagnottes-page .my-cagnottes-header h1 {
     font-size: 1.8rem;
   }
   
-  .create-campaign-btn {
+  .my-cagnottes-page .create-campaign-btn {
     padding: 12px 24px;
     font-size: 1rem;
   }
   
-  .cagnottes-section {
+  .my-cagnottes-page .cagnottes-section {
     padding: 15px;
   }
   
-  .cagnotte-image {
+  .my-cagnottes-page .cagnotte-image {
     height: 160px;
+    min-height: 160px;
+    max-height: 160px;
   }
   
-  .empty-state {
+  .my-cagnottes-page .cagnotte-card {
+    height: 400px;
+  }
+  
+  .my-cagnottes-page .empty-state {
     padding: 60px 15px;
   }
   
-  .empty-icon {
+  .my-cagnottes-page .empty-icon {
     width: 60px;
     height: 60px;
   }
   
-  .empty-icon svg {
+  .my-cagnottes-page .empty-icon svg {
     width: 30px;
     height: 30px;
   }
@@ -448,23 +587,87 @@
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 .cagnottes-section {
   animation: fadeInUp 0.6s ease-out;
 }
 
-.cagnotte-card {
+.my-cagnottes-page .cagnotte-card {
   animation: fadeInUp 0.6s ease-out;
 }
 
-/* Amélioration de l'accessibilité */
-.cagnotte-card:focus {
-  outline: 2px solid #00b289;
+/* Bouton "Afficher plus" - Design simple et compact - Spécifique à MyCagnottes */
+.my-cagnottes-page .see-more-btn {
+  background: var(--kollecta-primary);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 24px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 120px;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.my-cagnottes-page .see-more-btn:hover {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.my-cagnottes-page .see-more-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.my-cagnottes-page .see-more-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Indicateur de chargement - Spécifique à MyCagnottes */
+.my-cagnottes-page .loading-more {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.my-cagnottes-page .loading-more .see-more-btn {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #e5e7eb;
+}
+
+/* Amélioration de l'accessibilité - Spécifique à MyCagnottes */
+.my-cagnottes-page .cagnotte-card:focus {
+  outline: 2px solid var(--kollecta-primary);
   outline-offset: 2px;
 }
 
-.create-campaign-btn:focus,
-.finish-draft-btn:focus,
-.create-first-btn:focus {
-  outline: 2px solid #00b289;
+.my-cagnottes-page .create-campaign-btn:focus,
+.my-cagnottes-page .finish-draft-btn:focus,
+.my-cagnottes-page .create-first-btn:focus,
+.my-cagnottes-page .see-more-btn:focus {
+  outline: 2px solid var(--kollecta-primary);
   outline-offset: 2px;
 } 

@@ -7,6 +7,7 @@ const router = Router();
 
 // Routes publiques (lecture seule)
 router.get('/', cagnottesController.getAllCagnottes.bind(cagnottesController));
+router.get('/search', cagnottesController.searchCagnottes.bind(cagnottesController)); // Route de recherche
 router.get('/:id', cagnottesController.getCagnotteById.bind(cagnottesController));
 
 // Routes protégées (nécessitent une authentification)

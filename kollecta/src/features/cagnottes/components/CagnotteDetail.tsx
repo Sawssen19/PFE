@@ -9,7 +9,7 @@ interface Cagnotte {
   description: string;
   goalAmount: number;
   currentAmount: number;
-  status: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED' | 'PENDING' | 'REJECTED';
+  status: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED' | 'PENDING' | 'REJECTED' | 'SUSPENDED';
   coverImage?: string;
   coverVideo?: string;
   mediaType?: string;
@@ -82,6 +82,13 @@ const CagnotteDetail: React.FC = () => {
   };
 
   const handleDonate = () => {
+    // Vérifier si l'utilisateur est connecté
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Rediriger vers la page de connexion avec un message
+      navigate('/login?message=connectez-vous pour faire un don');
+      return;
+    }
     // TODO: Implémenter la fonctionnalité de don
     alert('Fonctionnalité de don à implémenter');
   };
@@ -220,33 +227,7 @@ const CagnotteDetail: React.FC = () => {
              />
            </div>
 
-          {/* Réactions */}
-          <div className="reactions-section">
-            <div className="reaction-buttons">
-              <button className="reaction-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-              </button>
-              <button className="reaction-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-              </button>
-              <button className="reaction-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </button>
-            </div>
-            <span className="reaction-count">8</span>
-          </div>
-
-                     {/* Boutons d'action */}
+          {/* Boutons d'action */}
            <div className="action-buttons">
              <button className="donate-btn" onClick={handleDonate}>
                Faire un don
@@ -255,24 +236,32 @@ const CagnotteDetail: React.FC = () => {
                Partager
              </button>
              
-             {/* Boutons du créateur */}
+             {/* Boutons du créateur - Design icônes uniquement */}
              {isCreator && (
                <div className="creator-actions">
-                 <button className="edit-btn" onClick={handleEdit}>
+                 <button 
+                   className="icon-action-btn edit-icon-btn" 
+                   onClick={handleEdit}
+                   title="Modifier la cagnotte"
+                   aria-label="Modifier la cagnotte"
+                 >
                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                    </svg>
-                   Modifier
                  </button>
-                 <button className="delete-btn" onClick={confirmDelete}>
+                 <button 
+                   className="icon-action-btn delete-icon-btn" 
+                   onClick={confirmDelete}
+                   title="Supprimer la cagnotte"
+                   aria-label="Supprimer la cagnotte"
+                 >
                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                      <polyline points="3,6 5,6 21,6"/>
                      <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"/>
                      <line x1="10" y1="11" x2="10" y2="17"/>
                      <line x1="14" y1="11" x2="14" y2="17"/>
                    </svg>
-                   Supprimer
                  </button>
                </div>
              )}
@@ -316,18 +305,18 @@ const CagnotteDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Mots de soutien */}
-          <div className="support-messages-section">
-            <h3>Mots de soutien (0)</h3>
-            <div className="support-messages-placeholder">
-              <p>Veuillez faire un don pour partager des mots de soutien.</p>
-            </div>
-          </div>
-
           {/* Informations supplémentaires */}
           <div className="additional-info">
             <p>Créé {formatDate(cagnotte.createdAt)} - Organisateur</p>
-            <button className="report-btn">Signaler une collecte de fonds</button>
+            {/* Afficher le bouton de signalement seulement si l'utilisateur n'est pas le créateur et que la cagnotte est active */}
+            {!isCreator && cagnotte.status === 'ACTIVE' && (
+              <button 
+                className="report-btn"
+                onClick={() => navigate(`/report/cagnotte/${cagnotte.id}`)}
+              >
+                Signaler une collecte de fonds
+              </button>
+            )}
           </div>
         </div>
 

@@ -93,7 +93,7 @@
 .avatar-placeholder {
   width: 100%;
   height: 100%;
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   color: white;
   display: flex;
   align-items: center;
@@ -204,48 +204,6 @@
    color: inherit;
  }
 
-/* Section réactions */
-.reactions-section {
-  padding: 16px 32px;
-  border-bottom: 1px solid #e9ecef;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.reaction-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.reaction-btn {
-  background: none;
-  border: 1px solid #dee2e6;
-  border-radius: 20px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.reaction-btn:hover {
-  background-color: #f8f9fa;
-  border-color: #adb5bd;
-}
-
-.reaction-btn svg {
-  width: 16px;
-  height: 16px;
-  color: #6c757d;
-}
-
-.reaction-count {
-  color: #6c757d;
-  font-size: 14px;
-}
-
 /* Boutons d'action */
 .action-buttons {
   padding: 24px 32px;
@@ -265,13 +223,13 @@
 }
 
 .donate-btn {
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   color: white;
   flex: 1;
 }
 
 .donate-btn:hover {
-  background-color: #008f47;
+  background-color: var(--kollecta-primary-dark);
 }
 
 .share-btn {
@@ -284,50 +242,151 @@
    background-color: #f8f9fa;
  }
 
- /* Actions du créateur */
- .creator-actions {
-   display: flex;
-   gap: 8px;
-   margin-top: 12px;
-   padding-top: 12px;
-   border-top: 1px solid #e9ecef;
- }
+/* Actions du créateur - Design icônes modernes */
+.creator-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e9ecef;
+  justify-content: center;
+}
 
- .edit-btn, .delete-btn {
-   display: flex;
-   align-items: center;
-   gap: 6px;
-   padding: 8px 12px;
-   border-radius: 6px;
-   font-size: 14px;
-   font-weight: 500;
-   cursor: pointer;
-   transition: all 0.2s;
-   border: none;
- }
+.icon-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
- .edit-btn {
-   background-color: #007bff;
-   color: white;
- }
+.icon-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
 
- .edit-btn:hover {
-   background-color: #0056b3;
- }
+.icon-action-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
- .delete-btn {
-   background-color: #dc3545;
-   color: white;
- }
+.icon-action-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: all 0.2s ease;
+}
 
- .delete-btn:hover {
-   background-color: #c82333;
- }
+/* Bouton modifier - Style Kollecta (couleur primaire #00b289) */
+.edit-icon-btn {
+  background: var(--kollecta-gradient-primary);
+  color: white;
+}
 
- .edit-btn svg, .delete-btn svg {
-   width: 16px;
-   height: 16px;
- }
+.edit-icon-btn:hover {
+  background: var(--kollecta-gradient-primary-dark);
+}
+
+.edit-icon-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* Bouton supprimer - Style moderne rouge */
+.delete-icon-btn {
+  background: var(--kollecta-gradient-red);
+  color: white;
+}
+
+.delete-icon-btn:hover {
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+}
+
+.delete-icon-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* Variantes supplémentaires - Basées sur la couleur primaire */
+.primary-icon-btn {
+  background: var(--kollecta-gradient-primary);
+  color: white;
+}
+
+.primary-icon-btn:hover {
+  background: var(--kollecta-gradient-primary-dark);
+}
+
+.primary-icon-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.secondary-icon-btn {
+  background: var(--kollecta-gradient-primary-light);
+  color: white;
+}
+
+.secondary-icon-btn:hover {
+  background: var(--kollecta-gradient-primary);
+}
+
+.secondary-icon-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* Effet de focus pour l'accessibilité */
+.icon-action-btn:focus {
+  outline: 2px solid var(--kollecta-primary);
+  outline-offset: 2px;
+}
+
+/* Animation d'entrée pour les boutons */
+.icon-action-btn {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive design pour les boutons */
+@media (max-width: 768px) {
+  .icon-action-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .icon-action-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .creator-actions {
+    gap: 8px;
+  }
+  
+  .icon-action-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .icon-action-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
 
 /* Section organisateur et bénéficiaire */
 .organizer-beneficiary-section {
@@ -375,7 +434,7 @@
 .avatar-placeholder-large {
   width: 100%;
   height: 100%;
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   color: white;
   display: flex;
   align-items: center;
@@ -398,7 +457,7 @@
 }
 
 .contact-btn {
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   color: white;
   border: none;
   padding: 6px 12px;
@@ -409,26 +468,7 @@
 }
 
 .contact-btn:hover {
-  background-color: #008f47;
-}
-
-/* Section mots de soutien */
-.support-messages-section {
-  padding: 24px 32px;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.support-messages-section h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #212529;
-}
-
-.support-messages-placeholder {
-  text-align: center;
-  padding: 32px;
-  color: #6c757d;
+  background-color: var(--kollecta-primary-dark);
 }
 
 /* Informations supplémentaires */
@@ -500,14 +540,14 @@
 
 .progress-fill {
   height: 100%;
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   transition: width 0.3s ease;
 }
 
 .progress-percentage {
   font-size: 14px;
   font-weight: 600;
-  color: #00a651;
+  color: var(--kollecta-primary);
 }
 
 .goal-amount {
@@ -536,7 +576,7 @@
   left: 0;
   width: 4px;
   height: 100%;
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
 }
 
 .days-icon {
@@ -545,7 +585,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   border-radius: 50%;
   color: white;
   flex-shrink: 0;
@@ -651,12 +691,12 @@
 }
 
 .donate-btn-sidebar {
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   color: white;
 }
 
 .donate-btn-sidebar:hover {
-  background-color: #008f47;
+  background-color: var(--kollecta-primary-dark);
 }
 
 /* Informations sur les donateurs */
@@ -839,10 +879,8 @@
   .organizer-section,
   .brief-section,
   .story-section,
-  .reactions-section,
   .action-buttons,
   .organizer-beneficiary-section,
-  .support-messages-section,
   .additional-info {
     padding-left: 20px;
     padding-right: 20px;

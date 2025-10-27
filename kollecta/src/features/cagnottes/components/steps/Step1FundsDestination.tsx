@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CATEGORIES } from '../../../../constants/categories';
 
 interface CagnotteData {
   country: string;
@@ -15,19 +16,8 @@ interface Step1Props {
 const Step1FundsDestination: React.FC<Step1Props> = ({ data, onUpdate, onNext }) => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const categories = [
-    'Animaux',
-    'Culture',
-    'Éducation',
-    'Environnement',
-    'Santé',
-    'Solidarité',
-    'Sport',
-    'Sportif',
-    'Technologie',
-    'Test',
-    'Urgences'
-  ];
+  // Utiliser les catégories synchronisées avec la base de données
+  const categories = CATEGORIES.map(cat => cat.name);
 
   const countries = [
     'Tunisie'

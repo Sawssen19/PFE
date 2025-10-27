@@ -75,7 +75,7 @@ export class CagnottesController {
         endDate: finalEndDate,
         category,
         createdBy: userId,
-        coverImage: coverImageFromBody || imageUrl,
+        coverImage: coverImage || coverImageFromBody || imageUrl,
         coverVideo,
         mediaType,
         mediaFilename,
@@ -185,16 +185,15 @@ export class CagnottesController {
 
       if (req.file) {
         const file = req.file;
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/cagnottes/${file.filename}`;
+        mediaFilename = file.filename;
         
         if (file.mimetype.startsWith('image/')) {
-          coverImage = fileUrl;
+          coverImage = `/uploads/cagnottes/${file.filename}`;
           mediaType = 'image';
         } else if (file.mimetype.startsWith('video/')) {
-          coverVideo = fileUrl;
+          coverVideo = `/uploads/cagnottes/${file.filename}`;
           mediaType = 'video';
         }
-        mediaFilename = file.filename;
       }
 
       // Préparer les données de mise à jour
@@ -202,10 +201,11 @@ export class CagnottesController {
         title,
         description: story,
         goalAmount: parseFloat(goalAmount),
-        coverImage,
-        coverVideo,
-        mediaType,
-        mediaFilename,
+        // Ne mettre à jour les médias que si un nouveau fichier est uploadé
+        ...(coverImage && { coverImage }),
+        ...(coverVideo && { coverVideo }),
+        ...(mediaType && { mediaType }),
+        ...(mediaFilename && { mediaFilename }),
         endDate: endDate ? new Date(endDate) : undefined
       };
 
@@ -500,7 +500,7 @@ export class CagnottesController {
         targetAmount, 
         endDate, 
         category, 
-        coverImage,
+        coverImage: coverImageFromBody,
         currentStep,
         status
       } = req.body;
@@ -508,6 +508,25 @@ export class CagnottesController {
       console.log('🔧 Controller updateDraft - req.body:', req.body);
       console.log('🔧 Controller updateDraft - targetAmount:', targetAmount);
       console.log('🔧 Controller updateDraft - currentStep:', currentStep);
+
+      // Gérer le fichier média s'il existe
+      let coverImage: string | undefined = undefined;
+      let coverVideo: string | undefined = undefined;
+      let mediaType: string | undefined = undefined;
+      let mediaFilename: string | undefined = undefined;
+
+      if (req.file) {
+        const file = req.file;
+        mediaFilename = file.filename;
+        
+        if (file.mimetype.startsWith('image/')) {
+          coverImage = `/uploads/cagnottes/${file.filename}`;
+          mediaType = 'image';
+        } else if (file.mimetype.startsWith('video/')) {
+          coverVideo = `/uploads/cagnottes/${file.filename}`;
+          mediaType = 'video';
+        }
+      }
 
       // Vérifier que la cagnotte appartient à l'utilisateur
       const existingCagnotte = await this.cagnottesService.getCagnotteById(id);
@@ -523,16 +542,26 @@ export class CagnottesController {
       console.log('🔧 Controller updateDraft - existingCagnotte:', existingCagnotte);
 
       // Mettre à jour le brouillon
-      const updateData = {
+      const updateData: any = {
         title: title && title.trim() !== '' ? title : existingCagnotte.title,
         description: description && description.trim() !== '' ? description : existingCagnotte.description,
         goalAmount: targetAmount && parseFloat(targetAmount) > 0 ? parseFloat(targetAmount) : existingCagnotte.goalAmount,
         endDate: endDate ? new Date(endDate) : existingCagnotte.endDate,
         category: category && category.trim() !== '' ? category : existingCagnotte.category?.name,
-        coverImage: coverImage || existingCagnotte.coverImage,
         currentStep: currentStep ? parseInt(currentStep) : existingCagnotte.currentStep || 1,
         status: status || existingCagnotte.status // Permettre le changement de statut
       };
+
+      // Ajouter les médias seulement s'ils sont fournis
+      if (coverImage) {
+        updateData.coverImage = coverImage;
+      } else if (coverImageFromBody) {
+        updateData.coverImage = coverImageFromBody;
+      }
+      
+      if (coverVideo) updateData.coverVideo = coverVideo;
+      if (mediaType) updateData.mediaType = mediaType;
+      if (mediaFilename) updateData.mediaFilename = mediaFilename;
 
       console.log('🔧 Controller updateDraft - updateData:', updateData);
 
@@ -548,6 +577,47 @@ export class CagnottesController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la mise à jour du brouillon'
+      });
+    }
+  }
+
+  // 🔍 Rechercher des cagnottes
+  async searchCagnottes(req: Request, res: Response) {
+    try {
+      const { 
+        q,                    // Query de recherche
+        category,             // Filtre par catégorie
+        status,               // Filtre par statut
+        minAmount,            // Montant minimum
+        maxAmount,            // Montant maximum
+        sortBy = 'relevance', // Tri (relevance, recent, amount, ending)
+        page = 1, 
+        limit = 20 
+      } = req.query;
+
+      console.log('🔍 Recherche de cagnottes:', { q, category, status, sortBy });
+
+      const results = await this.cagnottesService.searchCagnottes({
+        query: q as string,
+        category: category as string,
+        status: status as string,
+        minAmount: minAmount ? parseFloat(minAmount as string) : undefined,
+        maxAmount: maxAmount ? parseFloat(maxAmount as string) : undefined,
+        sortBy: sortBy as string,
+        page: parseInt(page as string),
+        limit: parseInt(limit as string)
+      });
+
+      res.status(200).json({
+        success: true,
+        data: results,
+        message: 'Recherche effectuée avec succès'
+      });
+    } catch (error) {
+      console.error('❌ Erreur lors de la recherche:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la recherche'
       });
     }
   }

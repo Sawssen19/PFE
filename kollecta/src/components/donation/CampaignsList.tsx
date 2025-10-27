@@ -234,8 +234,8 @@ const CampaignsList: React.FC = () => {
                 fullWidth
                 onClick={handleCreateCampaign}
                 sx={{
-                  bgcolor: '#02a95c',
-                  '&:hover': { bgcolor: '#02884a' },
+                  bgcolor: '#00b289',
+                  '&:hover': { bgcolor: '#008f73' },
                   height: 56
                 }}
               >
@@ -343,8 +343,8 @@ const CampaignsList: React.FC = () => {
                         startIcon={<EuroIcon />}
                         sx={{
                           mt: 2,
-                          bgcolor: '#02a95c',
-                          '&:hover': { bgcolor: '#02884a' }
+                          bgcolor: '#00b289',
+                          '&:hover': { bgcolor: '#008f73' }
                         }}
                       >
                         Faire un don

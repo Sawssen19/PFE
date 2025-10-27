@@ -174,7 +174,8 @@ export class CagnottesService {
   private async sendCagnotteCreationEmails(cagnotte: any) {
     try {
       // Email de confirmation au créateur
-      if (cagnotte.status === 'PENDING') {
+      // Envoyer l'email pour tous les statuts sauf DRAFT (brouillon)
+      if (cagnotte.status === 'PENDING' || cagnotte.status === 'ACTIVE' || cagnotte.status === 'REJECTED') {
         await EmailService.sendCagnotteCreationConfirmationEmail(
           cagnotte.creator.email,
           cagnotte.creator.firstName,
@@ -182,8 +183,10 @@ export class CagnottesService {
           cagnotte.id
         );
         console.log('✅ Email de confirmation envoyé au créateur:', cagnotte.creator.email);
+      }
 
-        // Email de notification à l'admin
+      // Email de notification à l'admin (uniquement pour PENDING)
+      if (cagnotte.status === 'PENDING') {
         await EmailService.sendCagnotteCreationAdminNotificationEmail(
           emailConfig.ADMIN_EMAIL,
           cagnotte.creator.firstName,
@@ -201,7 +204,7 @@ export class CagnottesService {
     }
   }
 
-  // 📧 Envoyer un email lors du changement de statut d'une cagnotte
+  // 📧 Envoyer un email ET créer une notification lors du changement de statut d'une cagnotte
   async sendCagnotteStatusChangeEmail(cagnotteId: string, oldStatus: string, newStatus: string, adminNotes?: string) {
     try {
       const cagnotte = await prisma.cagnotte.findUnique({
@@ -209,6 +212,7 @@ export class CagnottesService {
         include: {
           creator: {
             select: {
+              id: true,
               firstName: true,
               lastName: true,
               email: true
@@ -221,7 +225,7 @@ export class CagnottesService {
         throw new Error('Cagnotte non trouvée');
       }
 
-      // Envoyer l'email de changement de statut au créateur
+      // 1️⃣ Envoyer l'email de changement de statut au créateur
       await EmailService.sendCagnotteStatusChangeEmail(
         cagnotte.creator.email,
         cagnotte.creator.firstName,
@@ -232,10 +236,76 @@ export class CagnottesService {
         adminNotes
       );
 
-      console.log(`✅ Email de changement de statut envoyé au créateur: ${cagnotte.creator.email} (${oldStatus} → ${newStatus})`);
+      // 2️⃣ Créer une notification en base de données
+      await this.createCagnotteStatusNotification(
+        cagnotte.creator.id,
+        cagnotte.title,
+        oldStatus,
+        newStatus,
+        cagnotte.id,
+        adminNotes
+      );
+
+      console.log(`✅ Email et notification de changement de statut envoyés au créateur: ${cagnotte.creator.email} (${oldStatus} → ${newStatus})`);
     } catch (error) {
-      console.error('❌ Erreur lors de l\'envoi de l\'email de changement de statut:', error);
+      console.error('❌ Erreur lors de l\'envoi de l\'email/notification de changement de statut:', error);
       throw error;
+    }
+  }
+
+  // 🔔 Créer une notification en base de données pour le changement de statut d'une cagnotte
+  async createCagnotteStatusNotification(userId: string, cagnotteTitle: string, oldStatus: string, newStatus: string, cagnotteId: string, adminNotes?: string) {
+    try {
+      // Déterminer le type et le contenu de la notification selon le nouveau statut
+      let notificationType: 'CAGNOTTE' = 'CAGNOTTE';
+      let title: string;
+      let message: string;
+      let actionUrl: string = `/cagnottes/${cagnotteId}`;
+
+      switch (newStatus) {
+        case 'ACTIVE':
+          title = '🎉 Votre cagnotte a été approuvée !';
+          message = `Votre cagnotte "${cagnotteTitle}" est maintenant active et visible par tous les utilisateurs.`;
+          break;
+        case 'REJECTED':
+          title = '❌ Votre cagnotte a été rejetée';
+          message = `Votre cagnotte "${cagnotteTitle}" a été rejetée par l'administration.${adminNotes ? ` Raison: ${adminNotes}` : ''}`;
+          break;
+        case 'SUSPENDED':
+          title = '⚠️ Votre cagnotte a été suspendue';
+          message = `Votre cagnotte "${cagnotteTitle}" a été suspendue par l'administration.${adminNotes ? ` Raison: ${adminNotes}` : ''}`;
+          break;
+        case 'CLOSED':
+          title = '🔒 Votre cagnotte a été fermée';
+          message = `Votre cagnotte "${cagnotteTitle}" a été fermée.`;
+          break;
+        default:
+          title = '📢 Statut de votre cagnotte modifié';
+          message = `Le statut de votre cagnotte "${cagnotteTitle}" est passé de ${oldStatus} à ${newStatus}.`;
+      }
+
+      // Créer la notification en base de données
+      await prisma.notification.create({
+        data: {
+          userId,
+          type: notificationType,
+          title,
+          message,
+          actionUrl,
+          metadata: {
+            cagnotteId,
+            oldStatus,
+            newStatus,
+            cagnotteTitle,
+            adminNotes: adminNotes || null
+          }
+        }
+      });
+
+      console.log(`✅ Notification créée pour l'utilisateur ${userId}: ${title}`);
+    } catch (error) {
+      console.error('❌ Erreur lors de la création de la notification:', error);
+      // Ne pas faire échouer la fonction principale si la notification échoue
     }
   }
 
@@ -762,6 +832,126 @@ export class CagnottesService {
     } catch (error) {
       console.error('Erreur récupération cagnottes en attente:', error);
       throw new Error('Erreur lors de la récupération des cagnottes en attente');
+    }
+  }
+
+  // 🔍 Rechercher des cagnottes avec filtres avancés
+  async searchCagnottes(params: {
+    query?: string;
+    category?: string;
+    status?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    sortBy?: string;
+    page: number;
+    limit: number;
+  }) {
+    try {
+      const { query, category, status, minAmount, maxAmount, sortBy, page, limit } = params;
+
+      // Construction de la clause WHERE dynamique
+      const where: any = {
+        // Ne chercher que les cagnottes actives par défaut (sauf si status spécifié)
+        status: status || 'ACTIVE',
+      };
+
+      // Recherche textuelle sur titre et description
+      if (query && query.trim() !== '') {
+        where.OR = [
+          { title: { contains: query, mode: 'insensitive' } },
+          { description: { contains: query, mode: 'insensitive' } },
+        ];
+      }
+
+      // Filtre par catégorie
+      if (category && category !== 'all') {
+        where.category = {
+          name: category
+        };
+      }
+
+      // Filtre par montant
+      if (minAmount !== undefined || maxAmount !== undefined) {
+        where.goalAmount = {};
+        if (minAmount !== undefined) {
+          where.goalAmount.gte = minAmount;
+        }
+        if (maxAmount !== undefined) {
+          where.goalAmount.lte = maxAmount;
+        }
+      }
+
+      // Construction du tri
+      let orderBy: any = { createdAt: 'desc' }; // Par défaut: plus récentes
+
+      switch (sortBy) {
+        case 'recent':
+          orderBy = { createdAt: 'desc' };
+          break;
+        case 'amount':
+          orderBy = { currentAmount: 'desc' };
+          break;
+        case 'ending':
+          orderBy = { endDate: 'asc' };
+          break;
+        case 'relevance':
+        default:
+          // Pour la pertinence, on garde l'ordre par date de création
+          orderBy = { createdAt: 'desc' };
+          break;
+      }
+
+      // Pagination
+      const skip = (page - 1) * limit;
+
+      // Exécution de la requête
+      const [cagnottes, total] = await Promise.all([
+        prisma.cagnotte.findMany({
+          where,
+          include: {
+            creator: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePicture: true,
+              }
+            },
+            beneficiary: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              }
+            },
+            category: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              }
+            },
+          },
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        prisma.cagnotte.count({ where }),
+      ]);
+
+      console.log(`✅ Recherche effectuée: ${cagnottes.length} résultats sur ${total} total`);
+
+      return {
+        cagnottes,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + cagnottes.length < total,
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la recherche de cagnottes:', error);
+      throw new Error('Erreur lors de la recherche de cagnottes');
     }
   }
 }

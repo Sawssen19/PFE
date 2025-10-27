@@ -1,0 +1,199 @@
+/* Layout global pour l'application Kollecta */
+
+/* Padding pour compenser le header fixe */
+.main-content {
+  padding-top: 120px;
+  min-height: calc(100vh - 120px);
+}
+
+/* Padding spécifique pour les pages avec header */
+.page-with-header {
+  padding-top: 120px;
+}
+
+/* Ajustement pour les écrans plus petits */
+@media (max-width: 768px) {
+  .main-content,
+  .page-with-header {
+    padding-top: 100px;
+    min-height: calc(100vh - 100px);
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content,
+  .page-with-header {
+    padding-top: 80px;
+    min-height: calc(100vh - 80px);
+  }
+}
+
+/* Styles pour le header fixe */
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Styles pour le footer */
+.footer-spacing {
+  margin-top: auto;
+}
+
+/* Container principal */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-content {
+  flex: 1;
+  /* Padding-top sera appliqué conditionnellement */
+}
+
+/* Classes pour appliquer le padding conditionnellement */
+.app-content.needs-padding {
+  padding-top: 120px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app-content.needs-padding {
+    padding-top: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-content.needs-padding {
+    padding-top: 80px;
+  }
+}
+
+/* Styles pour les pages spécifiques */
+.page-container {
+  padding: 2rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Classe utilitaire pour ajouter du padding supplémentaire */
+.extra-padding-top {
+  padding-top: 2rem;
+}
+
+.extra-padding-bottom {
+  padding-bottom: 2rem;
+}
+
+.extra-padding {
+  padding: 2rem 0;
+}
+
+/* Classes pour les sections avec espacement */
+.section-spacing {
+  margin: 2rem 0;
+}
+
+.section-spacing-large {
+  margin: 4rem 0;
+}
+
+/* Pages qui ont déjà leur propre padding - ne pas ajouter de padding supplémentaire */
+.app-content.home-page,
+.app-content.landing-page,
+.app-content.hero-page,
+.app-content.default-page {
+  padding-top: 0;
+}
+
+/* Pages qui ont besoin du padding pour le header fixe */
+.app-content.dashboard-page,
+.app-content.profile-page,
+.app-content.settings-page,
+.app-content.admin-page,
+.app-content.cagnottes-page,
+.app-content.notifications-page {
+  padding-top: 80px;
+}
+
+/* Spécifique pour la page notifications - s'assurer qu'elle a le bon padding */
+.app-content.notifications-page {
+  padding-top: 80px !important;
+}
+
+/* Responsive pour les pages qui ont besoin de padding */
+@media (max-width: 768px) {
+  .app-content.dashboard-page,
+  .app-content.profile-page,
+  .app-content.settings-page,
+  .app-content.admin-page,
+  .app-content.cagnottes-page,
+  .app-content.notifications-page {
+    padding-top: 70px;
+  }
+  
+  /* Spécifique pour la page notifications sur tablet */
+  .app-content.notifications-page {
+    padding-top: 70px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-content.dashboard-page,
+  .app-content.profile-page,
+  .app-content.settings-page,
+  .app-content.admin-page,
+  .app-content.cagnottes-page,
+  .app-content.notifications-page {
+    padding-top: 60px;
+  }
+  
+  /* Spécifique pour la page notifications sur mobile */
+  .app-content.notifications-page {
+    padding-top: 60px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 1rem 0.5rem;
+  }
+}
+
+/* Styles pour éviter les débordements */
+body {
+  overflow-x: hidden;
+}
+
+/* Styles pour les sections principales */
+.main-section {
+  padding: 2rem 0;
+}
+
+.section-with-padding {
+  padding: 3rem 1rem;
+}
+
+@media (max-width: 768px) {
+  .section-with-padding {
+    padding: 2rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-with-padding {
+    padding: 1.5rem 0.5rem;
+  }
+}

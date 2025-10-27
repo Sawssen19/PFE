@@ -130,7 +130,8 @@ class CagnottesService {
 
   async getUserCagnottes(): Promise<any> {
     console.log('🔍 Appel getUserCagnottes...');
-    const response = await this.makeRequest('/user/my-cagnottes');
+    // Récupérer toutes les cagnottes en utilisant une limite élevée
+    const response = await this.makeRequest('/user/my-cagnottes?page=1&limit=1000');
     console.log('🔍 Réponse getUserCagnottes:', response);
     return response;
   }

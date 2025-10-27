@@ -148,8 +148,8 @@ const AdminDashboard: React.FC = () => {
       change: '+8%',
       changeType: 'positive',
       icon: <CampaignIcon />,
-      color: '#10b981',
-      gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      color: '#00b289',
+      gradient: 'linear-gradient(135deg, #00b289 0%, #008f73 100%)',
     },
     {
       title: 'Signalements en attente',

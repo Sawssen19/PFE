@@ -189,4 +189,8 @@ test-*.js
 emergency-*.js
 switch-to-*.js
 get-user-*.js
-reset-password-*.js 
+reset-password-*.js
+
+# Uploads (fichiers utilisateur uploadés)
+server/uploads/
+uploads/ 

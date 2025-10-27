@@ -450,6 +450,12 @@ export class EmailService {
    */
   static async sendEmail(to: string, subject: string, text: string, html?: string): Promise<boolean> {
     try {
+      console.log('📧 Tentative d\'envoi d\'email:');
+      console.log('   - À:', to);
+      console.log('   - De:', emailConfig.FROM_EMAIL);
+      console.log('   - Sujet:', subject);
+      console.log('   - API Key configurée:', emailConfig.SENDGRID_API_KEY ? 'Oui (longueur: ' + emailConfig.SENDGRID_API_KEY.length + ')' : 'Non');
+      
       const msg: any = {
         to,
         from: emailConfig.FROM_EMAIL,
@@ -462,9 +468,13 @@ export class EmailService {
       }
 
       await sgMail.send(msg);
+      console.log('✅ Email envoyé avec succès à', to);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`❌ Erreur lors de l'envoi d'email à ${to}:`, error);
+      if (error.response) {
+        console.error('   Détails SendGrid:', error.response.body);
+      }
       return false;
     }
   }

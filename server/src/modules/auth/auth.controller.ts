@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { EmailService } from '../../services/emailService';
+import { emailConfig } from '../../config/emailConfig';
 import crypto from 'crypto';
 import { SmsService } from '../../services/smsService';
 import dotenv from 'dotenv';
@@ -70,7 +71,7 @@ export class AuthController {
       // 🔔 Envoyer un email de NOTIFICATION à l'admin (vous)
       try {
         await EmailService.sendAdminNotification(email, firstName, lastName);
-        console.log('🔔 Email de notification admin envoyé avec succès à: sawssen.yazidi@sesame.com.tn');
+        console.log('🔔 Email de notification admin envoyé avec succès à:', emailConfig.ADMIN_EMAIL);
       } catch (adminEmailError) {
         console.error('⚠️ Erreur lors de l\'envoi de l\'email de notification admin:', adminEmailError);
         // On continue même si l'email admin échoue

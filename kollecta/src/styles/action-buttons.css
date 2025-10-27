@@ -1,0 +1,187 @@
+/* Styles globaux pour les boutons d'action icônes - Réutilisables dans toute l'app */
+
+.icon-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: transparent;
+}
+
+.icon-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.icon-action-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.icon-action-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: all 0.2s ease;
+}
+
+/* Variantes de couleurs - Basées sur #00b289 */
+.edit-icon-btn {
+  background: var(--kollecta-gradient-primary);
+  color: white;
+}
+
+.edit-icon-btn:hover {
+  background: var(--kollecta-gradient-primary-dark);
+}
+
+.delete-icon-btn {
+  background: var(--kollecta-gradient-red);
+  color: white;
+}
+
+.delete-icon-btn:hover {
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+}
+
+.primary-icon-btn {
+  background: var(--kollecta-gradient-primary);
+  color: white;
+}
+
+.primary-icon-btn:hover {
+  background: var(--kollecta-gradient-primary-dark);
+}
+
+.secondary-icon-btn {
+  background: var(--kollecta-gradient-primary-light);
+  color: white;
+}
+
+.secondary-icon-btn:hover {
+  background: var(--kollecta-gradient-primary);
+}
+
+.warning-icon-btn {
+  background: var(--kollecta-gradient-orange);
+  color: white;
+}
+
+.warning-icon-btn:hover {
+  background: linear-gradient(135deg, #e55a00 0%, #cc4a00 100%);
+}
+
+.info-icon-btn {
+  background: var(--kollecta-gradient-blue);
+  color: white;
+}
+
+.info-icon-btn:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+}
+
+/* Effets hover pour toutes les variantes */
+.edit-icon-btn:hover svg,
+.delete-icon-btn:hover svg,
+.primary-icon-btn:hover svg,
+.secondary-icon-btn:hover svg,
+.warning-icon-btn:hover svg,
+.info-icon-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* Effet de focus pour l'accessibilité */
+.icon-action-btn:focus {
+  outline: 2px solid #28a745;
+  outline-offset: 2px;
+}
+
+/* Animation d'entrée */
+.icon-action-btn {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .icon-action-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .icon-action-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .icon-action-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .icon-action-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Groupes de boutons d'action */
+.action-buttons-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .action-buttons-group {
+    gap: 8px;
+  }
+}
+
+/* Styles pour les tooltips (si nécessaire) */
+.icon-action-btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.icon-action-btn[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+}

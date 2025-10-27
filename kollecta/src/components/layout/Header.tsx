@@ -3,9 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectUser, selectIsAuthenticated, logout } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, Bell } from 'lucide-react';
 import { profileService } from '../../features/profile/profileService';
 import { setProfileData } from '../../store/slices/profileSlice';
+import { notificationsService } from '../../features/notifications/notificationsService';
+import { setNotifications, setUnreadCount } from '../../store/slices/notificationsSlice';
+import NotificationDropdown from '../notifications/NotificationDropdown';
+import './NotificationButton.css';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -13,8 +17,10 @@ const Header: React.FC = () => {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const profileData = useSelector((state: RootState) => state.profile.data);
+  const unreadCount = useSelector((state: RootState) => state.notifications.unreadCount);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const displayName = user?.firstName || 'Utilisateur';
 
@@ -37,6 +43,30 @@ const Header: React.FC = () => {
     const timer = setTimeout(loadProfileData, 100);
     return () => clearTimeout(timer);
   }, [isAuthenticated, user?.id, profileData, dispatch]);
+
+  // Charger les notifications de l'utilisateur connecté (sauf pour les admins)
+  useEffect(() => {
+    const loadNotifications = async () => {
+      // Ne pas charger les notifications pour les admins
+      if (isAuthenticated && user?.id && user?.role !== 'ADMIN') {
+        try {
+          const response = await notificationsService.getNotifications(1, 20);
+          if (response.success) {
+            dispatch(setNotifications(response.data.notifications));
+            dispatch(setUnreadCount(response.data.unreadCount));
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des notifications:', error);
+        }
+      }
+    };
+
+    loadNotifications();
+    
+    // Recharger les notifications toutes les 60 secondes (sauf pour les admins)
+    const interval = setInterval(loadNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user?.id, user?.role, dispatch]);
 
   // Gestion du scroll pour la transparence
   useEffect(() => {
@@ -99,14 +129,24 @@ const Header: React.FC = () => {
           <nav className="hrt-header-nav" aria-label="Menu principal">
             {/* Partie gauche */}
             <div className="hrt-header-left">
-              <a className="hrt-hide-min-md hrt-tertiary-icon-button hrt-tertiary-icon-button--medium hrt-tertiary-icon-button--default hrt-base-button" aria-label="Rechercher" href="/s">
+              <button 
+                className="hrt-hide-min-md hrt-tertiary-icon-button hrt-tertiary-icon-button--medium hrt-tertiary-icon-button--default hrt-base-button" 
+                aria-label="Rechercher" 
+                onClick={() => navigate('/search')}
+                style={{ cursor: 'pointer' }}
+              >
                 <Search className="hrt-icon hrt-icon--default" />
-              </a>
+              </button>
               
-              <a className="hrt-hide-max-md hrt-tertiary-button hrt-tertiary-button--inline hrt-tertiary-button--default hrt-base-button" aria-label="Rechercher" href="/s">
+              <button 
+                className="hrt-hide-max-md hrt-tertiary-button hrt-tertiary-button--inline hrt-tertiary-button--default hrt-base-button" 
+                aria-label="Rechercher" 
+                onClick={() => navigate('/search')}
+                style={{ cursor: 'pointer' }}
+              >
                 <Search className="hrt-mr-1 hrt-icon hrt-icon--small" />
                 Rechercher
-              </a>
+              </button>
               
               <div className="hrt-hide-max-lg hrt-header-dropdown">
                 <button className="hrt-ml-1 hrt-header-dropdown-button hrt-tertiary-button hrt-tertiary-button--inline hrt-tertiary-button--default hrt-base-button" type="button">
@@ -283,7 +323,57 @@ const Header: React.FC = () => {
               
               {/* Menu utilisateur connecté ou boutons de connexion */}
               {isAuthenticated ? (
-                <div className="hrt-hide-max-lg hrt-header-dropdown">
+                <>
+                  {/* Icône de notification améliorée - Masquée pour les admins car ils ont leur dashboard */}
+                  {user?.role !== 'ADMIN' && (
+                    <div className="notification-container" style={{ position: 'relative', marginLeft: '8px' }}>
+                      <button 
+                        className={`notification-button ${showNotifications ? 'active' : ''}`}
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        aria-label="Notifications"
+                      >
+                        <Bell 
+                          size={22} 
+                          style={{
+                            strokeWidth: showNotifications ? 2.5 : 2,
+                            transition: 'all 0.2s ease'
+                          }}
+                        />
+                        
+                        {/* Badge de notification non lues */}
+                        {unreadCount > 0 && (
+                          <span className="notification-badge" style={{
+                            position: 'absolute',
+                            top: '6px',
+                            right: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '20px',
+                            height: '20px',
+                            padding: '0 6px',
+                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            color: 'white',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            border: '2px solid white',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none'
+                          }}>
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                        )}
+                      </button>
+                      
+                      <NotificationDropdown 
+                        isOpen={showNotifications} 
+                        onClose={() => setShowNotifications(false)} 
+                      />
+                    </div>
+                  )}
+
+                  <div className="hrt-hide-max-lg hrt-header-dropdown">
                   <button className="hrt-ml-1 hrt-header-dropdown-button hrt-tertiary-button hrt-tertiary-button--inline hrt-tertiary-button--default hrt-base-button" type="button">
                     <div className="hrt-position-relative">
                       <div className="hrt-default-avatar hrt-avatar hrt-avatar--default hrt-avatar--neutral">
@@ -374,6 +464,7 @@ const Header: React.FC = () => {
                     </ul>
                   </div>
                 </div>
+                </>
               ) : (
                 <>
                   <a className="hrt-ml-1 hrt-tertiary-button hrt-tertiary-button--inline hrt-tertiary-button--default hrt-base-button" onClick={handleLoginClick}>

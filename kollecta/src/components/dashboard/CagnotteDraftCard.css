@@ -1,5 +1,5 @@
 .cagnotte-draft-card {
-  border: 2px dashed #00a651;
+  border: 2px dashed var(--kollecta-primary);
   background-color: #f8fff8;
   margin-bottom: 16px;
 }
@@ -21,11 +21,11 @@
 }
 
 .cagnotte-draft-card .MuiButton-contained {
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
 }
 
 .cagnotte-draft-card .MuiButton-contained:hover {
-  background-color: #008f47;
+  background-color: var(--kollecta-primary-dark);
 }
 
 .cagnotte-draft-card .MuiButton-outlined {

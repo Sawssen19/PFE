@@ -522,7 +522,7 @@
 }
 
 .notifications-icon {
-  background: linear-gradient(135deg, #00b289 0%, #02a95c 100%);
+  background: var(--kollecta-gradient-primary);
   border-radius: 12px;
   padding: 16px;
   color: white;
@@ -592,7 +592,7 @@
 }
 
 .notification-icon-wrapper.push {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--kollecta-gradient-primary);
 }
 
 .notification-icon-wrapper.marketing {
@@ -666,7 +666,7 @@
 }
 
 input:checked + .modern-toggle-slider {
-  background: linear-gradient(135deg, #00b289 0%, #02a95c 100%);
+  background: var(--kollecta-gradient-primary);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -1253,7 +1253,7 @@ input:checked + .modern-toggle-slider:before {
 .modal-header-icon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #00b289 0%, #059669 100%);
+  background: var(--kollecta-gradient-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1369,7 +1369,7 @@ input:checked + .modern-toggle-slider:before {
 }
 
 .modal-btn-primary {
-  background: linear-gradient(135deg, #00b289 0%, #059669 100%);
+  background: var(--kollecta-gradient-primary);
   color: white;
   box-shadow: 0 4px 12px rgba(0, 178, 137, 0.3);
 }
@@ -1610,7 +1610,7 @@ input:checked + .modern-toggle-slider:before {
 .btn-deactivate {
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, #00b289 0%, #059669 100%);
+  background: var(--kollecta-gradient-primary);
   color: white;
   border: none;
   padding: 14px 28px;
@@ -1848,7 +1848,7 @@ select:disabled {
 }
 
 .status-icon:has(.CheckCircle2) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--kollecta-gradient-primary);
 }
 
 .status-icon:has(.XCircle) {
@@ -1919,7 +1919,7 @@ select:disabled {
 }
 
 .progress-fill.approved {
-  background: linear-gradient(90deg, #10b981, #059669);
+  background: var(--kollecta-gradient-primary);
 }
 
 .progress-steps {
@@ -2022,9 +2022,9 @@ select:disabled {
 }
 
 .btn-primary:hover {
-  background: #059669 !important;
+  background: var(--kollecta-primary-dark) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.3) !important;
 }
 
 .btn-primary:active {

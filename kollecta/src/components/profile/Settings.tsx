@@ -528,71 +528,7 @@ const Settings = () => {
             </p>
           </div>
           
-          {/* Bouton notifications */}
-          <div className="notifications-button-container">
-            <button 
-              className="notifications-button"
-              onClick={() => setShowNotifications(!showNotifications)}
-              title="Voir les notifications"
-            >
-              <Bell className="w-5 h-5" />
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="notification-badge">
-                  {notifications.filter(n => !n.read).length}
-                </span>
-              )}
-            </button>
-            
-            {/* Dropdown des notifications */}
-            {showNotifications && (
-              <div className="notifications-dropdown">
-                <div className="notifications-header">
-                  <h3>Notifications</h3>
-                  <button 
-                    className="close-notifications"
-                    onClick={() => setShowNotifications(false)}
-                  >
-                    <XCircle className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {notifications.length === 0 ? (
-                  <div className="no-notifications">
-                    <Bell className="w-8 h-8 text-gray-400" />
-                    <p>Aucune notification</p>
-                  </div>
-                ) : (
-                  <div className="notifications-list">
-                    {notifications.map(notification => (
-                      <div 
-                        key={notification.id} 
-                        className={`notification-item ${notification.read ? 'read' : 'unread'}`}
-                        onClick={() => markNotificationAsRead(notification.id)}
-                      >
-                        <div className="notification-icon">
-                          {notification.type === 'success' && <CheckCircle2 className="w-4 h-4" />}
-                          {notification.type === 'info' && <Info className="w-4 h-4" />}
-                          {notification.type === 'warning' && <AlertCircle className="w-4 h-4" />}
-                          {notification.type === 'error' && <XCircle className="w-4 h-4" />}
-                        </div>
-                        <div className="notification-content">
-                          <h4 className="notification-title">{notification.title}</h4>
-                          <p className="notification-message">{notification.message}</p>
-                          <span className="notification-time">
-                            {notification.timestamp.toLocaleTimeString('fr-FR', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </span>
-                        </div>
-                        {!notification.read && <div className="unread-indicator" />}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Note: L'icône de notification a été déplacée dans le Header pour être accessible depuis toutes les pages */}
         </div>
 
         {/* Message d'alerte */}

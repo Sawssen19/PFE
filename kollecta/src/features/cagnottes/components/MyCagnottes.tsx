@@ -9,7 +9,7 @@ interface Cagnotte {
   description: string;
   goalAmount: number;
   currentAmount: number;
-  status: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED' | 'PENDING' | 'REJECTED';
+  status: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED' | 'PENDING' | 'REJECTED' | 'SUSPENDED';
   coverImage?: string;
   coverVideo?: string;
   mediaType?: string;
@@ -33,6 +33,22 @@ const MyCagnottes: React.FC = () => {
   const [cagnottes, setCagnottes] = useState<Cagnotte[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState<{ [key: string]: boolean }>({
+    draft: false,
+    active: false,
+    pending: false,
+    rejected: false,
+    completed: false,
+    suspended: false
+  });
+  const [loadingMore, setLoadingMore] = useState<{ [key: string]: boolean }>({
+    draft: false,
+    active: false,
+    pending: false,
+    rejected: false,
+    completed: false,
+    suspended: false
+  });
 
   useEffect(() => {
     loadCagnottes();
@@ -74,6 +90,32 @@ const MyCagnottes: React.FC = () => {
 
   const getCompletedCagnottes = () => {
     return cagnottes.filter(cagnotte => cagnotte.status === 'COMPLETED' || cagnotte.status === 'CLOSED');
+  };
+
+  const getSuspendedCagnottes = () => {
+    return cagnottes.filter(cagnotte => cagnotte.status === 'SUSPENDED');
+  };
+
+  // Fonctions pour gérer l'affichage limité - 3 par ligne
+  const getDisplayedCagnottes = (cagnottesList: Cagnotte[], type: string) => {
+    if (showAll[type]) {
+      return cagnottesList;
+    }
+    return cagnottesList.slice(0, 3);
+  };
+
+  const handleSeeMore = (type: string) => {
+    setLoadingMore(prev => ({ ...prev, [type]: true }));
+    
+    // Simuler un délai de chargement
+    setTimeout(() => {
+      setShowAll(prev => ({ ...prev, [type]: true }));
+      setLoadingMore(prev => ({ ...prev, [type]: false }));
+    }, 500);
+  };
+
+  const handleSeeLess = (type: string) => {
+    setShowAll(prev => ({ ...prev, [type]: false }));
   };
 
   const formatDate = (dateString: string) => {
@@ -126,9 +168,18 @@ const MyCagnottes: React.FC = () => {
   const pendingCagnottes = getPendingCagnottes();
   const rejectedCagnottes = getRejectedCagnottes();
   const completedCagnottes = getCompletedCagnottes();
+  const suspendedCagnottes = getSuspendedCagnottes();
+
+  // Cagnottes affichées avec limitation
+  const displayedDraftCagnottes = getDisplayedCagnottes(draftCagnottes, 'draft');
+  const displayedActiveCagnottes = getDisplayedCagnottes(activeCagnottes, 'active');
+  const displayedPendingCagnottes = getDisplayedCagnottes(pendingCagnottes, 'pending');
+  const displayedRejectedCagnottes = getDisplayedCagnottes(rejectedCagnottes, 'rejected');
+  const displayedCompletedCagnottes = getDisplayedCagnottes(completedCagnottes, 'completed');
+  const displayedSuspendedCagnottes = getDisplayedCagnottes(suspendedCagnottes, 'suspended');
 
   return (
-    <div className="my-cagnottes-container">
+    <div className="my-cagnottes-page my-cagnottes-container">
       <div className="my-cagnottes-header">
         <h1>Vos collectes de fonds</h1>
         <p style={{ margin: '0 0 25px 0', fontSize: '1.1rem', opacity: 0.9 }}>
@@ -138,7 +189,7 @@ const MyCagnottes: React.FC = () => {
           <svg style={{ width: '20px', height: '20px', marginRight: '8px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 5v14M5 12h14"/>
           </svg>
-          Lancez une campagne GoFundMe
+          Lancez une campagne Kollecta
         </button>
       </div>
 
@@ -204,8 +255,8 @@ const MyCagnottes: React.FC = () => {
       {draftCagnottes.length > 0 && (
         <div className="cagnottes-section">
           <h2>Brouillons</h2>
-          <div className="cagnottes-grid">
-            {draftCagnottes.map((cagnotte) => (
+          <div className={`cagnottes-grid ${!showAll.draft ? 'limited' : ''}`}>
+            {displayedDraftCagnottes.map((cagnotte) => (
               <div key={cagnotte.id} className="cagnotte-card draft">
                 <div className="cagnotte-image">
                   {cagnotte.coverImage ? (
@@ -240,6 +291,39 @@ const MyCagnottes: React.FC = () => {
               </div>
             ))}
           </div>
+          {draftCagnottes.length > 3 && (
+            <div className={loadingMore.draft ? 'loading-more' : ''}>
+              <button 
+                className="see-more-btn"
+                onClick={() => showAll.draft ? handleSeeLess('draft') : handleSeeMore('draft')}
+                disabled={loadingMore.draft}
+              >
+                {loadingMore.draft ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/>
+                      <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"/>
+                    </svg>
+                    Chargement...
+                  </>
+                ) : showAll.draft ? (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 15l-6-6-6 6"/>
+                    </svg>
+                    Réduire
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                    Afficher plus
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -247,8 +331,8 @@ const MyCagnottes: React.FC = () => {
        {activeCagnottes.length > 0 && (
          <div className="cagnottes-section">
            <h2>Cagnottes actives</h2>
-           <div className="cagnottes-grid">
-             {activeCagnottes.map((cagnotte) => (
+           <div className={`cagnottes-grid ${!showAll.active ? 'limited' : ''}`}>
+             {displayedActiveCagnottes.map((cagnotte) => (
                <div key={cagnotte.id} className="cagnotte-card active" onClick={() => handleViewCagnotte(cagnotte.id)}>
                  <div className="cagnotte-image">
                    {cagnotte.coverImage ? (
@@ -283,6 +367,39 @@ const MyCagnottes: React.FC = () => {
                </div>
              ))}
            </div>
+           {activeCagnottes.length > 3 && (
+             <div className={loadingMore.active ? 'loading-more' : ''}>
+               <button 
+                 className="see-more-btn"
+                 onClick={() => showAll.active ? handleSeeLess('active') : handleSeeMore('active')}
+                 disabled={loadingMore.active}
+               >
+                 {loadingMore.active ? (
+                   <>
+                     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/>
+                       <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"/>
+                     </svg>
+                     Chargement...
+                   </>
+                 ) : showAll.active ? (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M18 15l-6-6-6 6"/>
+                     </svg>
+                     Réduire
+                   </>
+                 ) : (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M6 9l6 6 6-6"/>
+                     </svg>
+                     Afficher plus
+                   </>
+                 )}
+               </button>
+             </div>
+           )}
          </div>
        )}
 
@@ -290,8 +407,8 @@ const MyCagnottes: React.FC = () => {
        {pendingCagnottes.length > 0 && (
          <div className="cagnottes-section">
            <h2>Cagnottes en attente</h2>
-           <div className="cagnottes-grid">
-             {pendingCagnottes.map((cagnotte) => (
+           <div className={`cagnottes-grid ${!showAll.pending ? 'limited' : ''}`}>
+             {displayedPendingCagnottes.map((cagnotte) => (
                <div key={cagnotte.id} className="cagnotte-card pending" onClick={() => handleViewCagnotte(cagnotte.id)}>
                  <div className="cagnotte-image">
                    {cagnotte.coverImage ? (
@@ -329,6 +446,39 @@ const MyCagnottes: React.FC = () => {
                </div>
              ))}
            </div>
+           {pendingCagnottes.length > 3 && (
+             <div className={loadingMore.pending ? 'loading-more' : ''}>
+               <button 
+                 className="see-more-btn"
+                 onClick={() => showAll.pending ? handleSeeLess('pending') : handleSeeMore('pending')}
+                 disabled={loadingMore.pending}
+               >
+                 {loadingMore.pending ? (
+                   <>
+                     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/>
+                       <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"/>
+                     </svg>
+                     Chargement...
+                   </>
+                 ) : showAll.pending ? (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M18 15l-6-6-6 6"/>
+                     </svg>
+                     Réduire
+                   </>
+                 ) : (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M6 9l6 6 6-6"/>
+                     </svg>
+                     Afficher plus
+                   </>
+                 )}
+               </button>
+             </div>
+           )}
          </div>
        )}
 
@@ -336,8 +486,8 @@ const MyCagnottes: React.FC = () => {
        {rejectedCagnottes.length > 0 && (
          <div className="cagnottes-section">
            <h2>Cagnottes rejetées</h2>
-           <div className="cagnottes-grid">
-             {rejectedCagnottes.map((cagnotte) => (
+           <div className={`cagnottes-grid ${!showAll.rejected ? 'limited' : ''}`}>
+             {displayedRejectedCagnottes.map((cagnotte) => (
                <div key={cagnotte.id} className="cagnotte-card rejected" onClick={() => handleViewCagnotte(cagnotte.id)}>
                  <div className="cagnotte-image">
                    {cagnotte.coverImage ? (
@@ -375,6 +525,39 @@ const MyCagnottes: React.FC = () => {
                </div>
              ))}
            </div>
+           {rejectedCagnottes.length > 3 && (
+             <div className={loadingMore.rejected ? 'loading-more' : ''}>
+               <button 
+                 className="see-more-btn"
+                 onClick={() => showAll.rejected ? handleSeeLess('rejected') : handleSeeMore('rejected')}
+                 disabled={loadingMore.rejected}
+               >
+                 {loadingMore.rejected ? (
+                   <>
+                     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/>
+                       <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"/>
+                     </svg>
+                     Chargement...
+                   </>
+                 ) : showAll.rejected ? (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M18 15l-6-6-6 6"/>
+                     </svg>
+                     Réduire
+                   </>
+                 ) : (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M6 9l6 6 6-6"/>
+                     </svg>
+                     Afficher plus
+                   </>
+                 )}
+               </button>
+             </div>
+           )}
          </div>
        )}
 
@@ -382,8 +565,8 @@ const MyCagnottes: React.FC = () => {
       {completedCagnottes.length > 0 && (
         <div className="cagnottes-section">
           <h2>Cagnottes terminées</h2>
-          <div className="cagnottes-grid">
-            {completedCagnottes.map((cagnotte) => (
+          <div className={`cagnottes-grid ${!showAll.completed ? 'limited' : ''}`}>
+            {displayedCompletedCagnottes.map((cagnotte) => (
               <div key={cagnotte.id} className="cagnotte-card completed" onClick={() => handleViewCagnotte(cagnotte.id)}>
                 <div className="cagnotte-image">
                   {cagnotte.coverImage ? (
@@ -413,6 +596,113 @@ const MyCagnottes: React.FC = () => {
               </div>
             ))}
           </div>
+          {completedCagnottes.length > 3 && (
+            <div className={loadingMore.completed ? 'loading-more' : ''}>
+              <button 
+                className="see-more-btn"
+                onClick={() => showAll.completed ? handleSeeLess('completed') : handleSeeMore('completed')}
+                disabled={loadingMore.completed}
+              >
+                {loadingMore.completed ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/>
+                      <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"/>
+                    </svg>
+                    Chargement...
+                  </>
+                 ) : showAll.completed ? (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M18 15l-6-6-6 6"/>
+                     </svg>
+                     Réduire
+                   </>
+                 ) : (
+                   <>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <path d="M6 9l6 6 6-6"/>
+                     </svg>
+                     Afficher plus
+                   </>
+                 )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cagnottes suspendues */}
+      {suspendedCagnottes.length > 0 && (
+        <div className="cagnottes-section">
+          <h2>Cagnottes suspendues</h2>
+          <div className={`cagnottes-grid ${!showAll.suspended ? 'limited' : ''}`}>
+            {displayedSuspendedCagnottes.map((cagnotte) => (
+              <div key={cagnotte.id} className="cagnotte-card suspended" onClick={() => handleViewCagnotte(cagnotte.id)}>
+                <div className="cagnotte-image">
+                  {cagnotte.coverImage ? (
+                    <img src={cagnotte.coverImage} alt={cagnotte.title} />
+                  ) : (
+                    <div className="placeholder-image">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className="status-badge suspended">
+                    Suspendue
+                  </div>
+                </div>
+                <div className="cagnotte-content">
+                  <h3>{cagnotte.title}</h3>
+                  <p className="cagnotte-category">{cagnotte.category?.name}</p>
+                  <div className="cagnotte-stats">
+                    <span className="current-amount">{cagnotte.currentAmount.toLocaleString()} TND</span>
+                    <span className="goal-amount">sur {cagnotte.goalAmount.toLocaleString()} TND</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{width: `${Math.min((cagnotte.currentAmount / cagnotte.goalAmount) * 100, 100)}%`}}
+                    ></div>
+                  </div>
+                  <p className="cagnotte-date">Créée {formatDate(cagnotte.createdAt)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {suspendedCagnottes.length > 3 && (
+            <div className="show-more-container">
+              <button 
+                className="show-more-btn"
+                onClick={() => showAll.suspended ? handleSeeLess('suspended') : handleSeeMore('suspended')}
+                disabled={loadingMore.suspended}
+              >
+                {loadingMore.suspended ? (
+                  <>
+                    <svg className="loading-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                    </svg>
+                    Chargement...
+                  </>
+                ) : showAll.suspended ? (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 15l-6-6-6 6"/>
+                    </svg>
+                    Afficher moins
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                    Afficher plus
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

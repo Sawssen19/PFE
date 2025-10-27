@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { CATEGORIES } from "../../constants/categories";
 
 const DiscoverPage = () => {
   const [visibleCategories, setVisibleCategories] = useState(12);
@@ -84,14 +85,6 @@ const DiscoverPage = () => {
           <circle cx="18" cy="8" r="2"/>
           <circle cx="20" cy="16" r="2"/>
           <path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>
-        </svg>
-      ),
-      environment: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-          <path d="M9 9h.01"/>
-          <path d="M15 9h.01"/>
         </svg>
       ),
       business: (
@@ -219,116 +212,37 @@ const DiscoverPage = () => {
     return icons[iconName] || icons.charity;
   };
 
-  const categories = [
-    {
-      name: "Santé",
-      icon: "medical",
-      href: "/discover/medical-fundraiser",
-      trackingId: "discover-category-medical",
-    },
-    {
-      name: "Commémoration",
-      icon: "memorials",
-      href: "/discover/memorial-fundraiser",
-      trackingId: "discover-category-memorial",
-    },
-    {
-      name: "Urgences",
-      icon: "emergencies",
-      href: "/discover/emergency-fundraiser",
-      trackingId: "discover-category-emergency",
-    },
-    {
-      name: "Association à but non lucratif",
-      icon: "charity",
-      href: "/discover/charity-fundraiser",
-      trackingId: "discover-category-nonprofit",
-    },
-    {
-      name: "Éducation",
-      icon: "education",
-      href: "/discover/education-fundraiser",
-      trackingId: "discover-category-education",
-    },
-    {
-      name: "Animaux",
-      icon: "animals",
-      href: "/discover/animal-fundraiser",
-      trackingId: "discover-category-animal",
-    },
-    {
-      name: "Environnement",
-      icon: "environment",
-      href: "/discover/environment-fundraiser",
-      trackingId: "discover-category-environment",
-    },
-    {
-      name: "Entreprises",
-      icon: "business",
-      href: "/discover/business-fundraiser",
-      trackingId: "discover-category-business",
-    },
-    {
-      name: "Communauté",
-      icon: "community",
-      href: "/discover/community-fundraiser",
-      trackingId: "discover-category-community",
-    },
-    {
-      name: "Compétition",
-      icon: "trophy",
-      href: "/discover/competition-fundraiser",
-      trackingId: "discover-category-competition",
-    },
-    {
-      name: "Créativité",
-      icon: "creative",
-      href: "/discover/creative-fundraiser",
-      trackingId: "discover-category-creative",
-    },
-    {
-      name: "Événement",
-      icon: "events",
-      href: "/discover/event-fundraiser",
-      trackingId: "discover-category-event",
-    },
-    {
-      name: "Religion",
-      icon: "faith",
-      href: "/discover/faith-fundraiser",
-      trackingId: "discover-category-faith",
-    },
-    {
-      name: "Famille",
-      icon: "family",
-      href: "/discover/family-fundraiser",
-      trackingId: "discover-category-family",
-    },
-    {
-      name: "Sports",
-      icon: "sports",
-      href: "/discover/sports-fundraiser",
-      trackingId: "discover-category-sports",
-    },
-    {
-      name: "Voyages",
-      icon: "travel",
-      href: "/discover/travel-fundraiser",
-      trackingId: "discover-category-travel",
-    },
-    {
-      name: "Bénévolat",
-      icon: "volunteer",
-      href: "/discover/volunteer-fundraiser",
-      trackingId: "discover-category-volunteer",
-    },
-    {
-      name: "Rêves",
-      icon: "wishes",
-      href: "/discover/wishes-fundraiser",
-      trackingId: "discover-category-wishes",
-    },
-  ];
+  // Mapping des catégories de la base vers les icônes et liens
+  const getCategoryIconName = (categoryName: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'Santé': 'medical',
+      'Mémorial': 'memorials',
+      'Urgences': 'emergencies',
+      'Solidarité': 'charity',
+      'Éducation': 'education',
+      'Animaux': 'animals',
+      'Environnement': 'environment',
+      'Entreprises': 'business',
+      'Sport': 'sports',
+      'Culture': 'creative',
+      'Religion': 'faith',
+      'Famille': 'family',
+      'Événements': 'events',
+      'Voyages': 'travel',
+      'Bénévolat': 'volunteer',
+      'Technologie': 'business',
+      'Autre': 'charity'
+    };
+    return iconMap[categoryName] || 'charity';
+  };
+
+  // Génération des catégories depuis la base de données
+  const categories = CATEGORIES.map(category => ({
+    name: category.name,
+    icon: getCategoryIconName(category.name),
+    href: `/discover/${category.name.toLowerCase()}-fundraiser`,
+    trackingId: `discover-category-${category.name.toLowerCase()}`,
+  }));
 
   const featuredCampaigns = [
     {

@@ -20,8 +20,7 @@ import Profile from '../components/profile/Profile';
 import ProfileEdit from '../components/profile/ProfileEdit';
 import Settings from '../components/profile/Settings';
 import Home from '../components/home/Home';
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
+import ConditionalLayout from '../components/layout/ConditionalLayout';
 import CampaignsList from '../components/donation/CampaignsList';
 import CampaignDetail from '../components/donation/CampaignDetail';
 import CreateCampaign from '../components/donation/CreateCampaign';
@@ -31,6 +30,9 @@ import CreateCagnotteWizard from '../features/cagnottes/components/CreateCagnott
 import MyCagnottes from '../features/cagnottes/components/MyCagnottes';
 import CagnotteDetail from '../features/cagnottes/components/CagnotteDetail';
 import EditCagnotte from '../features/cagnottes/components/EditCagnotte';
+import ReportCagnotte from '../components/report/ReportCagnotte';
+import Notifications from '../pages/Notifications';
+import SearchPage from '../pages/SearchPage';
 
 // 🆕 NOUVEAUX : Composants KYC
 import { KYCVerification } from '../components/kyc';
@@ -64,15 +66,10 @@ const Layout = () => (
 // Route configuration using JSX syntax
 export const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={
-      <>
-        <Header />
-        <Outlet />
-        <Footer />
-      </>
-    }>
+    <Route path="/" element={<ConditionalLayout><Outlet /></ConditionalLayout>}>
       <Route index element={<Home />} />
       <Route path="discover" element={<DiscoverPage />} />
+      <Route path="search" element={<SearchPage />} />
       <Route
         path="login"
         element={
@@ -138,6 +135,14 @@ export const router = createBrowserRouter(
         }
       />
       <Route
+        path="notifications"
+        element={
+          <PrivateRoute>
+            <Notifications />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="campaigns"
         element={
           <PrivateRoute>
@@ -171,11 +176,7 @@ export const router = createBrowserRouter(
             />
             <Route
               path="cagnottes/:id"
-              element={
-                <PrivateRoute>
-                  <CagnotteDetail />
-                </PrivateRoute>
-              }
+              element={<CagnotteDetail />}
             />
             <Route
               path="edit/cagnotte/:id"
@@ -185,13 +186,13 @@ export const router = createBrowserRouter(
                 </PrivateRoute>
               }
             />
+            <Route
+              path="report/cagnotte/:id"
+              element={<ReportCagnotte />}
+            />
       <Route
         path="campaigns/:id"
-        element={
-          <PrivateRoute>
-            <CampaignDetail />
-          </PrivateRoute>
-        }
+        element={<CampaignDetail />}
       />
       <Route
         path="admin"

@@ -39,32 +39,37 @@ model User {
   kycAuditLogs       KYCAuditLog[]
   kycVerification    KYCVerification?
   promises           Promise[]        @relation("PromiseContributor")
+  notifications      Notification[]
 }
 
 model Cagnotte {
-  id            String           @id @default(uuid())
-  title         String
-  description   String
-  goalAmount    Float
-  currentAmount Float            @default(0)
-  startDate     DateTime         @default(now())
-  endDate       DateTime
-  status        CagnotteStatus   @default(DRAFT)
-  creatorId     String
-  beneficiaryId String
-  categoryId    String
-  coverImage    String?
-  coverVideo    String?
-  mediaType     String?
-  mediaFilename String?
-  currentStep   Int              @default(1) // Étape actuelle du wizard (1-5)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  beneficiary   User             @relation("CagnotteBeneficiary", fields: [beneficiaryId], references: [id])
-  category      Category         @relation(fields: [categoryId], references: [id])
-  creator       User             @relation("CagnotteCreator", fields: [creatorId], references: [id])
-  reports       CagnotteReport[]
-  promises      Promise[]
+  id              String           @id @default(uuid())
+  title           String
+  description     String
+  goalAmount      Float
+  currentAmount   Float            @default(0)
+  startDate       DateTime         @default(now())
+  endDate         DateTime
+  status          CagnotteStatus   @default(DRAFT)
+  creatorId       String
+  beneficiaryId   String
+  categoryId      String
+  coverImage      String?
+  coverVideo      String?
+  mediaType       String?
+  mediaFilename   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  currentStep     Int              @default(1)
+  beneficiaryType String?          @default("self")
+  country         String?          @default("Tunisie")
+  postalCode      String?
+  currency        String?          @default("TND")
+  beneficiary     User             @relation("CagnotteBeneficiary", fields: [beneficiaryId], references: [id])
+  category        Category         @relation(fields: [categoryId], references: [id])
+  creator         User             @relation("CagnotteCreator", fields: [creatorId], references: [id])
+  reports         CagnotteReport[]
+  promises        Promise[]
 }
 
 model Promise {
@@ -144,7 +149,8 @@ model AccountRequest {
 model CagnotteReport {
   id            String       @id @default(uuid())
   cagnotteId    String
-  reporterType  ReporterType
+  type          ReportType   @default(OTHER)
+  priority      Priority     @default(MEDIUM)
   reason        String
   description   String
   reporterName  String
@@ -159,6 +165,8 @@ model CagnotteReport {
 
   @@index([cagnotteId])
   @@index([status])
+  @@index([type])
+  @@index([priority])
   @@index([createdAt])
 }
 
@@ -211,15 +219,52 @@ enum RiskLevel {
   BLOCKED
 }
 
-enum ReporterType {
-  DONOR
-  BENEFICIARY
-  OTHER
-}
-
 enum ReportStatus {
   PENDING
   UNDER_REVIEW
   RESOLVED
   DISMISSED
+}
+
+enum ReportType {
+  FRAUD
+  INAPPROPRIATE
+  SPAM
+  DUPLICATE
+  COMMENT
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String           @db.Text
+  read        Boolean          @default(false)
+  actionUrl   String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([read])
+}
+
+enum NotificationType {
+  SYSTEM
+  DONATION
+  CAGNOTTE
+  COMMENT
+  REPORT
+  ADMIN
 }

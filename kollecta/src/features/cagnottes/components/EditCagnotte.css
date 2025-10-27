@@ -53,7 +53,7 @@
 
 .progress-fill {
   height: 100%;
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   transition: width 0.3s ease;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .progress-steps .step.active {
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   color: white;
   box-shadow: 0 2px 8px rgba(0, 166, 81, 0.3);
 }
@@ -205,7 +205,7 @@
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #00a651;
+  border-color: var(--kollecta-primary);
   box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.1);
 }
 
@@ -224,7 +224,7 @@
 }
 
 .form-group input[type="file"]:hover {
-  border-color: #00a651;
+  border-color: var(--kollecta-primary);
   background-color: #f0f8f0;
 }
 
@@ -255,7 +255,7 @@
 }
 
 .radio-option:hover {
-  border-color: #00a651;
+  border-color: var(--kollecta-primary);
   background-color: #f8f9fa;
 }
 
@@ -313,7 +313,7 @@
 
 .preview-amount {
   font-weight: 600;
-  color: #00a651;
+  color: var(--kollecta-primary);
   font-size: 16px;
 }
 
@@ -375,12 +375,12 @@
 }
 
 .btn-primary {
-  background-color: #00a651;
+  background-color: var(--kollecta-primary);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #008f47;
+  background-color: var(--kollecta-primary-dark);
 }
 
 .btn-primary:disabled {

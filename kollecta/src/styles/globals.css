@@ -7,7 +7,13 @@
 }
 
 :root {
+  /* Couleurs Kollecta - Système unifié */
   --green-primary: #00b289;
+  --kollecta-primary: #00b289;
+  --kollecta-primary-light: #33c2a3;
+  --kollecta-primary-dark: #008f73;
+  --kollecta-gradient-primary: linear-gradient(135deg, #00b289 0%, #008f73 100%);
+  
   --gray-dark: #333;
   --gray-light: #f8f8f8;
   --white: #fff;
@@ -197,13 +203,13 @@ body {
   border-radius: 0 0 0.5rem 0.5rem;
 }
 
-/* Header GoFundMe pour utilisateur non connecté - STYLES DÉTAILLÉS */
+/* Header Kollecta pour utilisateur non connecté - STYLES DÉTAILLÉS */
 .header_homepage-header-fixed__JbfMx {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 1000;
+  z-index: 9999;
   background-color: transparent;
   transition: background-color 0.3s ease;
 }
@@ -277,6 +283,7 @@ body {
 .hrt-header--fixed {
   position: fixed;
   width: 100%;
+  z-index: 9999;
 }
 
 /* SKIP NAV */
@@ -287,7 +294,7 @@ body {
   padding: 8px;
   background: var(--white);
   color: var(--green-primary);
-  z-index: 1001;
+  z-index: 10000;
   text-decoration: none;
   font-weight: 500;
 }
@@ -380,7 +387,7 @@ body {
 }
 
 /* LOGO */
-.hrt-gfm-logo {
+.hrt-kollecta-logo {
   width: 105px;
   height: 36px;
   color: var(--green-primary);
@@ -391,7 +398,7 @@ body {
 }
 
 /* Correction pour le logo Kollecta */
-.hrt-header-center img.hrt-gfm-logo {
+.hrt-header-center img.hrt-kollecta-logo {
   width: 105px;
   height: 36px;
   object-fit: contain;
@@ -1284,7 +1291,7 @@ input:focus {
 }
 
 .hover-text-green:hover {
-  color: #059669;
+  color: var(--kollecta-primary-dark);
 }
 
 .hover-shadow:hover {
@@ -2400,6 +2407,12 @@ input:focus {
   transition: all 0.3s ease;
 }
 
+.cagnottes-grid {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+
 .cagnotte-featured {
   flex: 1.5;
 }
@@ -2694,6 +2707,11 @@ input:focus {
   
   .cagnottes-page-indicator {
     margin-bottom: 20px;
+  }
+  
+  .cagnottes-grid {
+    flex-direction: column;
+    gap: 20px;
   }
   
   .cagnottes-list {

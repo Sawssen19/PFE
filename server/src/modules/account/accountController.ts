@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { EmailService } from '../../services/emailService';
+import { emailConfig } from '../../config/emailConfig';
 
 const prisma = new PrismaClient();
 
@@ -58,7 +59,7 @@ export const createAccountRequest = async (req: Request, res: Response) => {
 async function sendNotificationEmails(accountRequest: any) {
   try {
     // Email à l'équipe Kollecta
-    const teamEmail = 'sawssen.yazidi@sesame.com.tn'; // Email de l'équipe Kollecta
+    const teamEmail = emailConfig.ADMIN_EMAIL; // Email de l'équipe Kollecta
     const teamSubject = `🚨 Nouvelle demande de ${accountRequest.requestType === 'DELETION' ? 'suppression' : 'désactivation'} de compte`;
     const teamHtml = generateTeamEmailHTML(accountRequest);
     const teamText = generateTeamEmailText(accountRequest);

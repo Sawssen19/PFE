@@ -103,6 +103,13 @@ const CampaignDetail: React.FC = () => {
   const daysLeft = campaign ? Math.ceil((new Date(campaign.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
   const handleDonate = () => {
+    // Vérifier si l'utilisateur est connecté
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Rediriger vers la page de connexion avec un message
+      navigate('/login?message=connectez-vous pour faire un don');
+      return;
+    }
     setDonationDialog(true);
   };
 
@@ -312,8 +319,8 @@ const CampaignDetail: React.FC = () => {
                 onClick={handleDonate}
                 startIcon={<EuroIcon />}
                 sx={{
-                  bgcolor: '#02a95c',
-                  '&:hover': { bgcolor: '#02884a' },
+                  bgcolor: '#00b289',
+                  '&:hover': { bgcolor: '#008f73' },
                   mb: 2
                 }}
               >
@@ -379,7 +386,7 @@ const CampaignDetail: React.FC = () => {
             onClick={handleDonationSubmit}
             variant="contained"
             disabled={isDonating}
-            sx={{ bgcolor: '#02a95c', '&:hover': { bgcolor: '#02884a' } }}
+            sx={{ bgcolor: '#00b289', '&:hover': { bgcolor: '#008f73' } }}
           >
             {isDonating ? <CircularProgress size={20} /> : 'Confirmer le don'}
           </Button>

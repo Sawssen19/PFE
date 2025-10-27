@@ -3,6 +3,27 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { selectUser, selectIsAuthenticated, logout } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
+import { HERO_CATEGORIES, MAIN_FILTER_CATEGORIES, MORE_CATEGORIES } from '../../constants/categories';
+
+// Types pour les cagnottes
+interface Cagnotte {
+  id: number;
+  cagnotteId?: string; // ID de la cagnotte dans la base de données (pour l'API)
+  title: string;
+  description: string;
+  image: string;
+  donations: string;
+  collected: string;
+  progress: number;
+  category: string;
+  goal?: string;
+  daysLeft?: string;
+}
+
+interface CagnottePage {
+  featured: Cagnotte;
+  small: Cagnotte[];
+}
 
 const Home = () => {
   const navigate = useNavigate();
@@ -12,197 +33,415 @@ const Home = () => {
   const [currentCategory, setCurrentCategory] = useState(0);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [currentCagnottesPage, setCurrentCagnottesPage] = useState(0);
+  const [activeFilter, setActiveFilter] = useState('Toutes');
+  const [showMoreCategories, setShowMoreCategories] = useState(false);
+  const [loadingCagnottes, setLoadingCagnottes] = useState(false);
 
-  const categories = [
-    { name: 'Votre cause', image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' },
-    { name: 'Santé', image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' },
-    { name: 'Urgences', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' },
-    { name: 'Entreprises', image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' },
-    { name: 'Animaux', image: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' },
-    { name: 'Éducation', image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' }
-  ];
+  // Catégories pour le carousel hero
+  const categories = HERO_CATEGORIES;
+
+  // Catégories supplémentaires pour le menu déroulant "Plus"
+  const moreCategories = MORE_CATEGORIES;
 
   // Mapping des titres vers les IDs des cagnottes en base
   const cagnotteIds = {
-    "Aider Youssef à vaincre le cancer": "47593359-2982-418a-a984-e23cd5b1b032",
-    "Bourse d'étude pour Amina": "1dc5b7fc-dd14-4609-91f5-f9b672181fbf",
-    "Reconstruction maison familiale": "b56c96ba-ab8d-40af-9294-1b267885e4a4",
+    "Aider Youssef à vaincre le cancer": "ee62b2f6-2277-43e7-ad4b-bfbb17e344a2",
+    "Bourse d'étude pour Amina": "e944a7d7-4626-4636-9ba1-b2bd6fac3ef1",
+    "Reconstruction maison familiale": "9632ed69-18cb-41e7-bd9e-e4f73ef8213d",
     "Soins pour Noura": "c8d4ff6d-571e-46e6-8c3c-172c40656145",
     "Startup écologique": "d009acee-a262-4fec-a1f0-ed89ce1627e8",
     "Aide aux sinistrés de Sfax": "c85713b4-07b6-405b-8245-f98679449e5c",
     "Équipement pour école rurale": "6e5616b2-8850-48be-8ba6-a0a043779301",
-    "Soins vétérinaires pour refuge": "9c54f59b-e518-4f17-b562-15e916a21b6c",
+    "Soins vétérinaires pour refuge": "219bbc6c-2f06-47fc-8182-9b644cbc77b9",
     "Formation professionnelle": "c188442a-529b-489f-8964-3773a362c8d5",
-    "Aide aux personnes âgées": "34646f77-f7ac-433c-92fa-e4c9fbf59a3c",
-    "Projet agricole communautaire": "1930a69c-b1a6-43a4-8a99-e03f4e7e007c",
+    "Aide aux personnes âgées": "55611946-f06a-4c83-ac83-68e47f884512",
+    "Projet agricole communautaire": "82002d3d-ea29-4eb1-9390-4145c3193772",
     "Bibliothèque mobile": "043f88f0-77bb-44f6-9ea3-63360e6d0eef",
     "Centre de réhabilitation": "aa24d11d-714a-44dc-8b21-69a0893c0fd8",
-    "Projet artistique": "33903430-caa6-488f-80e9-ba58b5fbfd95",
-    "Aide alimentaire d'urgence": "39e95d47-ffb-4636-8ff3-629c715eff9f",
+    "Projet artistique": "12472c9d-50d7-47c6-b366-71066b25aac1",
+    "Aide alimentaire d'urgence": "39e95d47-ff6b-4636-8ff3-629c715eff9f",
     "Aide Saeb à poursuivre ses études en informatique": "30afa078-48d9-4283-b65c-44f6b1a65182",
     "Bourse d'études pour Nour en médecine": "14f1fb5c-ccdc-4d29-9222-25685b430fbf",
     "Équipement informatique pour l'école rurale": "b29a33a9-2d0c-4fbb-ab27-0ddd9ccf6f58"
   };
 
-  // Données de cagnottes organisées par pages
-  const cagnottesData = [
-    // Page 1 - Cagnottes actuelles
+  // Toutes les cagnottes avec leurs catégories
+  const allCagnottes: Cagnotte[] = [
     {
-      featured: {
-        id: 1,
-        title: "Aider Youssef à vaincre le cancer",
-        description: "Soutien pour le traitement de Youssef, 8 ans, atteint d'une leucémie aiguë",
-        image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
-        donations: "2,458 dons",
-        collected: "78 000 DT",
-        goal: "100 000 DT",
-        progress: 78,
-        daysLeft: "22 jours restants"
-      },
-      small: [
-        {
-          id: 2,
-          title: "Bourse d'étude pour Amina",
-          description: "Permettre à Amina de poursuivre ses études d'ingénieur",
-          image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "756 dons",
-          collected: "13 000 DT",
-          progress: 65
-        },
-        {
-          id: 3,
-          title: "Reconstruction maison familiale",
-          description: "Aide pour la famille Ben Ali après l'incendie de leur maison",
-          image: "https://images.unsplash.com/photo-1521791055366-0d553872125f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "1,245 dons",
-          collected: "46 000 DT",
-          progress: 92
-        },
-        {
-          id: 4,
-          title: "Soins pour Noura",
-          description: "Traitement médical urgent pour Noura, 5 ans",
-          image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "1,842 dons",
-          collected: "22 500 DT",
-          progress: 45
-        },
-        {
-          id: 5,
-          title: "Startup écologique",
-          description: "Soutien à un jeune entrepreneur tunisien",
-          image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "523 dons",
-          collected: "16 000 DT",
-          progress: 32
-        }
-      ]
+      id: 1,
+      title: "Aider Youssef à vaincre le cancer",
+      description: "Soutien pour le traitement de Youssef, 8 ans, atteint d'une leucémie aiguë",
+      image: "http://localhost:3000/uploads/cagnottes/youssef.webp",
+      donations: "2,458 dons",
+      collected: "78 000 DT",
+      goal: "100 000 DT",
+      progress: 78,
+      daysLeft: "22 jours restants",
+      category: "Santé"
     },
-    // Page 2 - Nouvelles cagnottes
     {
-      featured: {
-        id: 6,
-        title: "Aide aux sinistrés de Sfax",
-        description: "Soutien aux familles touchées par les inondations récentes",
-        image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
-        donations: "3,127 dons",
-        collected: "125 000 DT",
-        goal: "200 000 DT",
-        progress: 62,
-        daysLeft: "15 jours restants"
-      },
-      small: [
-        {
-          id: 7,
-          title: "Équipement pour école rurale",
-          description: "Fournitures scolaires pour l'école primaire de Douz",
-          image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "892 dons",
-          collected: "28 500 DT",
-          progress: 71
-        },
-        {
-          id: 8,
-          title: "Soins vétérinaires pour refuge",
-          description: "Aide au refuge pour animaux abandonnés de Tunis",
-          image: "https://images.unsplash.com/photo-1450778869180-41d0601e046e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "1,634 dons",
-          collected: "34 200 DT",
-          progress: 68
-        },
-        {
-          id: 9,
-          title: "Formation professionnelle",
-          description: "Formation en informatique pour jeunes défavorisés",
-          image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "445 dons",
-          collected: "18 750 DT",
-          progress: 47
-        },
-        {
-          id: 10,
-          title: "Aide aux personnes âgées",
-          description: "Soutien pour les soins à domicile des seniors isolés",
-          image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "2,156 dons",
-          collected: "67 800 DT",
-          progress: 85
-        }
-      ]
+      id: 2,
+      title: "Bourse d'étude pour Amina",
+      description: "Permettre à Amina de poursuivre ses études d'ingénieur",
+      image: "http://localhost:3000/uploads/cagnottes/Bourses-amina.webp",
+      donations: "756 dons",
+      collected: "13 000 DT",
+      progress: 65,
+      category: "Éducation"
     },
-    // Page 3 - Autres cagnottes
     {
-      featured: {
-        id: 11,
-        title: "Projet agricole communautaire",
-        description: "Développement d'une ferme coopérative dans le sud tunisien",
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
-        donations: "1,789 dons",
-        collected: "89 500 DT",
-        goal: "150 000 DT",
-        progress: 60,
-        daysLeft: "8 jours restants"
-      },
-      small: [
-        {
-          id: 12,
-          title: "Bibliothèque mobile",
-          description: "Camion-bibliothèque pour les villages isolés",
-          image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "567 dons",
-          collected: "22 300 DT",
-          progress: 56
-        },
-        {
-          id: 13,
-          title: "Centre de réhabilitation",
-          description: "Centre pour personnes en situation de handicap",
-          image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "2,891 dons",
-          collected: "156 000 DT",
-          progress: 78
-        },
-        {
-          id: 14,
-          title: "Projet artistique",
-          description: "Ateliers d'art pour enfants des quartiers populaires",
-          image: "https://images.unsplash.com/photo-1521791055366-0d553872125f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "734 dons",
-          collected: "19 800 DT",
-          progress: 40
-        },
-        {
-          id: 15,
-          title: "Aide alimentaire d'urgence",
-          description: "Distribution de paniers alimentaires aux plus démunis",
-          image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-          donations: "4,123 dons",
-          collected: "203 500 DT",
-          progress: 92
-        }
-      ]
+      id: 3,
+      title: "Reconstruction maison familiale",
+      description: "Aide pour la famille Ben Ali après l'incendie de leur maison",
+      image: "http://localhost:3000/uploads/cagnottes/incendie.jpg",
+      donations: "1,245 dons",
+      collected: "46 000 DT",
+      progress: 92,
+      category: "Urgences"
+    },
+    {
+      id: 4,
+      title: "Soins pour Noura",
+      description: "Traitement médical urgent pour Noura, 5 ans",
+      image: "http://localhost:3000/uploads/cagnottes/aide%20noura.jpg",
+      donations: "1,842 dons",
+      collected: "22 500 DT",
+      progress: 45,
+      category: "Santé"
+    },
+    {
+      id: 5,
+      title: "Startup écologique",
+      description: "Soutien à un jeune entrepreneur tunisien",
+      image: "	http://localhost:3000/uploads/cagnottes/innovation%20%C3%A9cologie.avif",
+      donations: "523 dons",
+      collected: "16 000 DT",
+      progress: 32,
+      category: "Entreprises"
+    },
+    {
+      id: 6,
+      title: "Aide aux sinistrés de Sfax",
+      description: "Soutien aux familles touchées par les inondations récentes",
+      image: "http://localhost:3000/uploads/cagnottes/1639410564746.jpg",
+      donations: "3,127 dons",
+      collected: "125 000 DT",
+      goal: "200 000 DT",
+      progress: 62,
+      daysLeft: "15 jours restants",
+      category: "Urgences"
+    },
+    {
+      id: 7,
+      title: "Équipement pour école rurale",
+      description: "Fournitures scolaires pour l'école primaire de Douz",
+      image: "http://localhost:3000/uploads/cagnottes/pack-princess-pack-princess-03.jpg",
+      donations: "892 dons",
+      collected: "28 500 DT",
+      progress: 71,
+      category: "Éducation"
+    },
+    {
+      id: 8,
+      title: "Soins vétérinaires pour refuge",
+      description: "Aide au refuge pour animaux abandonnés de Tunis",
+      image: "http://localhost:3000/uploads/cagnottes/animals%20tunis.jpg",
+      donations: "1,634 dons",
+      collected: "34 200 DT",
+      progress: 68,
+      category: "Santé"
+    },
+    {
+      id: 9,
+      title: "Formation professionnelle",
+      description: "Formation en informatique pour jeunes défavorisés",
+      image: "http://localhost:3000/uploads/cagnottes/centre-de-formation-d-informatique-en-sfax_.jpg",
+      donations: "445 dons",
+      collected: "18 750 DT",
+      progress: 47,
+      category: "Éducation"
+    },
+    {
+      id: 10,
+      title: "Aide aux personnes âgées",
+      description: "Soutien pour les soins à domicile des seniors isolés",
+      image: "http://localhost:3000/uploads/cagnottes/personnes%20%C3%A2g%C3%A9es.jpg",
+      donations: "2,156 dons",
+      collected: "67 800 DT",
+      progress: 85,
+      category: "Santé"
+    },
+    {
+      id: 11,
+      title: "Projet agricole communautaire",
+      description: "Développement d'une ferme coopérative dans le sud tunisien",
+      image: "http://localhost:3000/uploads/cagnottes/societe_agricole.jpg",
+      donations: "1,789 dons",
+      collected: "89 500 DT",
+      goal: "150 000 DT",
+      progress: 60,
+      daysLeft: "8 jours restants",
+      category: "Entreprises"
+    },
+    {
+      id: 12,
+      title: "Bibliothèque mobile",
+      description: "Camion-bibliothèque pour les villages isolés",
+      image: "	http://localhost:3000/uploads/cagnottes/Camion-biblioth%C3%A8que.avif",
+      donations: "567 dons",
+      collected: "22 300 DT",
+      progress: 56,
+      category: "Éducation"
+    },
+    {
+      id: 13,
+      title: "Centre de réhabilitation",
+      description: "Centre pour personnes en situation de handicap",
+      image: "http://localhost:3000/uploads/cagnottes/Centre%20de%20r%C3%A9habilitation.webp",
+      donations: "2,891 dons",
+      collected: "156 000 DT",
+      progress: 78,
+      category: "Santé"
+    },
+    {
+      id: 14,
+      title: "Projet artistique",
+      description: "Ateliers d'art pour enfants des quartiers populaires",
+      image: "http://localhost:3000/uploads/cagnottes/K-LIVE-KIDS-atelierrrr.png",
+      donations: "734 dons",
+      collected: "19 800 DT",
+      progress: 40,
+      category: "Éducation"
+    },
+    {
+      id: 15,
+      title: "Aide alimentaire d'urgence",
+      description: "Distribution de paniers alimentaires aux plus démunis",
+      image: "http://localhost:3000/uploads/cagnottes/boite-donation.jpg",
+      donations: "4,123 dons",
+      collected: "203 500 DT",
+      progress: 92,
+      category: "Urgences"
+    },
+    // Cagnottes pour les nouvelles catégories
+    {
+      id: 16,
+      title: "Refuge pour animaux abandonnés",
+      description: "Construction d'un nouveau refuge pour chiens et chats errants",
+      image: "http://localhost:3000/uploads/cagnottes/refuge-animaux.jpg",
+      donations: "1,234 dons",
+      collected: "45 000 DT",
+      progress: 60,
+      category: "Animaux"
+    },
+    {
+      id: 17,
+      title: "Startup technologique",
+      description: "Développement d'une application mobile innovante",
+      image: "http://localhost:3000/uploads/cagnottes/startup-tech.jpg",
+      donations: "856 dons",
+      collected: "67 500 DT",
+      progress: 45,
+      category: "Technologie"
+    },
+    {
+      id: 18,
+      title: "Festival de musique locale",
+      description: "Organisation d'un festival pour promouvoir les artistes tunisiens",
+      image: "http://localhost:3000/uploads/cagnottes/festival-musique.jpg",
+      donations: "2,145 dons",
+      collected: "89 000 DT",
+      progress: 74,
+      category: "Culture"
+    },
+    {
+      id: 19,
+      title: "Équipement sportif pour jeunes",
+      description: "Achat d'équipements pour le club de football local",
+      image: "http://localhost:3000/uploads/cagnottes/sport-equipement.jpg",
+      donations: "1,567 dons",
+      collected: "34 200 DT",
+      progress: 68,
+      category: "Sport"
+    },
+    {
+      id: 20,
+      title: "Construction d'une mosquée",
+      description: "Financement de la construction d'une mosquée dans le quartier",
+      image: "http://localhost:3000/uploads/cagnottes/mosquee-construction.jpg",
+      donations: "3,245 dons",
+      collected: "156 800 DT",
+      progress: 78,
+      category: "Religion"
+    },
+    // Cagnottes supplémentaires pour les catégories manquantes
+    {
+      id: 21,
+      title: "Projet de reforestation",
+      description: "Planter des arbres pour lutter contre la désertification",
+      image: "http://localhost:3000/uploads/cagnottes/environnement.jpg",
+      donations: "1,856 dons",
+      collected: "67 300 DT",
+      progress: 55,
+      category: "Environnement"
+    },
+    {
+      id: 22,
+      title: "Centre culturel local",
+      description: "Création d'un espace culturel pour jeunes artistes",
+      image: "http://localhost:3000/uploads/cagnottes/culture.jpg",
+      donations: "2,134 dons",
+      collected: "89 200 DT",
+      progress: 71,
+      category: "Culture"
+    },
+    {
+      id: 23,
+      title: "Mémorial pour les héros",
+      description: "Ériger un monument en mémoire des héros locaux",
+      image: "http://localhost:3000/uploads/cagnottes/memorial.jpg",
+      donations: "4,567 dons",
+      collected: "234 500 DT",
+      progress: 88,
+      category: "Mémorial"
+    },
+    {
+      id: 24,
+      title: "Projet de solidarité communautaire",
+      description: "Aide aux familles les plus démunies du quartier",
+      image: "http://localhost:3000/uploads/cagnottes/solidarite.jpg",
+      donations: "3,789 dons",
+      collected: "145 600 DT",
+      progress: 76,
+      category: "Solidarité"
+    },
+    {
+      id: 25,
+      title: "Programme de bénévolat",
+      description: "Organiser des actions bénévoles pour la communauté",
+      image: "http://localhost:3000/uploads/cagnottes/benevolat.jpg",
+      donations: "1,234 dons",
+      collected: "45 800 DT",
+      progress: 61,
+      category: "Bénévolat"
+    },
+    {
+      id: 26,
+      title: "Soutien aux familles monoparentales",
+      description: "Aide aux mères célibataires et leurs enfants",
+      image: "http://localhost:3000/uploads/cagnottes/famille.jpg",
+      donations: "2,456 dons",
+      collected: "78 900 DT",
+      progress: 68,
+      category: "Famille"
+    },
+    {
+      id: 27,
+      title: "Festival de musique en plein air",
+      description: "Organisation d'un événement musical pour la jeunesse",
+      image: "http://localhost:3000/uploads/cagnottes/evenements.jpg",
+      donations: "3,567 dons",
+      collected: "112 400 DT",
+      progress: 74,
+      category: "Événements"
+    },
+    {
+      id: 28,
+      title: "Aventure écologique au désert",
+      description: "Expedition éco-responsable pour jeunes aventuriers",
+      image: "http://localhost:3000/uploads/cagnottes/voyages.jpg",
+      donations: "1,123 dons",
+      collected: "34 600 DT",
+      progress: 52,
+      category: "Voyages"
+    },
+    {
+      id: 29,
+      title: "Projet innovant divers",
+      description: "Soutenir une cause unique et innovante",
+      image: "http://localhost:3000/uploads/cagnottes/autre.jpg",
+      donations: "876 dons",
+      collected: "28 500 DT",
+      progress: 43,
+      category: "Autre"
     }
   ];
+
+  // Charger les cagnottes depuis l'API
+  const [allCagnottesFromAPI, setAllCagnottesFromAPI] = useState<Cagnotte[]>([]);
+
+  useEffect(() => {
+    const fetchCagnottes = async () => {
+      setLoadingCagnottes(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/cagnottes?status=ACTIVE&limit=50');
+        if (response.ok) {
+          const result = await response.json();
+          const cagnottes = result.data.cagnottes || result.data || [];
+          
+          // Transformer les données de l'API en format Cagnotte
+          const transformedCagnottes: Cagnotte[] = cagnottes.map((cagnotte: any, index: number) => ({
+            id: cagnotte.id || index + 1,
+            cagnotteId: cagnotte.id, // 👈 Ajouter l'ID de la cagnotte de la base de données
+            title: cagnotte.title,
+            description: cagnotte.description,
+            image: cagnotte.coverImage || "http://localhost:3000/uploads/cagnottes/default.jpg",
+            donations: `${cagnotte.donations?.length || 0} dons`,
+            collected: `${(cagnotte.currentAmount || 0).toLocaleString()} DT`,
+            goal: `${(cagnotte.goalAmount || 0).toLocaleString()} DT`,
+            progress: cagnotte.goalAmount ? Math.round((cagnotte.currentAmount / cagnotte.goalAmount) * 100) : 0,
+            daysLeft: cagnotte.endDate ? `Jours restants: ${Math.ceil((new Date(cagnotte.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}` : undefined,
+            category: cagnotte.category?.name || "Autre"
+          }));
+          
+          setAllCagnottesFromAPI(transformedCagnottes);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des cagnottes:', error);
+        // En cas d'erreur, utiliser les cagnottes statiques
+        setAllCagnottesFromAPI(allCagnottes);
+      } finally {
+        setLoadingCagnottes(false);
+      }
+    };
+
+    fetchCagnottes();
+  }, []);
+
+  // Filtrage des cagnottes par catégorie
+  const getFilteredCagnottes = () => {
+    // Utiliser les cagnottes de l'API si disponibles, sinon les statiques
+    const cagnottesToFilter = allCagnottesFromAPI.length > 0 ? allCagnottesFromAPI : allCagnottes;
+    
+    if (activeFilter === 'Toutes') {
+      return cagnottesToFilter;
+    }
+    return cagnottesToFilter.filter(cagnotte => cagnotte.category === activeFilter);
+  };
+
+  const filteredCagnottes = getFilteredCagnottes();
+
+  // Organisation des cagnottes filtrées en pages (1 featured + 4 small par page)
+  const organizeCagnottesIntoPages = (): CagnottePage[] => {
+    const pages: CagnottePage[] = [];
+    const cagnottes = [...filteredCagnottes];
+    
+    while (cagnottes.length > 0) {
+      const featured = cagnottes.shift(); // Premier élément comme featured
+      const small = cagnottes.splice(0, 4); // Les 4 suivants comme small
+      
+      if (featured) {
+        pages.push({ featured, small });
+      }
+    }
+    
+    return pages.length > 0 ? pages : [{
+      featured: filteredCagnottes[0] || allCagnottes[0],
+      small: []
+    }];
+  };
+
+  const cagnottesData: CagnottePage[] = organizeCagnottesIntoPages();
 
   // Gestion de la responsivité
   useEffect(() => {
@@ -253,6 +492,43 @@ const Home = () => {
     setCurrentCagnottesPage((prev) => (prev - 1 + cagnottesData.length) % cagnottesData.length);
   };
 
+  // Gestion des filtres de catégories
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    setCurrentCagnottesPage(0); // Réinitialiser à la première page lors du changement de filtre
+    setShowMoreCategories(false); // Fermer le menu déroulant
+  };
+
+  // Gestion du menu déroulant "Plus"
+  const toggleMoreCategories = () => {
+    setShowMoreCategories(!showMoreCategories);
+  };
+
+  // Réinitialiser la page si elle dépasse le nombre de pages disponibles
+  useEffect(() => {
+    if (currentCagnottesPage >= cagnottesData.length && cagnottesData.length > 0) {
+      setCurrentCagnottesPage(0);
+    }
+  }, [activeFilter, cagnottesData.length, currentCagnottesPage]);
+
+  // Fermer le menu déroulant quand on clique à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.filter-more-container')) {
+        setShowMoreCategories(false);
+      }
+    };
+
+    if (showMoreCategories) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMoreCategories]);
+
   useEffect(() => {
     const interval = setInterval(nextCategory, 4000);
     return () => clearInterval(interval);
@@ -265,10 +541,57 @@ const Home = () => {
   };
 
   // Données actuelles des cagnottes
-  const currentCagnottes = cagnottesData[currentCagnottesPage];
+  const currentCagnottes = cagnottesData[currentCagnottesPage] || cagnottesData[0];
 
   return (
     <div className="home-hero-bubbles">
+      {/* Styles pour le menu déroulant */}
+      <style>{`
+        @keyframes dropdownFadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+        
+        @keyframes dropdownFadeOut {
+          from {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+          }
+        }
+        
+        .more-categories-dropdown {
+          animation: dropdownFadeIn 0.2s ease-out;
+        }
+        
+        @media (max-width: 768px) {
+          .more-categories-dropdown {
+            left: 0 !important;
+            transform: none !important;
+            width: 100% !important;
+          }
+          
+          @keyframes dropdownFadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        }
+      `}</style>
       {/* Hero Section avec bulles */}
       <div className="hero-bubbles_heroContent">
         <div className="hrt-container">
@@ -415,17 +738,123 @@ const Home = () => {
           <div className="cagnottes-controls">
             {/* Filtres */}
             <div className="cagnottes-filters">
-              <button className="filter-button filter-active">Toutes</button>
-              <button className="filter-button">Santé</button>
-              <button className="filter-button">Éducation</button>
-              <button className="filter-button">Urgences</button>
-              <button className="filter-button">Entrepreneuriat</button>
-              <button className="filter-button filter-more">
-                Plus
-                <svg className="filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
+              <button 
+                className={`filter-button ${activeFilter === 'Toutes' ? 'filter-active' : ''}`}
+                onClick={() => handleFilterChange('Toutes')}
+              >
+                Toutes
               </button>
+              {MAIN_FILTER_CATEGORIES.map((category) => (
+                <button 
+                  key={category}
+                  className={`filter-button ${activeFilter === category ? 'filter-active' : ''}`}
+                  onClick={() => handleFilterChange(category)}
+                >
+                  {category}
+                </button>
+              ))}
+              <div className="filter-more-container" style={{ position: 'relative', display: 'inline-block' }}>
+                <button 
+                  className={`filter-button filter-more ${showMoreCategories ? 'active' : ''}`}
+                  onClick={toggleMoreCategories}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    position: 'relative',
+                    zIndex: 1001
+                  }}
+                >
+                  Plus
+                  <svg 
+                    className={`filter-icon ${showMoreCategories ? 'rotated' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    style={{ 
+                      transform: showMoreCategories ? 'rotate(180deg)' : 'rotate(0deg)', 
+                      transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      width: '16px',
+                      height: '16px'
+                    }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                
+                {/* Menu déroulant */}
+                {showMoreCategories && (
+                  <div 
+                    className="more-categories-dropdown"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      minWidth: windowWidth > 768 ? '200px' : '160px',
+                      maxWidth: windowWidth > 768 ? '250px' : '200px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
+                      zIndex: 1000,
+                      padding: '12px 0',
+                      marginTop: '4px',
+                      backdropFilter: 'blur(10px)',
+                      animation: 'dropdownFadeIn 0.2s ease-out'
+                    }}
+                  >
+                    {moreCategories.map((category, index) => (
+                      <button
+                        key={index}
+                        className={`dropdown-category-button ${activeFilter === category ? 'active' : ''}`}
+                        onClick={() => handleFilterChange(category)}
+                        style={{
+                          width: '100%',
+                          padding: windowWidth > 768 ? '12px 20px' : '10px 16px',
+                          border: 'none',
+                          backgroundColor: activeFilter === category ? '#f0fdf4' : 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: windowWidth > 768 ? '14px' : '13px',
+                          fontWeight: activeFilter === category ? '600' : '400',
+                          color: activeFilter === category ? '#16a34a' : '#374151',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          position: 'relative'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (activeFilter !== category) {
+                            e.currentTarget.style.backgroundColor = '#f9fafb';
+                            e.currentTarget.style.color = '#1f2937';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (activeFilter !== category) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#374151';
+                          }
+                        }}
+                      >
+                        {activeFilter === category && (
+                          <div 
+                            style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              backgroundColor: '#16a34a',
+                              flexShrink: 0
+                            }}
+                          />
+                        )}
+                        <span>{category}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Navigation */}
@@ -463,10 +892,32 @@ const Home = () => {
           </div>
 
           {/* Grille des cagnottes */}
-          <div className="cagnottes-grid">
-            {/* Cagnotte principale (à gauche) */}
-            <div className="cagnotte-featured">
-              <a className="cagnotte-link" href={`/cagnottes/${cagnotteIds[currentCagnottes.featured.title] || '#'}`}>
+          {loadingCagnottes ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#666' }}>
+              <p style={{ fontSize: '18px' }}>Chargement des cagnottes...</p>
+            </div>
+          ) : filteredCagnottes.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#666' }}>
+              <p style={{ fontSize: '18px', marginBottom: '10px' }}>Aucune cagnotte trouvée dans cette catégorie</p>
+              <p style={{ fontSize: '14px' }}>Essayez une autre catégorie ou consultez toutes les cagnottes</p>
+            </div>
+          ) : (
+            <div className="cagnottes-grid">
+              {/* Cagnotte principale (à gauche) */}
+              <div className="cagnotte-featured">
+              <div 
+                className="cagnotte-link" 
+                onClick={() => {
+                  const cagnotteId = currentCagnottes.featured.cagnotteId || cagnotteIds[currentCagnottes.featured.title];
+                  if (cagnotteId && cagnotteId !== '#') {
+                    navigate(`/cagnottes/${cagnotteId}`);
+                  } else {
+                    console.warn('ID de cagnotte non trouvé pour:', currentCagnottes.featured.title);
+                    alert('Impossible de charger cette cagnotte. ID non trouvé.');
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="cagnotte-card cagnotte-featured-card">
                   <div className="cagnotte-image-container">
                     <img 
@@ -493,14 +944,26 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-              </a>
+              </div>
             </div>
 
             {/* Liste des 4 cagnottes (à droite) */}
             <div className="cagnottes-list">
               {currentCagnottes.small.map((cagnotte) => (
                 <div key={cagnotte.id} className="cagnotte-item">
-                  <a className="cagnotte-link" href={`/cagnottes/${cagnotteIds[cagnotte.title] || '#'}`}>
+                  <div 
+                    className="cagnotte-link" 
+                    onClick={() => {
+                      const cagnotteId = cagnotte.cagnotteId || cagnotteIds[cagnotte.title];
+                      if (cagnotteId && cagnotteId !== '#') {
+                        navigate(`/cagnottes/${cagnotteId}`);
+                      } else {
+                        console.warn('ID de cagnotte non trouvé pour:', cagnotte.title);
+                        alert('Impossible de charger cette cagnotte. ID non trouvé.');
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="cagnotte-card cagnotte-small-card">
                       <div className="cagnotte-image-container">
                         <img 
@@ -521,11 +984,12 @@ const Home = () => {
                         </div>
                       </div>
                     </div>
-                  </a>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+          )}
 
           {/* Bouton Voir plus */}
           <div className="cagnottes-more">

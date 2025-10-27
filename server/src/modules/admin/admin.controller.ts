@@ -256,6 +256,15 @@ export class AdminController {
         // Ne pas bloquer l'approbation si l'email échoue
       }
 
+      // 🔔 Créer une notification d'approbation KYC
+      try {
+        await this.createUserApprovalNotification(user.id, user.firstName, user.lastName);
+        console.log(`✅ Notification d'approbation KYC créée pour ${user.email}`);
+      } catch (notificationError) {
+        console.error(`⚠️ Erreur lors de la création de la notification d'approbation:`, notificationError);
+        // Ne pas bloquer l'approbation si la notification échoue
+      }
+
       res.json(updatedUser);
     } catch (error) {
       console.error('Erreur lors de l\'approbation KYC:', error);
@@ -764,9 +773,16 @@ export class AdminController {
       const { id } = req.params;
       const adminId = (req as any).user?.id;
 
+      console.log(`🗑️ Tentative de suppression de cagnotte ${id} par admin ${adminId}`);
+
       const existingCagnotte = await prisma.cagnotte.findUnique({
         where: { id },
-        select: { title: true, creator: { select: { email: true, firstName: true } } }
+        select: { 
+          id: true,
+          title: true, 
+          status: true,
+          creator: { select: { email: true, firstName: true, lastName: true } } 
+        }
       });
 
       if (!existingCagnotte) {
@@ -776,23 +792,68 @@ export class AdminController {
         });
       }
 
-      // Supprimer la cagnotte et toutes ses relations
+      console.log(`📋 Statut de la cagnotte: ${existingCagnotte.status}`);
+
+      // Supprimer d'abord les notifications liées à cette cagnotte
+      const notifications = await prisma.notification.findMany({
+        where: {
+          metadata: {
+            path: ['cagnotteId'],
+            equals: id
+          }
+        }
+      });
+
+      if (notifications.length > 0) {
+        console.log(`🗑️ Suppression de ${notifications.length} notification(s) liée(s) à la cagnotte`);
+        await prisma.notification.deleteMany({
+          where: {
+            id: { in: notifications.map(n => n.id) }
+          }
+        });
+      }
+
+      // Supprimer toutes les promesses liées à la cagnotte
+      const promisesCount = await prisma.promise.count({
+        where: { cagnotteId: id }
+      });
+      
+      if (promisesCount > 0) {
+        console.log(`🗑️ Suppression de ${promisesCount} promesse(s) liée(s) à la cagnotte`);
+        await prisma.promise.deleteMany({
+          where: { cagnotteId: id }
+        });
+      }
+
+      // Supprimer tous les signalements liés à la cagnotte
+      const reportsCount = await prisma.cagnotteReport.count({
+        where: { cagnotteId: id }
+      });
+
+      if (reportsCount > 0) {
+        console.log(`🗑️ Suppression de ${reportsCount} signalement(s) lié(s) à la cagnotte`);
+        await prisma.cagnotteReport.deleteMany({
+          where: { cagnotteId: id }
+        });
+      }
+
+      // Enfin, supprimer la cagnotte elle-même
       await prisma.cagnotte.delete({
         where: { id }
       });
 
-      // TODO: Envoyer notification email au créateur
-      console.log(`🗑️ Cagnotte "${existingCagnotte.title}" supprimée par l'admin`);
+      console.log(`✅ Cagnotte "${existingCagnotte.title}" supprimée avec succès par l'admin`);
 
       res.json({
         success: true,
         message: 'Cagnotte supprimée avec succès'
       });
     } catch (error) {
-      console.error('Erreur suppression cagnotte:', error);
+      console.error('❌ Erreur lors de la suppression de la cagnotte:', error);
       res.status(500).json({ 
         success: false,
-        message: 'Erreur lors de la suppression de la cagnotte' 
+        message: 'Erreur lors de la suppression de la cagnotte',
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
       });
     }
   }
@@ -866,6 +927,28 @@ export class AdminController {
         success: false,
         message: 'Erreur lors de la modification de la cagnotte' 
       });
+    }
+  }
+
+  // 🔔 Créer une notification d'approbation utilisateur
+  private async createUserApprovalNotification(userId: string, firstName: string, lastName: string) {
+    try {
+      await prisma.notification.create({
+        data: {
+          userId,
+          type: 'SYSTEM',
+          title: '✅ Votre compte a été approuvé !',
+          message: `Félicitations ${firstName} ! Votre compte Kollecta a été approuvé par l'administration. Vous pouvez maintenant créer des cagnottes et faire des dons.`,
+          actionUrl: '/profile',
+          metadata: {
+            approvalType: 'KYC',
+            approvedAt: new Date().toISOString()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('❌ Erreur lors de la création de la notification d\'approbation:', error);
+      throw error;
     }
   }
 } 
