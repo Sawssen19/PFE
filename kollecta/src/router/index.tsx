@@ -176,7 +176,11 @@ export const router = createBrowserRouter(
             />
             <Route
               path="cagnottes/:id"
-              element={<CagnotteDetail />}
+              element={
+                <PrivateRoute>
+                  <CagnotteDetail />
+                </PrivateRoute>
+              }
             />
             <Route
               path="edit/cagnotte/:id"
@@ -188,11 +192,19 @@ export const router = createBrowserRouter(
             />
             <Route
               path="report/cagnotte/:id"
-              element={<ReportCagnotte />}
+              element={
+                <PrivateRoute>
+                  <ReportCagnotte />
+                </PrivateRoute>
+              }
             />
       <Route
         path="campaigns/:id"
-        element={<CampaignDetail />}
+        element={
+          <PrivateRoute>
+            <CampaignDetail />
+          </PrivateRoute>
+        }
       />
       <Route
         path="admin"
