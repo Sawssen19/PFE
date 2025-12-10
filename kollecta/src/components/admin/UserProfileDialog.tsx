@@ -38,14 +38,25 @@ const UserProfileDialog: React.FC<UserProfileDialogProps> = ({
 }) => {
   if (!user) return null;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatDate = (dateString: string | null | undefined, isUpdatedAt: boolean = false) => {
+    if (!dateString) {
+      return isUpdatedAt ? 'Jamais modifié' : 'Non disponible';
+    }
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return isUpdatedAt ? 'Jamais modifié' : 'Date invalide';
+      }
+      return date.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      return isUpdatedAt ? 'Jamais modifié' : 'Date invalide';
+    }
   };
 
   const getRoleColor = (role: string) => {
@@ -205,7 +216,7 @@ const UserProfileDialog: React.FC<UserProfileDialogProps> = ({
                 </Typography>
                 <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CalendarIcon fontSize="small" />
-                  {formatDate(user.updatedAt)}
+                  {formatDate(user.updatedAt, true)}
                 </Typography>
               </Box>
               

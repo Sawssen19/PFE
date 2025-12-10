@@ -67,7 +67,7 @@ const Navbar: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {user ? (
               <>
-                <Button color="inherit" onClick={() => navigate('/cagnottes/new')}>
+                <Button color="inherit" onClick={() => navigate('/create/fundraiser?new=true')}>
                   Démarrer une cagnotte
                 </Button>
                 <IconButton
@@ -105,7 +105,10 @@ const Navbar: React.FC = () => {
                     Profil
                   </MenuItem>
                   <MenuItem onClick={() => handleNavigation('/my-cagnottes')}>
-                    Vos cagnottes
+                    Mes cagnottes
+                  </MenuItem>
+                  <MenuItem onClick={() => handleNavigation('/promises')}>
+                    Mes promesses
                   </MenuItem>
                   <MenuItem onClick={() => handleNavigation('/settings')}>
                     Paramètres

@@ -374,7 +374,7 @@ const Home = () => {
     const fetchCagnottes = async () => {
       setLoadingCagnottes(true);
       try {
-        const response = await fetch('http://localhost:5000/api/cagnottes?status=ACTIVE&limit=50');
+        const response = await fetch('http://localhost:5000/api/cagnottes?limit=50');
         if (response.ok) {
           const result = await response.json();
           const cagnottes = result.data.cagnottes || result.data || [];
@@ -462,7 +462,7 @@ const Home = () => {
 
   const handleStartFundraiser = () => {
     if (isAuthenticated) {
-      navigate('/create-fundraiser');
+      navigate('/create/fundraiser?new=true');
     } else {
       navigate('/login');
     }
@@ -993,7 +993,10 @@ const Home = () => {
 
           {/* Bouton Voir plus */}
           <div className="cagnottes-more">
-            <button className="cagnottes-more-button">
+            <button 
+              className="cagnottes-more-button"
+              onClick={() => navigate('/discover')}
+            >
               Voir plus de cagnottes
             </button>
           </div>

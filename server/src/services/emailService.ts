@@ -1,8 +1,13 @@
 import sgMail from '@sendgrid/mail';
-import { emailConfig } from '../config/emailConfig';
+import { emailConfig } from '../config/email.config';
 
 // Configure SendGrid
-sgMail.setApiKey(emailConfig.SENDGRID_API_KEY);
+if (emailConfig.SENDGRID_API_KEY && emailConfig.SENDGRID_API_KEY !== 'your-sendgrid-api-key') {
+  sgMail.setApiKey(emailConfig.SENDGRID_API_KEY);
+  console.log('✅ SendGrid configuré avec la clé API');
+} else {
+  console.warn('⚠️ Clé API SendGrid non configurée ou invalide');
+}
 
 export class EmailService {
   /**
@@ -450,11 +455,20 @@ export class EmailService {
    */
   static async sendEmail(to: string, subject: string, text: string, html?: string): Promise<boolean> {
     try {
-      console.log('📧 Tentative d\'envoi d\'email:');
-      console.log('   - À:', to);
-      console.log('   - De:', emailConfig.FROM_EMAIL);
-      console.log('   - Sujet:', subject);
-      console.log('   - API Key configurée:', emailConfig.SENDGRID_API_KEY ? 'Oui (longueur: ' + emailConfig.SENDGRID_API_KEY.length + ')' : 'Non');
+      console.log('\n📧 ===== TENTATIVE D\'ENVOI D\'EMAIL =====');
+      console.log('   📨 Destinataire:', to);
+      console.log('   📤 Expéditeur:', emailConfig.FROM_EMAIL);
+      console.log('   📝 Sujet:', subject);
+      console.log('   🔑 API Key configurée:', emailConfig.SENDGRID_API_KEY ? `Oui (${emailConfig.SENDGRID_API_KEY.substring(0, 10)}...)` : 'Non');
+      
+      if (!emailConfig.SENDGRID_API_KEY || emailConfig.SENDGRID_API_KEY === 'your-sendgrid-api-key') {
+        console.error('❌ ERREUR: Clé API SendGrid non configurée !');
+        return false;
+      }
+
+      if (!emailConfig.FROM_EMAIL || emailConfig.FROM_EMAIL === 'noreply@kollecta.com') {
+        console.warn('⚠️ ATTENTION: FROM_EMAIL doit être vérifié dans SendGrid !');
+      }
       
       const msg: any = {
         to,
@@ -467,14 +481,33 @@ export class EmailService {
         msg.html = html;
       }
 
-      await sgMail.send(msg);
+      console.log('   📤 Envoi en cours...');
+      const result = await sgMail.send(msg);
       console.log('✅ Email envoyé avec succès à', to);
+      console.log('   📊 Réponse SendGrid:', result[0]?.statusCode || 'OK');
+      console.log('===========================\n');
       return true;
     } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi d'email à ${to}:`, error);
+      console.error('\n❌ ===== ERREUR LORS DE L\'ENVOI D\'EMAIL =====');
+      console.error(`   📨 Destinataire: ${to}`);
+      console.error(`   📤 Expéditeur: ${emailConfig.FROM_EMAIL}`);
+      console.error(`   ❌ Erreur:`, error.message || error);
+      
       if (error.response) {
-        console.error('   Détails SendGrid:', error.response.body);
+        console.error('   📋 Détails SendGrid:', JSON.stringify(error.response.body, null, 2));
+        console.error('   📊 Code status:', error.response.statusCode);
+        
+        // Erreurs communes SendGrid
+        if (error.response.body?.errors) {
+          error.response.body.errors.forEach((err: any) => {
+            console.error(`   ⚠️ Erreur SendGrid: ${err.message}`);
+            if (err.message?.includes('verified')) {
+              console.error('   💡 SOLUTION: L\'email FROM_EMAIL doit être vérifié dans SendGrid !');
+            }
+          });
+        }
       }
+      console.error('==========================================\n');
       return false;
     }
   }

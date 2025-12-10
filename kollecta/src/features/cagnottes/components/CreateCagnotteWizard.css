@@ -4,11 +4,20 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Animation pour le spinner IA */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .wizard-container {
   display: flex;
   max-width: 1200px;
-  margin: 0 auto;
-  margin-top: 120px; /* Margin top de 120px après le header */
+  margin: 120px auto 0 auto;
   min-height: 100vh;
 }
 

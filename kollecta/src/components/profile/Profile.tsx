@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -20,6 +21,12 @@ import {
   Info as InfoIcon,
   Security as SecurityIcon,
   DocumentScanner as DocumentIcon,
+  Campaign as CampaignIcon,
+  Favorite as FavoriteIcon,
+  AttachMoney as MoneyIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material';
 import { selectUser, selectIsAuthenticated } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
@@ -34,6 +41,12 @@ const Profile = () => {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const profileData = useSelector((state: RootState) => state.profile.data);
+  const [stats, setStats] = useState<{
+    cagnottesCreated: number;
+    cagnottesSupported: number;
+    totalGiven: number;
+  } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // 🧪 LOGS DE DÉBOGAGE COMPLETS : Vérifier TOUTES les données
   console.log('🧪 Profile - User depuis Redux:', user);
@@ -100,6 +113,33 @@ const Profile = () => {
 
     return () => clearInterval(interval);
   }, [user?.id, user?.role, dispatch]);
+
+  // 📊 Charger les statistiques
+  useEffect(() => {
+    const loadStats = async () => {
+      if (user?.id) {
+        try {
+          setLoadingStats(true);
+          console.log('📊 Chargement des statistiques pour l\'utilisateur:', user.id);
+          const statsData = await profileService.getProfileStats(user.id);
+          console.log('✅ Statistiques reçues:', statsData);
+          setStats(statsData);
+        } catch (error: any) {
+          console.error('❌ Erreur lors du chargement des statistiques:', error);
+          console.error('❌ Détails de l\'erreur:', error?.response?.data || error?.message);
+          setStats({ cagnottesCreated: 0, cagnottesSupported: 0, totalGiven: 0 });
+        } finally {
+          setLoadingStats(false);
+        }
+      } else {
+        console.warn('⚠️ Pas d\'ID utilisateur disponible pour charger les statistiques');
+        setStats({ cagnottesCreated: 0, cagnottesSupported: 0, totalGiven: 0 });
+        setLoadingStats(false);
+      }
+    };
+
+    loadStats();
+  }, [user?.id]);
 
   // Fonction pour déterminer si on doit afficher l'avatar par défaut
   const shouldShowDefaultAvatar = () => {
@@ -173,15 +213,18 @@ const Profile = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
-      {/* Section d'en-tête avec couleur claire et padding sous le header */}
+    <Box sx={{ 
+      minHeight: '100vh', 
+      bgcolor: '#f8fafc',
+      paddingTop: { xs: '80px', md: '100px' }
+    }}>
+      {/* Section d'en-tête moderne avec gradient */}
       <Box
         sx={{
-          bgcolor: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          py: 10, // Augmenté de 8 à 10 pour plus d'espace
-          mt: 12, // Augmenté de 8 à 12 pour créer plus d'espace sous le header
+          background: 'linear-gradient(135deg, #00b289 0%, #008e6d 100%)',
+          py: { xs: 6, md: 8 },
           position: 'relative',
+          overflow: 'hidden',
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -189,14 +232,26 @@ const Profile = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'linear-gradient(135deg, rgba(0, 178, 137, 0.03) 0%, rgba(0, 142, 109, 0.01) 100%)',
+            background: 'radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+            zIndex: 0,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '300px',
+            height: '300px',
+            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
+            borderRadius: '50%',
+            transform: 'translate(30%, -30%)',
             zIndex: 0,
           },
         }}
       >
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-            {/* Avatar avec effet moderne */}
+            {/* Avatar avec effet moderne et brillant */}
             <Box
               sx={{
                 display: 'inline-block',
@@ -205,14 +260,24 @@ const Profile = () => {
                 '&::before': {
                   content: '""',
                   position: 'absolute',
-                  top: -12,
-                  left: -12,
-                  right: -12,
-                  bottom: -12,
-                  background: 'linear-gradient(135deg, #00b289, #008e6d)',
+                  top: -8,
+                  left: -8,
+                  right: -8,
+                  bottom: -8,
+                  background: 'rgba(255, 255, 255, 0.2)',
                   borderRadius: '50%',
-                  opacity: 0.1,
                   zIndex: -1,
+                  animation: 'pulse 2s ease-in-out infinite',
+                },
+                '@keyframes pulse': {
+                  '0%, 100%': {
+                    transform: 'scale(1)',
+                    opacity: 0.2,
+                  },
+                  '50%': {
+                    transform: 'scale(1.05)',
+                    opacity: 0.3,
+                  },
                 },
               }}
             >
@@ -228,14 +293,15 @@ const Profile = () => {
                 <Avatar
                   src={profileData?.profilePicture ? `http://localhost:5000${profileData.profilePicture}` : undefined}
                   sx={{
-                    width: 120,
-                    height: 120,
-                    border: '4px solid #ffffff',
-                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.06)',
-                    fontSize: '3rem',
-                    bgcolor: '#00b289',
+                    width: { xs: 100, sm: 120 },
+                    height: { xs: 100, sm: 120 },
+                    border: '5px solid rgba(255, 255, 255, 0.9)',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.2)',
+                    fontSize: { xs: '2.5rem', sm: '3rem' },
+                    bgcolor: 'rgba(255, 255, 255, 0.2)',
                     color: 'white',
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    backdropFilter: 'blur(10px)',
                   }}
                 >
                   {(profileData?.firstName || user.firstName)?.[0] || 'U'}{(profileData?.lastName || user.lastName)?.[0] || 'S'}
@@ -270,10 +336,12 @@ const Profile = () => {
               variant="h3"
               component="h1"
               sx={{
-                color: '#1a202c',
+                color: 'white',
                 fontWeight: 700,
-                mb: 2,
-                fontSize: { xs: '2rem', md: '2.5rem' },
+                mb: 1,
+                fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.75rem' },
+                wordBreak: 'break-word',
+                textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
               }}
             >
               {profileData?.firstName || user.firstName} {profileData?.lastName || user.lastName}
@@ -282,35 +350,46 @@ const Profile = () => {
             <Typography
               variant="h6"
               sx={{
-                color: '#64748b',
-                mb: 4,
+                color: 'rgba(255, 255, 255, 0.9)',
+                mb: { xs: 3, md: 4 },
                 fontWeight: 400,
-                fontSize: '1.1rem',
+                fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.2rem' },
+                wordBreak: 'break-word',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
               }}
             >
+              <EmailIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />
               {profileData?.email || user.email}
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: { xs: 1.5, sm: 2 }, 
+              justifyContent: 'center', 
+              flexWrap: 'wrap' 
+            }}>
               <Button
                 variant="contained"
                 startIcon={<EditIcon />}
                 onClick={() => navigate('/profile/edit')}
                 sx={{
-                  bgcolor: '#00b289',
-                  color: 'white',
-                  px: 4,
-                  py: 1.5,
+                  bgcolor: 'white',
+                  color: '#00b289',
+                  px: { xs: 3, sm: 4 },
+                  py: { xs: 1.25, sm: 1.5 },
                   borderRadius: '50px',
-                  fontWeight: 600,
-                  fontSize: '1rem',
+                  fontWeight: 700,
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
                   textTransform: 'none',
-                  boxShadow: '0 8px 25px rgba(0, 178, 137, 0.25)',
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.2)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    bgcolor: '#008e6d',
+                    bgcolor: 'rgba(255, 255, 255, 0.95)',
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 16px 40px rgba(0, 178, 137, 0.35)',
+                    boxShadow: '0 12px 35px rgba(0, 0, 0, 0.3)',
                   },
                 }}
               >
@@ -322,20 +401,21 @@ const Profile = () => {
                 startIcon={<ShareIcon />}
                 onClick={handleShareProfile}
                 sx={{
-                  borderColor: '#00b289',
-                  color: '#00b289',
-                  px: 4,
-                  py: 1.5,
+                  borderColor: 'rgba(255, 255, 255, 0.8)',
+                  color: 'white',
+                  px: { xs: 3, sm: 4 },
+                  py: { xs: 1.25, sm: 1.5 },
                   borderRadius: '50px',
                   fontWeight: 600,
-                  fontSize: '1rem',
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
                   textTransform: 'none',
                   borderWidth: 2,
+                  backdropFilter: 'blur(10px)',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    borderColor: '#008e6d',
-                    color: '#008e6d',
-                    bgcolor: 'rgba(0, 178, 137, 0.05)',
+                    borderColor: 'white',
+                    bgcolor: 'rgba(255, 255, 255, 0.2)',
                     transform: 'translateY(-2px)',
                   },
                 }}
@@ -348,42 +428,62 @@ const Profile = () => {
       </Box>
 
       {/* Contenu principal avec plus de padding */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Grid container spacing={4}>
+      <Container 
+        maxWidth="lg" 
+        sx={{ 
+          py: { xs: 4, md: 8 },
+          px: { xs: 2, sm: 3, md: 4 }
+        }}
+      >
+        <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
           {/* Colonne gauche - Informations principales */}
           <Grid item xs={12} md={8}>
             {/* Carte des informations personnelles */}
             <Card
               elevation={0}
               sx={{
-                mb: 4,
+                mb: { xs: 3, md: 4 },
                 borderRadius: '16px',
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
                   borderColor: '#00b289',
                 },
               }}
             >
               <Box
                 sx={{
-                  bgcolor: 'linear-gradient(135deg, #00b289 0%, #008e6d 100%)',
                   background: 'linear-gradient(135deg, #00b289 0%, #008e6d 100%)',
                   p: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
                 }}
               >
-                <Typography variant="h5" component="h2" sx={{ color: 'white', fontWeight: 600 }}>
+                <PersonIcon sx={{ color: 'white', fontSize: '2rem' }} />
+                <Typography variant="h5" component="h2" sx={{ color: 'white', fontWeight: 600, textAlign: 'center' }}>
                   Informations personnelles
                 </Typography>
               </Box>
               <CardContent sx={{ p: 4 }}>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="body2" color="textSecondary" sx={{ minWidth: 120, fontWeight: 500 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      p: 2,
+                      borderRadius: '8px',
+                      bgcolor: 'rgba(0, 178, 137, 0.03)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(0, 178, 137, 0.08)',
+                      }
+                    }}>
+                      <Typography variant="body2" color="textSecondary" sx={{ minWidth: { xs: 100, sm: 120 }, fontWeight: 600, mr: 2 }}>
                         Nom complet:
                       </Typography>
                       <Typography variant="body1" sx={{ fontWeight: 600, color: '#1a202c' }}>
@@ -395,8 +495,18 @@ const Profile = () => {
 
 
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="body2" color="textSecondary" sx={{ minWidth: 120, fontWeight: 500 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      p: 2,
+                      borderRadius: '8px',
+                      bgcolor: 'rgba(0, 178, 137, 0.03)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(0, 178, 137, 0.08)',
+                      }
+                    }}>
+                      <Typography variant="body2" color="textSecondary" sx={{ minWidth: { xs: 100, sm: 120 }, fontWeight: 600, mr: 2 }}>
                         Rôle:
                       </Typography>
                       <Chip
@@ -408,11 +518,19 @@ const Profile = () => {
                     </Box>
                   </Grid>
 
-
-
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="body2" color="textSecondary" sx={{ minWidth: 120, fontWeight: 500 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      p: 2,
+                      borderRadius: '8px',
+                      bgcolor: 'rgba(0, 178, 137, 0.03)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(0, 178, 137, 0.08)',
+                      }
+                    }}>
+                      <Typography variant="body2" color="textSecondary" sx={{ minWidth: { xs: 100, sm: 120 }, fontWeight: 600, mr: 2 }}>
                         Statut:
                       </Typography>
                       <Chip
@@ -432,64 +550,143 @@ const Profile = () => {
             <Card
               elevation={0}
               sx={{
-                mb: 4,
+                mb: { xs: 3, md: 4 },
                 borderRadius: '16px',
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
                   borderColor: '#00b289',
                 },
               }}
             >
               <Box
                 sx={{
-                  bgcolor: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  background: 'linear-gradient(135deg, #00b289 0%, #008e6d 100%)',
                   p: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
                 }}
               >
-                <Typography variant="h5" component="h2" sx={{ color: 'white', fontWeight: 600 }}>
+                <CampaignIcon sx={{ color: 'white', fontSize: '2rem' }} />
+                <Typography variant="h5" component="h2" sx={{ color: 'white', fontWeight: 600, textAlign: 'center' }}>
                   Statistiques
                 </Typography>
               </Box>
               <CardContent sx={{ p: 4 }}>
+                {loadingStats ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress size={40} sx={{ color: '#00b289' }} />
+                  </Box>
+                ) : (
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={4}>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h3" component="div" sx={{ color: '#00b289', fontWeight: 700, mb: 1 }}>
-                        0
+                      <Box sx={{ 
+                        textAlign: 'center',
+                        p: 3,
+                        borderRadius: '12px',
+                        bgcolor: 'rgba(0, 178, 137, 0.05)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          bgcolor: 'rgba(0, 178, 137, 0.1)',
+                          transform: 'translateY(-4px)',
+                        }
+                      }}>
+                        <Typography 
+                          variant="h3" 
+                          component="div" 
+                          sx={{ 
+                            color: '#00b289', 
+                            fontWeight: 700, 
+                            mb: 1,
+                            fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+                          }}
+                        >
+                          {stats?.cagnottesCreated ?? 0}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                        <Typography 
+                          variant="body2" 
+                          color="textSecondary" 
+                          sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                        >
                         Cagnottes créées
                       </Typography>
                     </Box>
                   </Grid>
 
                   <Grid item xs={12} sm={4}>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h3" component="div" sx={{ color: '#00b289', fontWeight: 700, mb: 1 }}>
-                        0
+                      <Box sx={{ 
+                        textAlign: 'center',
+                        p: 3,
+                        borderRadius: '12px',
+                        bgcolor: 'rgba(0, 178, 137, 0.05)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          bgcolor: 'rgba(0, 178, 137, 0.1)',
+                          transform: 'translateY(-4px)',
+                        }
+                      }}>
+                        <Typography 
+                          variant="h3" 
+                          component="div" 
+                          sx={{ 
+                            color: '#00b289', 
+                            fontWeight: 700, 
+                            mb: 1,
+                            fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+                          }}
+                        >
+                          {stats?.cagnottesSupported ?? 0}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                        <Typography 
+                          variant="body2" 
+                          color="textSecondary" 
+                          sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                        >
                         Cagnottes soutenues
                       </Typography>
                     </Box>
                   </Grid>
 
                   <Grid item xs={12} sm={4}>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h3" component="div" sx={{ color: '#00b289', fontWeight: 700, mb: 1 }}>
-                        0€
+                      <Box sx={{ 
+                        textAlign: 'center',
+                        p: 3,
+                        borderRadius: '12px',
+                        bgcolor: 'rgba(0, 178, 137, 0.05)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          bgcolor: 'rgba(0, 178, 137, 0.1)',
+                          transform: 'translateY(-4px)',
+                        }
+                      }}>
+                        <Typography 
+                          variant="h3" 
+                          component="div" 
+                          sx={{ 
+                            color: '#00b289', 
+                            fontWeight: 700, 
+                            mb: 1,
+                            fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.75rem' }
+                          }}
+                        >
+                          {stats?.totalGiven ? `${stats.totalGiven.toLocaleString('fr-FR')} DT` : '0 DT'}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                        <Typography 
+                          variant="body2" 
+                          color="textSecondary" 
+                          sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                        >
                         Total donné
                       </Typography>
                     </Box>
                   </Grid>
                 </Grid>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -504,22 +701,26 @@ const Profile = () => {
                 borderRadius: '16px',
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
                   borderColor: '#00b289',
                 },
               }}
             >
               <Box
                 sx={{
-                  bgcolor: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  background: 'linear-gradient(135deg, #00b289 0%, #008e6d 100%)',
                   p: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
                 }}
               >
-                <Typography variant="h6" component="h3" sx={{ color: 'white', fontWeight: 600 }}>
+                <EditIcon sx={{ color: 'white', fontSize: '1.75rem' }} />
+                <Typography variant="h6" component="h3" sx={{ color: 'white', fontWeight: 600, textAlign: 'center' }}>
                   Actions rapides
                 </Typography>
               </Box>
@@ -571,95 +772,123 @@ const Profile = () => {
             <Card
               elevation={0}
               sx={{
+                mb: { xs: 3, md: 4 },
                 borderRadius: '16px',
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
                   borderColor: '#00b289',
                 },
               }}
             >
               <Box
                 sx={{
-                  bgcolor: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  background: 'linear-gradient(135deg, #00b289 0%, #008e6d 100%)',
                   p: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
                 }}
               >
-                <Typography variant="h6" component="h3" sx={{ color: 'white', fontWeight: 600 }}>
+                <SecurityIcon sx={{ color: 'white', fontSize: '1.75rem' }} />
+                <Typography variant="h6" component="h3" sx={{ color: 'white', fontWeight: 600, textAlign: 'center' }}>
                   Sécurité
                 </Typography>
               </Box>
               <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="body2" color="textSecondary" sx={{ flex: 1, fontWeight: 500 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  p: 2,
+                  borderRadius: '8px',
+                  bgcolor: 'rgba(239, 68, 68, 0.03)',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: 'rgba(239, 68, 68, 0.08)',
+                  }
+                }}>
+                  <LockIcon sx={{ color: '#ef4444', mr: 1.5, fontSize: '1.5rem' }} />
+                  <Typography variant="body2" color="textSecondary" sx={{ flex: 1, fontWeight: 600 }}>
                     Mot de passe
                   </Typography>
                   <Button
                     size="small"
                     variant="text"
-                    onClick={() => navigate('/change-password')}
-                    sx={{ color: '#00b289', fontWeight: 600 }}
+                    onClick={() => navigate('/parametres', { state: { activeTab: 'securite' } })}
+                    sx={{ 
+                      color: '#00b289', 
+                      fontWeight: 600,
+                      '&:hover': {
+                        bgcolor: 'rgba(0, 178, 137, 0.1)',
+                      }
+                    }}
                   >
                     Modifier
                   </Button>
                 </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="body2" color="textSecondary" sx={{ flex: 1, fontWeight: 500 }}>
-                    Authentification à deux facteurs
-                  </Typography>
-                  <Chip
-                    label="Non activée"
-                    color="default"
-                    size="small"
-                    sx={{ fontWeight: 600 }}
-                  />
-                </Box>
               </CardContent>
             </Card>
+          </Grid>
+        </Grid>
 
-            {/* 🆕 NOUVELLE CARTE : Vérification KYC/AML */}
+        {/* 🆕 Section KYC en pleine largeur (horizontale) */}
             <Card
               elevation={0}
               sx={{
+            mt: { xs: 3, md: 4 },
                 borderRadius: '16px',
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                mt: 4, // Ajout du padding manquant entre les cartes
+            transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
-                  borderColor: '#667eea',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
+              borderColor: '#00b289',
                 },
               }}
             >
               <Box
                 sx={{
-                  bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #00b289 0%, #008e6d 100%)',
                   p: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
                 }}
               >
-                <Typography variant="h6" component="h3" sx={{ color: 'white', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <SecurityIcon />
+                <DocumentIcon sx={{ color: 'white', fontSize: '1.75rem' }} />
+                <Typography variant="h6" component="h3" sx={{ color: 'white', fontWeight: 600, textAlign: 'center' }}>
                   Vérification d'identité KYC
                 </Typography>
               </Box>
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                <Grid container spacing={{ xs: 3, md: 4 }}>
+                  {/* Colonne gauche - Informations et statut */}
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 3, lineHeight: 1.7, fontSize: '0.95rem' }}>
                     Pour votre sécurité et conformité réglementaire, nous devons vérifier votre identité avant l'ouverture de cagnottes et les paiements.
                   </Typography>
                   
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary" sx={{ flex: 1, fontWeight: 500 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      p: 2,
+                      borderRadius: '8px',
+                      bgcolor: 'rgba(0, 178, 137, 0.05)',
+                      mb: 2,
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <SecurityIcon sx={{ color: '#00b289', fontSize: '1.5rem' }} />
+                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>
                       Statut KYC
                     </Typography>
+                      </Box>
                     <Chip
                       icon={profileData?.kycVerification?.verificationStatus === 'VERIFIED' ? <VerifiedIcon /> : <InfoIcon />}
                       label={
@@ -679,10 +908,20 @@ const Profile = () => {
                     />
                   </Box>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary" sx={{ flex: 1, fontWeight: 500 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      p: 2,
+                      borderRadius: '8px',
+                      bgcolor: 'rgba(0, 178, 137, 0.05)',
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <DocumentIcon sx={{ color: '#00b289', fontSize: '1.5rem' }} />
+                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>
                       Documents acceptés
                     </Typography>
+                      </Box>
                     <Chip
                       label="Carte d'identité / Passeport"
                       color="default"
@@ -690,21 +929,24 @@ const Profile = () => {
                       sx={{ fontWeight: 600 }}
                     />
                   </Box>
-                </Box>
+                  </Grid>
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* Colonne droite - Actions et informations */}
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
                   <Button
                     variant="contained"
                     fullWidth
                     startIcon={<DocumentIcon />}
                     onClick={() => navigate('/kyc/verify')}
                     sx={{
-                      bgcolor: '#667eea',
-                      '&:hover': { bgcolor: '#5a67d8' },
+                          bgcolor: '#00b289',
+                          '&:hover': { bgcolor: '#008e6d' },
                       py: 1.5,
                       borderRadius: '12px',
                       fontWeight: 600,
                       textTransform: 'none',
+                          fontSize: '0.95rem',
                     }}
                   >
                     Commencer la vérification KYC
@@ -716,10 +958,10 @@ const Profile = () => {
                     startIcon={<InfoIcon />}
                     onClick={() => navigate('/kyc/status')}
                     sx={{
-                      borderColor: '#667eea',
-                      color: '#667eea',
+                          borderColor: '#00b289',
+                          color: '#00b289',
                       '&:hover': {
-                        bgcolor: '#667eea',
+                            bgcolor: '#00b289',
                         color: 'white',
                       },
                       py: 1.5,
@@ -727,27 +969,45 @@ const Profile = () => {
                       fontWeight: 600,
                       textTransform: 'none',
                       borderWidth: 2,
+                          fontSize: '0.95rem',
                     }}
                   >
                     Vérifier le statut
                   </Button>
                 </Box>
 
-                <Box sx={{ mt: 3, p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
-                    💡 Pourquoi la vérification KYC ?
+                    <Box sx={{ 
+                      p: 2.5, 
+                      bgcolor: '#fffbf0', 
+                      borderRadius: '12px', 
+                      border: '1px solid #fef3c7',
+                      borderLeft: '4px solid #fbbf24'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                        <InfoIcon sx={{ color: '#f59e0b', fontSize: '1.25rem' }} />
+                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 700, color: '#92400e' }}>
+                          Pourquoi la vérification KYC ?
                   </Typography>
-                  <Typography variant="caption" color="textSecondary" sx={{ lineHeight: 1.5 }}>
-                    • Conformité réglementaire tunisienne<br/>
-                    • Protection contre la fraude<br/>
-                    • Sécurisation des transactions<br/>
-                    • Obligatoire pour les cagnottes
+                      </Box>
+                      <Box component="ul" sx={{ m: 0, pl: 2.5, listStyle: 'none' }}>
+                        <Typography component="li" variant="body2" color="textSecondary" sx={{ mb: 0.75, lineHeight: 1.6, '&::before': { content: '"• "', color: '#f59e0b', fontWeight: 'bold', mr: 1 } }}>
+                          Conformité réglementaire tunisienne
+                        </Typography>
+                        <Typography component="li" variant="body2" color="textSecondary" sx={{ mb: 0.75, lineHeight: 1.6, '&::before': { content: '"• "', color: '#f59e0b', fontWeight: 'bold', mr: 1 } }}>
+                          Protection contre la fraude
+                        </Typography>
+                        <Typography component="li" variant="body2" color="textSecondary" sx={{ mb: 0.75, lineHeight: 1.6, '&::before': { content: '"• "', color: '#f59e0b', fontWeight: 'bold', mr: 1 } }}>
+                          Sécurisation des transactions
+                        </Typography>
+                        <Typography component="li" variant="body2" color="textSecondary" sx={{ lineHeight: 1.6, '&::before': { content: '"• "', color: '#f59e0b', fontWeight: 'bold', mr: 1 } }}>
+                          Obligatoire pour les cagnottes
                   </Typography>
                 </Box>
-              </CardContent>
-            </Card>
+                    </Box>
           </Grid>
         </Grid>
+              </CardContent>
+            </Card>
       </Container>
     </Box>
   );

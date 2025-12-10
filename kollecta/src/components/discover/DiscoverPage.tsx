@@ -1,12 +1,80 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { CATEGORIES } from "../../constants/categories";
 
+interface Cagnotte {
+  id: string;
+  title: string;
+  description: string;
+  goalAmount: number;
+  currentAmount: number;
+  coverImage?: string;
+  category: {
+    name: string;
+  };
+  creator: {
+    firstName: string;
+    lastName: string;
+  };
+  endDate: string;
+}
+
 const DiscoverPage = () => {
+  const navigate = useNavigate();
   const [visibleCategories, setVisibleCategories] = useState(12);
   const [isLoading, setIsLoading] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   const [visibleCampaignSections, setVisibleCampaignSections] = useState(3);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
+  const [realCagnottes, setRealCagnottes] = useState<Cagnotte[]>([]);
+
+  // Charger les vraies cagnottes depuis l'API
+  useEffect(() => {
+    const fetchRealCagnottes = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/cagnottes?limit=50');
+        if (response.ok) {
+          const result = await response.json();
+          const cagnottes = result.data.cagnottes || result.data || [];
+          setRealCagnottes(cagnottes);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des cagnottes:', error);
+      }
+    };
+
+    fetchRealCagnottes();
+  }, []);
+
+  // Organiser les vraies cagnottes par catégorie
+  const getCagnottesByCategory = () => {
+    const categoriesMap: { [key: string]: Cagnotte[] } = {};
+    
+    realCagnottes.forEach(cagnotte => {
+      const categoryName = cagnotte.category.name;
+      if (!categoriesMap[categoryName]) {
+        categoriesMap[categoryName] = [];
+      }
+      categoriesMap[categoryName].push(cagnotte);
+    });
+
+    return Object.entries(categoriesMap).map(([categoryName, cagnottes]) => {
+      const iconName = getCategoryIconName(categoryName);
+      return {
+        category: iconName, // Garder l'icône en anglais pour la compatibilité
+        categoryName: categoryName, // Ajouter le nom français de la catégorie
+        title: `Cagnottes ${categoryName.toLowerCase()}`,
+        campaigns: cagnottes.slice(0, 3).map(cagnotte => ({
+          title: cagnotte.title,
+          location: `${cagnotte.creator.firstName} ${cagnotte.creator.lastName}`,
+          progress: cagnotte.goalAmount > 0 ? Math.round((cagnotte.currentAmount / cagnotte.goalAmount) * 100) : 0,
+          amount: `${cagnotte.currentAmount.toLocaleString()} DT`,
+          href: `/cagnottes/${cagnotte.id}`,
+          image: cagnotte.coverImage || "https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80",
+        }))
+      };
+    });
+  };
 
   // Mapping des titres vers les IDs des cagnottes en base
   const cagnotteIds = {
@@ -39,9 +107,13 @@ const DiscoverPage = () => {
   const getCategoryIcon = (iconName: string) => {
     const icons: { [key: string]: React.ReactNode } = {
       medical: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/>
-          <path d="M12 5L8 21l4-7 4 7-4-16"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 3v4"/>
+          <path d="M16 3v4"/>
+          <path d="M8 7l4 3"/>
+          <path d="M16 7l-4 3"/>
+          <path d="M12 10v8"/>
+          <circle cx="18" cy="20" r="2.5" fill="none"/>
         </svg>
       ),
       memorials: (
@@ -58,14 +130,16 @@ const DiscoverPage = () => {
       ),
       emergencies: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v6l4 2"/>
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       ),
       emergency: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v6l4 2"/>
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       ),
       charity: (
@@ -114,9 +188,9 @@ const DiscoverPage = () => {
       ),
       creative: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="9" cy="21" r="1"/>
-          <circle cx="20" cy="21" r="1"/>
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
         </svg>
       ),
       events: (
@@ -129,38 +203,44 @@ const DiscoverPage = () => {
       ),
       faith: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor"/>
         </svg>
       ),
       family: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M3 21v-8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v8"/>
-          <path d="M3 10a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1"/>
-          <path d="M12 8h7a2 2 0 0 1 2 2v1l-2 9"/>
-          <path d="M7 3a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v5H7V3z"/>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          <circle cx="18" cy="7" r="2"/>
         </svg>
       ),
       sports: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
-          <path d="M2 12h20"/>
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+          <path d="M4 22h16"/>
+          <path d="M10 14.66V17c0 .55.47.98.97 1.21C12.04 18.75 14 20.24 14 22"/>
+          <path d="M14 14.66V17c0 .55-.47.98-.97 1.21C11.96 18.75 10 20.24 10 22"/>
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
         </svg>
       ),
       travel: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-          <polyline points="14,2 14,8 20,8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10,9 9,9 8,9"/>
+          <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+          <circle cx="10.5" cy="9.5" r="1.5" fill="currentColor"/>
         </svg>
       ),
       volunteer: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <path d="M16 10a4 4 0 0 1-8 0"/>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          <path d="M12 11h8"/>
         </svg>
       ),
       wishes: (
@@ -183,10 +263,8 @@ const DiscoverPage = () => {
       ),
       environment: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-          <path d="M9 9h.01"/>
-          <path d="M15 9h.01"/>
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
         </svg>
       ),
       competition: (
@@ -205,6 +283,22 @@ const DiscoverPage = () => {
           <line x1="16" y1="2" x2="16" y2="6"/>
           <line x1="8" y1="2" x2="8" y2="6"/>
           <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      ),
+      technology: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21h6"/>
+          <path d="M10 21v-1a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1"/>
+          <path d="M12 3a6 6 0 0 1 6 6c0 3.31-2.69 6-6 6s-6-2.69-6-6a6 6 0 0 1 6-6z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="15" x2="12.01" y2="15"/>
+        </svg>
+      ),
+      other: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
       ),
     };
@@ -230,10 +324,49 @@ const DiscoverPage = () => {
       'Événements': 'events',
       'Voyages': 'travel',
       'Bénévolat': 'volunteer',
-      'Technologie': 'business',
-      'Autre': 'charity'
+      'Technologie': 'technology',
+      'Autre': 'other'
     };
     return iconMap[categoryName] || 'charity';
+  };
+
+  // Fonction pour générer un slug à partir d'un nom de catégorie
+  // IMPORTANT: Le slug doit correspondre exactement à celui utilisé dans les liens de catégories
+  // Format: /discover/{nom-en-minuscules}-fundraiser (sans normalisation des accents)
+  const generateCategorySlug = (categoryName: string): string => {
+    const slug = categoryName.toLowerCase();
+    return `/discover/${slug}-fundraiser`;
+  };
+
+  // Fonction pour convertir le nom de catégorie anglais en nom français et générer le slug
+  const getCategorySlugFromEnglish = (englishCategory: string): string => {
+    const categoryMap: { [key: string]: string } = {
+      'medical': 'Santé',
+      'memorial': 'Mémorial',
+      'memorials': 'Mémorial',
+      'emergency': 'Urgences',
+      'emergencies': 'Urgences',
+      'nonprofit': 'Solidarité',
+      'charity': 'Solidarité',
+      'education': 'Éducation',
+      'business': 'Entreprises',
+      'animals': 'Animaux',
+      'animal': 'Animaux',
+      'environment': 'Environnement',
+      'sports': 'Sport',
+      'creative': 'Culture',
+      'faith': 'Religion',
+      'family': 'Famille',
+      'events': 'Événements',
+      'event': 'Événements',
+      'travel': 'Voyages',
+      'volunteer': 'Bénévolat',
+      'technology': 'Technologie',
+      'tech': 'Technologie'
+    };
+    
+    const frenchCategory = categoryMap[englishCategory.toLowerCase()] || englishCategory;
+    return generateCategorySlug(frenchCategory);
   };
 
   // Génération des catégories depuis la base de données
@@ -244,7 +377,8 @@ const DiscoverPage = () => {
     trackingId: `discover-category-${category.name.toLowerCase()}`,
   }));
 
-  const featuredCampaigns = [
+  // Utiliser les vraies cagnottes ou les données statiques en fallback
+  const featuredCampaigns = realCagnottes.length > 0 ? getCagnottesByCategory() : [
     {
       category: "medical",
       title: "Cagnottes pour des frais médicaux",
@@ -413,6 +547,8 @@ const DiscoverPage = () => {
   ];
 
   // Animation d'entrée
+
+  // Animation d'entrée
   useEffect(() => {
     setShowAnimation(true);
   }, []);
@@ -452,7 +588,7 @@ const DiscoverPage = () => {
               <div className="hero-buttons">
                 <a
                   className="primary-cta-button"
-                  href="/create/fundraiser"
+                  href="/create/fundraiser?new=true"
                 >
                   <span>Démarrer une cagnotte</span>
                   <svg className="button-icon" viewBox="0 0 24 24" fill="none">
@@ -475,36 +611,27 @@ const DiscoverPage = () => {
       <section id="categories" className="categories-section">
         <div className="section-container">
           <div className="section-header slide-up">
-            <h2 className="section-title">Explorez par catégorie</h2>
-            <p className="section-subtitle">Trouvez la cause qui vous passionne</p>
+            <h2 className="section-title">Parcourir les catégories de cagnottes</h2>
           </div>
           
           <div className="categories-grid">
             {categories.slice(0, visibleCategories).map((category, index) => (
-              <div 
-                key={category.trackingId} 
-                className={`category-card ${showAnimation ? 'slide-up' : ''}`}
+              <a
+                key={category.trackingId}
+                className={`category-link ${showAnimation ? 'slide-up' : ''}`}
                 style={{ animationDelay: `${index * 0.1}s` }}
+                data-tracking-id={category.trackingId}
+                href={category.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(category.href);
+                }}
               >
-                <a
-                  className="category-link"
-                  data-tracking-id={category.trackingId}
-                  href={category.href}
-                >
-                  <div className="category-icon-container">
-                    <div className="category-icon-bg"></div>
-                    <div className="category-icon">
-                      {getCategoryIcon(category.icon)}
-                    </div>
-                  </div>
-                  <h3 className="category-name">{category.name}</h3>
-                  <div className="category-arrow">
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </a>
-              </div>
+                <div className="category-icon">
+                  {getCategoryIcon(category.icon)}
+                </div>
+                <span className="category-name">{category.name}</span>
+              </a>
             ))}
           </div>
           
@@ -603,9 +730,18 @@ const DiscoverPage = () => {
                 <a
                   className="see-more-link"
                   data-tracking-id={`discover-see-more-${section.category}`}
-                  href={`/discover/${section.category}-fundraiser`}
+                  href={(section as any).categoryName 
+                    ? generateCategorySlug((section as any).categoryName)
+                    : getCategorySlugFromEnglish(section.category)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const slug = (section as any).categoryName 
+                      ? generateCategorySlug((section as any).categoryName)
+                      : getCategorySlugFromEnglish(section.category);
+                    navigate(slug);
+                  }}
                 >
-                  <span>En voir plus</span>
+                  <span>En savoir plus</span>
                   <svg className="see-more-icon" viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>

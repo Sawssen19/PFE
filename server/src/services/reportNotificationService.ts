@@ -1,5 +1,5 @@
 import { EmailService } from './emailService';
-import { emailConfig } from '../config/emailConfig';
+import { emailConfig } from '../config/email.config';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();

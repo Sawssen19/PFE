@@ -1,0 +1,309 @@
+.supported-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.supported-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, rgba(0, 178, 137, 0.1) 0%, rgba(0, 160, 122, 0.1) 100%);
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.supported-icon svg {
+  transition: transform 0.3s ease;
+}
+
+.supported-title:hover .supported-icon svg {
+  transform: scale(1.1);
+}
+
+.tunisia-highlight {
+  max-width: 600px;
+  margin: 40px auto;
+  text-align: center;
+  padding: 48px 40px;
+  background: white;
+  border-radius: 16px;
+  border: 3px solid #00b289;
+  box-shadow: 0 4px 20px rgba(0, 178, 137, 0.15);
+  transition: all 0.3s ease;
+}
+
+.tunisia-highlight:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 178, 137, 0.25);
+}
+
+.tunisia-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d2d2d;
+  margin: 0 0 16px 0;
+  line-height: 1.2;
+}
+
+.tunisia-badge {
+  display: inline-block;
+  padding: 10px 28px;
+  border-radius: 25px;
+  background: linear-gradient(135deg, #00b289 0%, #00a07a 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.3);
+}
+
+.tunisia-description {
+  font-size: 1.0625rem;
+  color: #5e5e5e;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.highlight-section {
+  background: linear-gradient(135deg, rgba(0, 178, 137, 0.05) 0%, rgba(0, 160, 122, 0.05) 100%);
+  border: 2px solid rgba(0, 178, 137, 0.1);
+}
+
+.contribution-features {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.contribution-feature {
+  display: flex;
+  gap: 20px;
+  padding: 28px;
+  background: white;
+  border-radius: 12px;
+  border-left: 4px solid #00b289;
+  transition: all 0.3s ease;
+}
+
+.contribution-feature:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.1);
+  background: #f0fdf4;
+}
+
+.contribution-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #00b289 0%, #00a07a 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.25);
+}
+
+.contribution-icon svg {
+  transition: transform 0.3s ease;
+}
+
+.contribution-feature:hover .contribution-icon svg {
+  transform: scale(1.1);
+}
+
+.contribution-content {
+  flex: 1;
+}
+
+.contribution-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2d2d2d;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.contribution-text {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: #5e5e5e;
+  margin: 0;
+}
+
+
+.eligibility-simple {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 32px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.eligibility-item {
+  padding: 24px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border-left: 4px solid #00b289;
+  transition: all 0.3s ease;
+}
+
+.eligibility-item:hover {
+  background: #f0fdf4;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.1);
+}
+
+.eligibility-item-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2d2d2d;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.eligibility-item-text {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: #5e5e5e;
+  margin: 0;
+}
+
+.eligibility-item-text strong {
+  color: #00b289;
+  font-weight: 600;
+}
+
+.waitlist-section {
+  background: #f9fafb;
+  text-align: center;
+}
+
+.waitlist-form {
+  display: flex;
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.waitlist-input {
+  flex: 1;
+  min-width: 280px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.waitlist-input:focus {
+  border-color: #00b289;
+  box-shadow: 0 0 0 3px rgba(0, 178, 137, 0.1);
+}
+
+.waitlist-button {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #00b289 0%, #00a07a 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 178, 137, 0.2);
+}
+
+.waitlist-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 178, 137, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .supported-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .supported-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 2rem;
+  }
+
+  .tunisia-highlight {
+    padding: 40px 24px;
+    margin: 32px auto;
+  }
+
+  .tunisia-flag {
+    font-size: 4rem;
+  }
+
+  .tunisia-title {
+    font-size: 1.75rem;
+  }
+
+  .contribution-feature {
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+  }
+
+  .contribution-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.125rem;
+  }
+
+  .contribution-title {
+    font-size: 1.125rem;
+  }
+
+  .contribution-text {
+    font-size: 1rem;
+  }
+
+  .eligibility-simple {
+    gap: 20px;
+  }
+
+  .eligibility-item {
+    padding: 20px;
+  }
+
+  .eligibility-item-title {
+    font-size: 1.125rem;
+  }
+
+  .eligibility-item-text {
+    font-size: 1rem;
+  }
+
+  .waitlist-form {
+    flex-direction: column;
+  }
+
+  .waitlist-input,
+  .waitlist-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .upcoming-countries-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

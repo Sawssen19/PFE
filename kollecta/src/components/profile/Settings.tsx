@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { selectUser } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
 import { setProfileData, updateProfileData } from '../../store/slices/profileSlice';
 import { updateUser } from '../../store/slices/authSlice';
 import { profileService } from '../../features/profile/profileService';
 import { accountService } from '../../features/account/accountService';
+import { authService } from '../../features/auth/authService';
 import { Info, Eye, EyeOff, Calendar, Globe, Phone, Mail, User, Lock, AlertCircle, CheckCircle, XCircle, Loader2, Shield, Trash2, PowerOff, Users, Bell, Clock, CheckCircle2 } from 'lucide-react';
 import { Button } from '@mui/material';
 import AccountRequestConfirmation from './AccountRequestConfirmation';
@@ -16,12 +17,16 @@ import './Settings.css';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const profileData = useSelector((state: RootState) => state.profile.data);
   const authToken = useSelector((state: RootState) => state.auth.token);
   
-  const [activeTab, setActiveTab] = useState('compte');
+  // Initialiser activeTab depuis location.state si disponible
+  const [activeTab, setActiveTab] = useState(
+    (location.state as any)?.activeTab || 'compte'
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [editMode, setEditMode] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -47,12 +52,91 @@ const Settings = () => {
     password: ''
   });
   
+  // Charger les préférences depuis localStorage ou utiliser les valeurs par défaut
+  const loadNotificationPreferences = (userId: string) => {
+    const saved = localStorage.getItem(`notificationPreferences_${userId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log('📥 Préférences chargées depuis localStorage:', parsed);
+        return parsed;
+      } catch (e) {
+        console.error('❌ Erreur lors du parsing des préférences:', e);
+      }
+    }
+    // Valeurs par défaut
+    const defaults = {
+      emailNotifications: true,
+      donationUpdates: true,
+    };
+    console.log('📥 Utilisation des valeurs par défaut:', defaults);
+    return defaults;
+  };
+
+  // Initialiser le state avec les valeurs par défaut
+  // Les valeurs réelles seront chargées dans le useEffect
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
-    pushNotifications: true,
-    marketingEmails: false,
     donationUpdates: true,
   });
+
+  // Recharger les préférences quand l'utilisateur change (connexion/déconnexion)
+  useEffect(() => {
+    if (!user?.id) {
+      console.log('⚠️ Pas d\'utilisateur connecté, réinitialisation aux valeurs par défaut');
+      setNotificationSettings({
+        emailNotifications: true,
+        donationUpdates: true,
+      });
+      return;
+    }
+
+    console.log('🔄 ===== CHARGEMENT DES PRÉFÉRENCES =====');
+    console.log('🔄 User ID:', user.id);
+    const key = `notificationPreferences_${user.id}`;
+    console.log('🔄 Clé recherchée:', key);
+    
+    const saved = localStorage.getItem(key);
+    console.log('🔍 Valeur brute dans localStorage:', saved);
+    
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log('✅ Préférences parsées avec succès:', parsed);
+        console.log('✅ donationUpdates dans localStorage:', parsed.donationUpdates);
+        
+        // Mettre à jour le state uniquement si les valeurs sont différentes
+        setNotificationSettings(prev => {
+          if (JSON.stringify(prev) !== JSON.stringify(parsed)) {
+            console.log('🔄 Mise à jour du state nécessaire');
+            console.log('🔄 Ancien state:', prev);
+            console.log('🔄 Nouveau state:', parsed);
+            return parsed;
+          }
+          console.log('✅ State déjà à jour, pas de changement');
+          return prev;
+        });
+      } catch (e) {
+        console.error('❌ Erreur parsing:', e);
+        // Utiliser les valeurs par défaut en cas d'erreur
+        const defaults = {
+          emailNotifications: true,
+          donationUpdates: true,
+        };
+        setNotificationSettings(defaults);
+        console.log('⚠️ Utilisation des valeurs par défaut à cause d\'une erreur');
+      }
+    } else {
+      console.log('⚠️ Aucune préférence sauvegardée pour cet utilisateur');
+      console.log('⚠️ Utilisation des valeurs par défaut');
+      const defaults = {
+        emailNotifications: true,
+        donationUpdates: true,
+      };
+      setNotificationSettings(defaults);
+    }
+    console.log('🔄 ===== FIN DU CHARGEMENT =====');
+  }, [user?.id]); // ⚠️ IMPORTANT: Ne charger que quand user.id change
   
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openDeactivateDialog, setOpenDeactivateDialog] = useState(false);
@@ -119,9 +203,8 @@ const Settings = () => {
     };
 
     loadProfileData();
-    
-
   }, [user?.id, profileData, dispatch]);
+
 
   // Synchroniser formData avec profileData quand il change
   useEffect(() => {
@@ -224,6 +307,91 @@ const Settings = () => {
   console.log('🔧 Settings - profileData:', profileData);
   console.log('🔧 Settings - profilePicture:', profileData?.profilePicture);
   console.log('🔧 Settings - Bouton suppression visible:', !!profileData?.profilePicture);
+  
+  // 🔧 VÉRIFICATION : S'assurer que le state correspond toujours à localStorage
+  // Cette vérification se fait uniquement lors du rendu, pas dans un useEffect
+  // pour éviter les boucles infinies
+  if (user?.id) {
+    const key = `notificationPreferences_${user.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Si le state ne correspond pas à localStorage, c'est un problème
+        // mais on ne corrige pas ici pour éviter les boucles infinies
+        // La correction se fait dans le useEffect principal
+        if (parsed.donationUpdates !== notificationSettings.donationUpdates ||
+            parsed.emailNotifications !== notificationSettings.emailNotifications) {
+          console.warn('⚠️⚠️⚠️ INCOHÉRENCE DÉTECTÉE ENTRE STATE ET LOCALSTORAGE');
+          console.warn('⚠️ State actuel:', notificationSettings);
+          console.warn('⚠️ localStorage:', parsed);
+        }
+      } catch (e) {
+        // Ignorer les erreurs de parsing ici
+      }
+    }
+  }
+
+  // Fonction pour sauvegarder les préférences de notifications (localStorage + Backend)
+  const saveNotificationPreferences = async (preferences: typeof notificationSettings) => {
+    if (!user?.id) {
+      console.warn('⚠️ Impossible de sauvegarder : utilisateur non connecté');
+      return;
+    }
+    
+    const key = `notificationPreferences_${user.id}`;
+    console.log('💾 ===== SAUVEGARDE DES PRÉFÉRENCES =====');
+    console.log('💾 User ID:', user.id);
+    console.log('💾 Clé:', key);
+    console.log('💾 Nouvelles préférences:', preferences);
+    console.log('💾 donationUpdates:', preferences.donationUpdates);
+    
+    try {
+      // 1. Sauvegarder dans localStorage
+      const serialized = JSON.stringify(preferences);
+      console.log('💾 JSON sérialisé:', serialized);
+      
+      localStorage.setItem(key, serialized);
+      console.log('💾 Écriture dans localStorage effectuée');
+      
+      // 2. Synchroniser avec le backend
+      try {
+        await profileService.updateNotificationPreferences({
+          emailNotifications: preferences.emailNotifications,
+          donationUpdates: preferences.donationUpdates
+        });
+        console.log('✅ Préférences synchronisées avec le backend');
+      } catch (backendError) {
+        console.error('⚠️ Erreur lors de la synchronisation avec le backend:', backendError);
+        // Ne pas bloquer si le backend échoue, localStorage est déjà sauvegardé
+      }
+      
+      // 3. Vérifier immédiatement que la sauvegarde a bien fonctionné
+      const saved = localStorage.getItem(key);
+      console.log('🔍 Vérification après sauvegarde:', saved);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('🔍 Valeur parsée après vérification:', parsed);
+        console.log('🔍 donationUpdates vérifié:', parsed.donationUpdates);
+        
+        if (saved === serialized && parsed.donationUpdates === preferences.donationUpdates) {
+          console.log('✅✅✅ SAUVEGARDE RÉUSSIE ET VÉRIFIÉE');
+          console.log('✅ donationUpdates sauvegardé:', parsed.donationUpdates);
+        } else {
+          console.error('❌❌❌ PROBLÈME DE SAUVEGARDE');
+          console.error('❌ donationUpdates attendu:', preferences.donationUpdates);
+          console.error('❌ donationUpdates reçu:', parsed.donationUpdates);
+        }
+      } else {
+        console.error('❌❌❌ ÉCHEC TOTAL - Aucune valeur sauvegardée');
+      }
+      console.log('💾 ===== FIN DE LA SAUVEGARDE =====');
+    } catch (error) {
+      console.error('❌ Erreur lors de la sauvegarde des préférences:', error);
+      setMessage({ type: 'error', text: 'Erreur lors de la sauvegarde des préférences' });
+    }
+  };
 
   const handleSave = async (field: string) => {
     setLoading(true);
@@ -310,6 +478,11 @@ const Settings = () => {
   };
 
   const handlePasswordChange = async () => {
+    if (!passwordData.currentPassword) {
+      setMessage({ type: 'error', text: 'Veuillez entrer votre mot de passe actuel' });
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas' });
       return;
@@ -322,11 +495,14 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      // Ici vous devrez implémenter la logique de changement de mot de passe
+      // Appeler le service pour changer le mot de passe
+      await authService.changePassword(passwordData.currentPassword, passwordData.newPassword);
       setMessage({ type: 'success', text: 'Mot de passe modifié avec succès' });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Erreur lors du changement de mot de passe' });
+    } catch (error: any) {
+      console.error('Erreur lors du changement de mot de passe:', error);
+      const errorMessage = error?.message || 'Erreur lors du changement de mot de passe';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -1192,51 +1368,11 @@ const Settings = () => {
                       <input
                         type="checkbox"
                         checked={notificationSettings.emailNotifications}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, emailNotifications: e.target.checked }))}
-                      />
-                      <span className="modern-toggle-slider"></span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="notification-card">
-                  <div className="notification-card-header">
-                    <div className="notification-icon-wrapper push">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                    <div className="notification-info">
-                      <h4>Notifications push</h4>
-                      <p>Recevoir des notifications sur votre appareil</p>
-                    </div>
-                    <label className="modern-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={notificationSettings.pushNotifications}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, pushNotifications: e.target.checked }))}
-                      />
-                      <span className="modern-toggle-slider"></span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="notification-card">
-                  <div className="notification-card-header">
-                    <div className="notification-icon-wrapper marketing">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                    <div className="notification-info">
-                      <h4>Emails marketing</h4>
-                      <p>Recevoir des offres et promotions</p>
-                    </div>
-                    <label className="modern-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={notificationSettings.marketingEmails}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, marketingEmails: e.target.checked }))}
+                        onChange={(e) => {
+                          const newSettings = { ...notificationSettings, emailNotifications: e.target.checked };
+                          setNotificationSettings(newSettings);
+                          saveNotificationPreferences(newSettings);
+                        }}
                       />
                       <span className="modern-toggle-slider"></span>
                     </label>
@@ -1258,7 +1394,17 @@ const Settings = () => {
                       <input
                         type="checkbox"
                         checked={notificationSettings.donationUpdates}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, donationUpdates: e.target.checked }))}
+                        onChange={(e) => {
+                          console.log('🔄 ===== CLIC SUR TOGGLE donationUpdates =====');
+                          console.log('🔄 Ancienne valeur:', notificationSettings.donationUpdates);
+                          console.log('🔄 Nouvelle valeur:', e.target.checked);
+                          const newSettings = { ...notificationSettings, donationUpdates: e.target.checked };
+                          console.log('🔄 Nouveau settings complet:', newSettings);
+                          setNotificationSettings(newSettings);
+                          console.log('🔄 State mis à jour, appel de saveNotificationPreferences...');
+                          saveNotificationPreferences(newSettings);
+                          console.log('🔄 ===== FIN DU CLIC =====');
+                        }}
                       />
                       <span className="modern-toggle-slider"></span>
                     </label>

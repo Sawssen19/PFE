@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import cagnottesController from './cagnottes.controller';
+import cagnotteRemindersController from './cagnotteReminders.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { uploadMiddleware } from '../../middleware/upload.middleware';
 
@@ -9,6 +10,11 @@ const router = Router();
 router.get('/', cagnottesController.getAllCagnottes.bind(cagnottesController));
 router.get('/search', cagnottesController.searchCagnottes.bind(cagnottesController)); // Route de recherche
 router.get('/:id', cagnottesController.getCagnotteById.bind(cagnottesController));
+
+// Routes pour les rappels (accessibles publiquement pour les cron jobs, mais peuvent être sécurisées)
+// ⚠️ IMPORTANT : Ces routes doivent être AVANT le middleware d'authentification pour être publiques
+router.get('/reminders/check', cagnotteRemindersController.checkReminders.bind(cagnotteRemindersController));
+router.get('/reminders/check-expired', cagnotteRemindersController.checkExpired.bind(cagnotteRemindersController));
 
 // Routes protégées (nécessitent une authentification)
 router.use(authMiddleware);

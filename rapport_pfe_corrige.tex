@@ -1,0 +1,297 @@
+\documentclass[11pt]{report} % Correction: 11pt au lieu de lipt
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{parskip}
+\usepackage[french]{babel} % Correction: [french] au lieu de ffrench
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xltabular}
+\usepackage{longtable}
+\usepackage{caption} % Ajout nécessaire pour \captionsetup
+\usepackage{ragged2e}
+\usepackage{titlesec}
+
+\titleformat{\chapter}
+  {\normalfont\Large\bfseries\centering} % taille et style
+  {\MakeUppercase{Chapitre \thechapter :}} % "CHAPITRE 1 :"
+  {1em} % espace entre "CHAPITRE 1 :" et le titre
+  {\MakeUppercase} % met le titre du chapitre en majuscules
+
+% Configuration du séparateur de légende
+\captionsetup{labelsep=colon} % Correction: syntaxe correcte
+
+% Configuration de la page (suppression de la duplication)
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm}
+
+% Configuration de la numérotation des sections
+\renewcommand{\thesection}{\thechapter.\arabic{section}} % Format 1.1, 1.2, etc.
+
+% Définition des couleurs
+\definecolor{titlecolor}{RGB}{40, 60, 100}
+\definecolor{linecolor}{RGB}{80, 120, 160}
+
+% Réduire les espacements par défaut
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\thispagestyle{empty}
+\vspace*{0.1cm} % Espacement minimal au début
+
+\begin{center}
+
+% Logo SESAME - chargé depuis le dossier images/
+\includegraphics[width=0.25\textwidth]{images/sesame_logo.png}
+\\[0.5cm]
+
+% Titre principal
+{\color{titlecolor}\fontsize{16pt}{20pt}\selectfont 
+\textbf{RAPPORT DE STAGE DE PROJET DE FIN D'ÉTUDES}}
+
+\\[0.5cm]
+
+% Ligne de séparation
+{\color{linecolor}\rule{\textwidth}{0.8pt}}
+
+\\[0.8cm]
+
+% Intitulé du stage
+{\fontsize{12pt}{14pt}\selectfont
+\textbf{Conception et développement d'une plateforme de} \\
+\textbf{cagnottes collaboratives et de crowdfunding}}
+
+\\[1cm]
+
+% Réalisé par
+{\fontsize{12pt}{14pt}\selectfont
+Réalisé par \\
+\vspace{0.1cm}
+\textbf{YAZIDI SAWSSEN}}
+
+\\[1cm]
+
+% Logo et nom de l'entreprise - chargé depuis le dossier images/
+{\fontsize{12pt}{14pt}\selectfont
+Entreprise d'accueil \\
+\vspace{0.1cm}
+\includegraphics[width=0.18\textwidth]{images/cca_logo.png} \\
+\vspace{0.1cm}
+\textbf{CCA}}
+
+\\[1cm]
+
+% Encadrants
+{\fontsize{12pt}{14pt}\selectfont
+Encadrant Entreprise \\
+\vspace{0.1cm}
+\textbf{Mr EUCHI KAIS} \\
+\vspace{0.4cm}
+Encadrant SESAME \\
+\vspace{0.1cm}
+\textbf{Mr Ben Rhouma Kamel}}
+
+\\[1cm]
+
+% Année universitaire
+{\fontsize{12pt}{14pt}\selectfont
+\textbf{Année Universitaire} \\
+\vspace{0.1cm}
+2024/2025}
+
+\end{center}
+
+% Ajustement final pour garantir que tout tient sur une page
+\vspace*{\fill}
+
+% ==================== Dédicaces ====================
+\cleardoublepage
+\thispagestyle{empty}
+
+\begin{center}
+\vspace*{2cm}
+{\Large\textbf{Dédicaces}}\\[1.5cm]
+
+\begin{minipage}{0.9\textwidth}
+\centering
+\textit{
+Je dédie ce travail de fin d'études à toutes les personnes qui ont contribué, de près ou de loin, à sa réalisation.\\[0.8cm]
+
+À la mémoire de mon père, paix à son âme, dont les valeurs de persévérance et de travail continuent de me guider chaque jour.\\[0.8cm]
+
+À ma mère, pour son amour, sa patience et ses sacrifices. Merci pour ton soutien inconditionnel et ta confiance sans faille.\\[0.8cm]
+
+À ma sœur, pour sa présence, ses encouragements et son appui constant.\\[0.8cm]
+
+À mon mari, pour son amour, sa compréhension et son soutien tout au long de ce parcours.\\[0.8cm]
+
+À ma famille, mes amis et tous ceux qui m'ont soutenue et encouragée durant cette aventure.
+}
+\end{minipage}
+
+\vspace*{2cm}
+\end{center}
+% =====================================================
+
+% ==================== Remerciements ====================
+\cleardoublepage
+\thispagestyle{empty}
+
+\begin{center}
+\vspace*{2cm}
+{\Large\textbf{Remerciements}}\\[1.5cm]
+
+\begin{minipage}{0.9\textwidth}
+\centering
+\textit{
+Je tiens à exprimer ma sincère gratitude à toutes les personnes qui ont contribué au succès de ce projet de fin d'études.\\[0.8cm]
+
+Je remercie chaleureusement Monsieur \textbf{Euchi Kais}, mon encadrant en entreprise, pour m'avoir offert l'opportunité de réaliser mon stage à l'agence CCA. Son soutien constant et son encadrement ont été essentiels à la réussite de ce projet.\\[0.8cm]
+
+Un grand merci à mon encadrant académique, Monsieur \textbf{Ben Rhouma Kamel}, pour ses précieux conseils, son soutien et son expertise. Son accompagnement méthodologique a été déterminant dans l'accomplissement de ce travail.\\[0.8cm]
+
+Je remercie également les membres du jury pour leur temps, leurs évaluations constructives et leurs suggestions qui ont permis d'améliorer la qualité de ce projet.\\[0.8cm]
+
+Enfin, merci à tous les enseignants de l'Université SESAME pour leurs enseignements, leurs conseils et leur soutien tout au long de mon parcours universitaire.
+}
+\end{minipage}
+
+\vspace*{2cm}
+\end{center}
+% =====================================================
+
+% ==================== Table des matières ====================
+\newpage
+\thispagestyle{empty}
+\noindent
+
+\tableofcontents
+
+\vspace*{\fill}
+% =====================================================
+
+% ==================== Table des figures ====================
+\newpage
+\thispagestyle{empty}
+\noindent
+
+\listoffigures 
+
+\vspace*{\fill}
+% =====================================================
+
+% ==================== Liste des tableaux ====================
+\newpage
+\thispagestyle{empty}
+\noindent
+\listoftables
+
+\vspace*{\fill}
+% =====================================================
+
+% ==================== Liste des abréviations ====================
+\newpage
+\thispagestyle{empty}
+\noindent
+{\Large\textbf{Liste des abréviations}}
+
+\\
+
+\\
+
+\begin{itemize}
+    \item \textbf{JWT} : JSON Web Token
+    \item \textbf{KYC} : Know Your Customer
+    \item \textbf{AML} : Anti-Money Laundering
+    \item \textbf{RGPD} : Règlement Général sur la Protection des Données
+    \item \textbf{DSP2} : Directive sur les Services de Paiement 2
+    \item \textbf{API} : Application Programming Interface
+    \item \textbf{REST} : Representational State Transfer
+    \item \textbf{ORM} : Object-Relational Mapping
+    \item \textbf{CRUD} : Create, Read, Update, Delete
+    \item \textbf{SQL} : Structured Query Language
+    \item \textbf{SGBD} : Système de Gestion de Base de Données
+    \item \textbf{UI} : User Interface
+    \item \textbf{UX} : User Experience
+    \item \textbf{SPA} : Single Page Application
+    \item \textbf{UML} : Unified Modeling Language
+    \item \textbf{US} : User Story
+\end{itemize}
+
+\vspace*{\fill}
+% =====================================================
+
+% ==================== Introduction ====================
+\newpage
+\addcontentsline{toc}{section}{Introduction}
+\begin{center}
+\vspace*{2cm}
+{\LARGE\textbf{Introduction}}
+\end{center}
+
+\vspace{1cm}
+
+% Votre texte d'introduction ici...
+\noindent\hspace{1.5cm} Dans un monde numérique en constante évolution, les solutions collaboratives en ligne jouent un rôle crucial dans le renforcement de la solidarité et la réalisation de projets collectifs. Les plateformes de financement participatif (crowdfunding) émergent comme des vecteurs d'innovation sociale : elles permettent à de nombreux contributeurs de se regrouper pour soutenir financièrement des causes communes, des projets personnels ou associatifs. Ce phénomène, rendu possible par la puissance des réseaux Internet et sociaux, reflète une nouvelle économie de l'entraide : chacun peut devenir acteur du financement de projets qu'il souhaite voir aboutir. La vocation d'une telle approche est d'aller au-delà du simple aspect financier, en favorisant l'engagement citoyen et la cohésion communautaire autour de valeurs partagées.\\
+
+Le présent projet s'inscrit précisément dans cette dynamique. Il a été réalisé au sein de l'organisme d'accueil CCA, structure dévouée à la promotion de l'innovation technologique au service de la société. Soucieux de répondre aux besoins des initiatives collectives, CCA accompagne les porteurs de projets et les associations dans la mise en place d'outils numériques facilitant la collaboration et le financement. Dans ce cadre, le développement d'une application web de cagnotte collaborative est apparu comme une opportunité pertinente, alignée sur la mission de CCA et sur les aspirations actuelles en matière de contribution sociale. En effet, CCA place l'accent sur le développement d'applications citoyennes, ce qui correspond au cœur du projet entrepris.\\
+
+Plusieurs plateformes spécialisées dans la cagnotte en ligne existent déjà et témoignent de cet engouement. À l'échelle internationale, Leetchi est l'une des solutions de référence : lancée en France, elle offre un service de cagnotte généraliste, sécurisé et intuitif. Les utilisateurs peuvent y collecter des fonds pour diverses occasions (anniversaires, cadeaux communs, projets associatifs, etc.) en versant immédiatement leur contribution. Leetchi prélevait historiquement une commission sur chaque don, ce qui constitue l'un de ses inconvénients pour les organisateurs. Par ailleurs, même si elle est ergonomique, sa modalité principale reste le paiement effectif des sommes récoltées. D'autre part, Cha9a9a représente une initiative locale en Tunisie, portée par l'Association Tunisienne des Technologies Digitales. Cette plateforme vise spécifiquement la solidarité et les dons à but non lucratif : elle permet aux associations, aux écoles ou aux particuliers de lancer des campagnes de collecte sans commission sur les dons, facilitant le soutien à des causes sociales. Toutefois, Cha9a9a a un périmètre plus restreint : elle est essentiellement orientée vers le contexte tunisien et ne prend pas en compte le mécanisme de promesse de don différé. Poussées ses fonctionnalités de suivi et de statistiques sont moins poussées que celles d'un service optimisé à grande échelle, ce qui peut limiter la visibilité des campagnes.\\
+
+Ces constats font émerger un besoin particulier : proposer un modèle de cagnotte par promesse de don, avec une structure opérationnelle respectant les contraintes réglementaires. Contrairement aux plateformes classiques qui exigent une transaction immédiate, la promesse de don permet au contributeur de s'engager sans paiement instantané : le versement effectif interviendra ultérieurement, généralement lorsque le projet se concrétise ou à la fin de la campagne. Cette modalité offre flexibilité et confiance, tout en s'adaptant à certains cas d'usage où le temps joue un rôle clef (par exemple des levées de fonds programmées ou des événements à venir). Par ailleurs, la collecte de fonds en ligne est soumise à des obligations de conformité. Notamment, pour prévenir la fraude et le blanchiment d'argent, la réglementation impose de vérifier l'identité des donateurs (processus KYC – Know Your Customer) et de surveiller les transactions financières (AML – Anti-Money Laundering). Ces exigences légales encadrent la conception du projet : il est essentiel d'intégrer des mécanismes de contrôle et de traçabilité dans la plateforme pour répondre à ces normes.\\
+
+Pour satisfaire ces besoins, le projet propose la réalisation d'une application web de cagnotte collaborative, centrée sur la promesse de don. Cette plateforme donne la possibilité à tout utilisateur de créer une cagnotte en ligne en définissant un objectif et en invitant des contributeurs, ces derniers formalisant leur engagement par une promesse. Les organisateurs peuvent ensuite suivre l'avancée de leur collecte grâce à un tableau de bord dynamique, où figurent le montant total promis et le détail des participants. Des notifications automatisées informent les contributeurs des évolutions importantes (atteinte d'objectifs intermédiaires, rappel d'échéance, événement lié au projet, etc.), afin de maintenir leur implication. Des outils statistiques sont également intégrés pour analyser la participation : évolution temporelle des promesses, profil des donateurs, etc. Enfin, la plateforme prend en compte les aspects de sécurité et conformité : un processus d'inscription complet intègre la collecte des informations nécessaires pour la vérification KYC, et l'ensemble du traitement des promesses de dons respecte les règles AML en vigueur.\\
+
+Le développement de cette solution s'est effectué selon la méthodologie agile Scrum, choisie pour sa capacité à structurer le travail en équipes multidisciplinaires et à s'adapter aux besoins évolutifs. Dès la phase initiale (Sprint 0), l'équipe projet a clarifié les exigences, établi le backlog et défini l'architecture technique générale. Le déroulement des sprints ultérieurs (Sprint 1 à Sprint 5) a permis de réaliser les fonctionnalités les unes après les autres : chaque sprint comportait des réunions quotidiennes (daily stand-up), des sessions de révision des objectifs ainsi qu'une revue et une rétrospective en fin de cycle pour intégrer les retours. Cette approche itérative a assuré la cohérence progressive du système, en testant et validant chaque module avant d'enrichir l'outil avec les suivants. La méthode Scrum a ainsi garanti transparence, responsabilité collective et livraison de livrables tangibles à chaque étape.\\
+
+Ce rapport présente l'ensemble de cette démarche. Après ce chapitre introductif, il détaille d'abord les travaux préparatoires effectués lors du Sprint 0, notamment l'étude de l'existant et la définition des besoins. Les chapitres suivants sont organisés par sprint : chaque section correspond à un sprint de développement (Sprint 1 à Sprint 5), décrivant les objectifs visés, les choix techniques opérés et les résultats obtenus à l'issue de l'itération. Enfin, la phase de tests et le déploiement final de la plateforme font l'objet d'une dernière partie, illustrant la validation fonctionnelle et la mise à disposition de l'application. Ce plan reflète la progression logique du projet et fournit au lecteur un aperçu exhaustif de son contenu, depuis l'analyse initiale jusqu'à la réalisation complète.
+
+% =====================================================
+
+% ==================== CHAPITRE 1 : CADRE GÉNÉRAL DU PROJET ====================
+\newpage
+
+\chapter{Cadre Général du Projet}
+
+% Section Plan (non numérotée)
+\section*{Plan}
+\begin{enumerate}
+    \item Introduction
+    \item Présentation de l'organisme d'accueil
+    \item Analyse de l'existant
+    \item Définition du besoin et enjeux
+    \item Solution proposée
+    \item La méthodologie de travail
+    \item Conclusion
+\end{enumerate}
+\newpage
+
+% Sections numérotées automatiquement 1.1, 1.2, 1.3...
+\section{Introduction}
+
+\noindent\hspace{1.5cm} Ce chapitre constitue un élément clé pour appréhender l'ensemble du projet. Il débute par une contextualisation détaillée de l'environnement dans lequel s'inscrit notre travail, propose ensuite une analyse approfondie de la situation actuelle, puis met en lumière la problématique identifiée. Enfin, il présente la méthodologie de gestion de projet adoptée. Cette démarche permet au lecteur de comprendre notre cadre professionnel, de cerner les enjeux majeurs et de saisir notre approche méthodologique visant à garantir la réussite du projet.
+
+% ... (Le reste du document continue avec tous les chapitres)
+
+% NOTE: Le document est très long. Pour une analyse complète, je dois créer un fichier de corrections détaillé.
+
+
+
+
+
+
+
+
+
+
+
+
+

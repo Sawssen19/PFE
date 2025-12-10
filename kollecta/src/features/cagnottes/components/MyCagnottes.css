@@ -670,4 +670,44 @@
 .my-cagnottes-page .see-more-btn:focus {
   outline: 2px solid var(--kollecta-primary);
   outline-offset: 2px;
+}
+
+/* Bouton de suppression - Spécifique à MyCagnottes */
+.my-cagnottes-page .delete-cagnotte-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(245, 101, 101, 0.95);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.my-cagnottes-page .delete-cagnotte-btn:hover {
+  background: rgba(220, 38, 38, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.my-cagnottes-page .delete-cagnotte-btn:active {
+  transform: scale(0.95);
+}
+
+.my-cagnottes-page .delete-cagnotte-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.my-cagnottes-page .delete-cagnotte-btn:focus {
+  outline: 2px solid rgba(245, 101, 101, 0.8);
+  outline-offset: 2px;
 } 

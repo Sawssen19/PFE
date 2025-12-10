@@ -240,6 +240,34 @@ export const createNotification = async (
   metadata?: any
 ) => {
   try {
+    // 🔔 Vérifier les préférences de notifications pour les notifications DONATION
+    if (type === 'DONATION') {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { notificationPreferences: true }
+        });
+
+        if (user?.notificationPreferences) {
+          const preferences = user.notificationPreferences as { donationUpdates?: boolean };
+          // Si donationUpdates est false, ne pas créer la notification
+          if (preferences.donationUpdates === false) {
+            console.log(`⏭️ Notification DONATION ignorée pour l'utilisateur ${userId} (donationUpdates désactivé)`);
+            return null;
+          }
+        }
+        // Si pas de préférences définies, on considère que c'est activé par défaut (true)
+      } catch (error: any) {
+        // Si le champ n'existe pas encore dans la base, on ignore l'erreur et on continue
+        // (le champ sera créé lors de la prochaine migration)
+        if (error?.code === 'P2025' || error?.message?.includes('Unknown column')) {
+          console.log(`⚠️ Champ notificationPreferences pas encore disponible, notification créée par défaut`);
+        } else {
+          throw error;
+        }
+      }
+    }
+
     const notification = await prisma.notification.create({
       data: {
         userId,

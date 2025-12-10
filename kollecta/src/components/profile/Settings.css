@@ -879,11 +879,12 @@ input:checked + .modern-toggle-slider:before {
 
 .password-form input {
   width: 100%;
-  padding: 14px 18px;
+  padding: 14px 50px 14px 18px;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   font-size: 0.875rem;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .password-form input:focus {
@@ -892,16 +893,39 @@ input:checked + .modern-toggle-slider:before {
   box-shadow: 0 0 0 4px rgba(0, 178, 137, 0.1);
 }
 
+.password-form .relative {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
 .password-toggle {
   position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 12px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: #9ca3af;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  margin: 0;
+  width: 32px;
+  height: 100%;
+  line-height: 0;
+}
+
+.password-toggle svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .password-toggle:hover {

@@ -52,13 +52,13 @@ import {
   Storage as DatabaseIcon,
   Cloud as CloudIcon,
 } from '@mui/icons-material';
+import adminService from '../../features/admin/adminService';
 
 interface SystemSettings {
   general: {
     siteName: string;
     siteDescription: string;
     maintenanceMode: boolean;
-    debugMode: boolean;
     timezone: string;
     language: string;
   };
@@ -104,53 +104,110 @@ const AdminSettings: React.FC = () => {
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string>('');
 
-  // 🎯 Données de démonstration (à remplacer par l'API)
+  // 📋 Charger les paramètres depuis l'API
   useEffect(() => {
-    const mockSettings: SystemSettings = {
-      general: {
-        siteName: 'Kollecta',
-        siteDescription: 'Plateforme de collecte de fonds collaborative',
-        maintenanceMode: false,
-        debugMode: false,
-        timezone: 'Europe/Paris',
-        language: 'fr',
-      },
-      security: {
-        sessionTimeout: 30,
-        maxLoginAttempts: 5,
-        twoFactorRequired: false,
-        passwordMinLength: 8,
-        passwordComplexity: true,
-        ipWhitelist: ['192.168.1.0/24', '10.0.0.0/8'],
-        sslRequired: true,
-      },
-      notifications: {
-        emailEnabled: true,
-        smsEnabled: false,
-        pushEnabled: true,
-        adminEmail: 'admin@kollecta.com',
-        adminPhone: '+33123456789',
-        notificationDelay: 5,
-      },
-      performance: {
-        cacheEnabled: true,
-        cacheTimeout: 3600,
-        maxFileSize: 10,
-        compressionEnabled: true,
-        cdnEnabled: false,
-        rateLimit: 100,
-      },
-      database: {
-        connectionPool: 20,
-        queryTimeout: 30,
-        backupEnabled: true,
-        backupFrequency: 24,
-        backupRetention: 30,
-      },
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        const response = await adminService.getSystemSettings();
+        
+        if (response.success) {
+          setSettings(response.data as SystemSettings);
+        } else {
+          console.error('Erreur lors du chargement des paramètres');
+          // Utiliser les valeurs par défaut en cas d'erreur
+          setSettings({
+            general: {
+              siteName: 'Kollecta',
+              siteDescription: 'Plateforme de collecte de fonds collaborative',
+            maintenanceMode: false,
+            timezone: 'Africa/Tunis',
+              language: 'fr',
+            },
+            security: {
+              sessionTimeout: 30,
+              maxLoginAttempts: 5,
+              twoFactorRequired: false,
+              passwordMinLength: 8,
+              passwordComplexity: true,
+              ipWhitelist: [],
+              sslRequired: true,
+            },
+            notifications: {
+              emailEnabled: true,
+              smsEnabled: false,
+              pushEnabled: true,
+              adminEmail: 'admin@kollecta.com',
+              adminPhone: '+33123456789',
+              notificationDelay: 5,
+            },
+            performance: {
+              cacheEnabled: true,
+              cacheTimeout: 3600,
+              maxFileSize: 10,
+              compressionEnabled: true,
+              cdnEnabled: false,
+              rateLimit: 100,
+            },
+            database: {
+              connectionPool: 20,
+              queryTimeout: 30,
+              backupEnabled: true,
+              backupFrequency: 24,
+              backupRetention: 30,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des paramètres:', error);
+        // Utiliser les valeurs par défaut en cas d'erreur
+        setSettings({
+          general: {
+            siteName: 'Kollecta',
+            siteDescription: 'Plateforme de collecte de fonds collaborative',
+            maintenanceMode: false,
+            timezone: 'Europe/Paris',
+            language: 'fr',
+          },
+          security: {
+            sessionTimeout: 30,
+            maxLoginAttempts: 5,
+            twoFactorRequired: false,
+            passwordMinLength: 8,
+            passwordComplexity: true,
+            ipWhitelist: [],
+            sslRequired: true,
+          },
+          notifications: {
+            emailEnabled: true,
+            smsEnabled: false,
+            pushEnabled: true,
+            adminEmail: 'admin@kollecta.com',
+            adminPhone: '+33123456789',
+            notificationDelay: 5,
+          },
+          performance: {
+            cacheEnabled: true,
+            cacheTimeout: 3600,
+            maxFileSize: 10,
+            compressionEnabled: true,
+            cdnEnabled: false,
+            rateLimit: 100,
+          },
+          database: {
+            connectionPool: 20,
+            queryTimeout: 30,
+            backupEnabled: true,
+            backupFrequency: 24,
+            backupRetention: 30,
+          },
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setSettings(mockSettings);
-    setLoading(false);
+    loadSettings();
   }, []);
 
   const handleSettingChange = (section: keyof SystemSettings, key: string, value: any) => {
@@ -174,16 +231,20 @@ const AdminSettings: React.FC = () => {
 
     setSaving(true);
     try {
-      // 🎯 Ici, vous appellerez l'API pour sauvegarder les paramètres
-      console.log('Sauvegarde des paramètres:', settings);
+      const response = await adminService.updateSystemSettings(settings);
       
-      // Simuler un délai d'API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setHasChanges(false);
-      console.log('Paramètres sauvegardés avec succès');
+      if (response.success) {
+        setHasChanges(false);
+        console.log('✅ Paramètres sauvegardés avec succès');
+        // Optionnel: afficher une notification de succès
+        alert('Paramètres sauvegardés avec succès');
+      } else {
+        console.error('Erreur lors de la sauvegarde:', response);
+        alert('Erreur lors de la sauvegarde des paramètres');
+      }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
+      alert('Erreur lors de la sauvegarde des paramètres');
     } finally {
       setSaving(false);
     }
@@ -308,9 +369,21 @@ const AdminSettings: React.FC = () => {
                       onChange={(e) => handleSettingChange('general', 'timezone', e.target.value)}
                       label="Fuseau horaire"
                     >
-                      <MenuItem value="Europe/Paris">Europe/Paris</MenuItem>
-                      <MenuItem value="UTC">UTC</MenuItem>
-                      <MenuItem value="America/New_York">America/New_York</MenuItem>
+                      <MenuItem value="Africa/Tunis">Africa/Tunis (Tunisie)</MenuItem>
+                      <MenuItem value="Europe/Paris">Europe/Paris (France)</MenuItem>
+                      <MenuItem value="Europe/London">Europe/London (Royaume-Uni)</MenuItem>
+                      <MenuItem value="Europe/Berlin">Europe/Berlin (Allemagne)</MenuItem>
+                      <MenuItem value="Europe/Madrid">Europe/Madrid (Espagne)</MenuItem>
+                      <MenuItem value="Europe/Rome">Europe/Rome (Italie)</MenuItem>
+                      <MenuItem value="America/New_York">America/New_York (États-Unis - Est)</MenuItem>
+                      <MenuItem value="America/Los_Angeles">America/Los_Angeles (États-Unis - Ouest)</MenuItem>
+                      <MenuItem value="America/Toronto">America/Toronto (Canada)</MenuItem>
+                      <MenuItem value="Asia/Dubai">Asia/Dubai (Émirats arabes unis)</MenuItem>
+                      <MenuItem value="Asia/Riyadh">Asia/Riyadh (Arabie saoudite)</MenuItem>
+                      <MenuItem value="Asia/Tokyo">Asia/Tokyo (Japon)</MenuItem>
+                      <MenuItem value="Asia/Shanghai">Asia/Shanghai (Chine)</MenuItem>
+                      <MenuItem value="Australia/Sydney">Australia/Sydney (Australie)</MenuItem>
+                      <MenuItem value="UTC">UTC (Temps universel)</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -341,21 +414,6 @@ const AdminSettings: React.FC = () => {
                   />
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
                     Active le mode maintenance pour tous les utilisateurs non-admin
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.general.debugMode}
-                        onChange={(e) => handleSettingChange('general', 'debugMode', e.target.checked)}
-                        color="info"
-                      />
-                    }
-                    label="Mode debug"
-                  />
-                  <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
-                    Active les logs de debug détaillés
                   </Typography>
                 </Grid>
               </Grid>

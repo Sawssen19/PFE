@@ -54,6 +54,7 @@ import {
   Campaign as CampaignIcon,
   Report as ReportIcon,
 } from '@mui/icons-material';
+import adminService from '../../features/admin/adminService';
 
 interface LogEntry {
   id: string;
@@ -76,14 +77,16 @@ const AdminLogs: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalLogs, setTotalLogs] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
-    start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0],
+    start: '',
+    end: '',
   });
+  const [useDateFilter, setUseDateFilter] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
@@ -91,151 +94,100 @@ const AdminLogs: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showDebugLogs, setShowDebugLogs] = useState(false);
+  const [importantLogs, setImportantLogs] = useState<Set<string>>(new Set());
 
-  // 🎯 Données de démonstration (à remplacer par l'API)
+  // 📋 Charger les logs depuis l'API
+  const loadLogs = async () => {
+    try {
+      setLoading(true);
+      console.log('📋 Chargement des logs...', {
+        page: page + 1,
+        limit: rowsPerPage,
+        levelFilter,
+        categoryFilter,
+        dateRange
+      });
+
+      // Mapper CAMPAIGN vers CAGNOTTE pour le backend
+      let backendCategory = categoryFilter;
+      if (categoryFilter === 'CAMPAIGN') {
+        backendCategory = 'CAGNOTTE';
+      }
+
+      const response = await adminService.getLogs({
+        page: page + 1,
+        limit: rowsPerPage,
+        level: levelFilter !== 'ALL' ? levelFilter : undefined,
+        category: backendCategory !== 'ALL' ? backendCategory : undefined,
+        startDate: useDateFilter && dateRange.start ? dateRange.start : undefined,
+        endDate: useDateFilter && dateRange.end ? dateRange.end : undefined,
+      });
+
+      console.log('📋 Réponse API complète:', JSON.stringify(response, null, 2));
+      console.log('📋 Structure de la réponse:', {
+        success: response.success,
+        hasData: !!response.data,
+        hasLogs: !!response.data?.logs,
+        logsCount: response.data?.logs?.length || 0,
+        hasPagination: !!response.data?.pagination,
+        total: response.data?.pagination?.total || 0
+      });
+
+      if (response.success && response.data) {
+        // Transformer les logs de l'API pour correspondre à l'interface LogEntry
+        const transformedLogs: LogEntry[] = (response.data.logs || []).map((log: any) => {
+          // Mapper CAGNOTTE vers CAMPAIGN pour correspondre à l'interface frontend
+          let category = log.category;
+          if (category === 'CAGNOTTE') {
+            category = 'CAMPAIGN';
+          }
+          
+          return {
+            id: log.id,
+            timestamp: log.timestamp,
+            level: log.level,
+            category: category as LogEntry['category'],
+            action: log.action,
+            description: log.description,
+            userId: log.userId,
+            userName: log.userName,
+            userEmail: log.userEmail,
+            ipAddress: log.ipAddress || 'N/A',
+            userAgent: log.userAgent || 'N/A',
+            sessionId: log.sessionId || 'N/A',
+            severity: log.severity,
+            metadata: log.metadata || {},
+          };
+        });
+
+        console.log(`📋 ${transformedLogs.length} logs transformés sur ${response.data.pagination.total} total`);
+        setLogs(transformedLogs);
+        setFilteredLogs(transformedLogs);
+        setTotalLogs(response.data.pagination.total || 0);
+      } else {
+        console.error('❌ Erreur lors du chargement des logs:', response);
+        setLogs([]);
+        setFilteredLogs([]);
+        setTotalLogs(0);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des logs:', error);
+      if (error instanceof Error) {
+        console.error('❌ Détails de l\'erreur:', error.message);
+        console.error('❌ Stack:', error.stack);
+      }
+      setLogs([]);
+      setFilteredLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const mockLogs: LogEntry[] = [
-      {
-        id: '1',
-        timestamp: '2024-01-20T15:30:00Z',
-        level: 'SECURITY',
-        category: 'AUTH',
-        action: 'LOGIN_SUCCESS',
-        description: 'Connexion réussie pour l\'utilisateur admin',
-        userId: 'admin-1',
-        userName: 'Sawssen Yazidi',
-        userEmail: 'sawssen.yazidi@sesame.com.tn',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        sessionId: 'sess_12345',
-        severity: 'LOW',
-        metadata: {
-          loginMethod: 'password',
-          twoFactorEnabled: false,
-        },
-      },
-      {
-        id: '2',
-        timestamp: '2024-01-20T15:25:00Z',
-        level: 'WARNING',
-        category: 'CAMPAIGN',
-        action: 'CAMPAIGN_REJECTED',
-        description: 'Campagne rejetée pour violation des règles',
-        userId: 'user-123',
-        userName: 'Marie Dubois',
-        userEmail: 'marie.dubois@email.com',
-        ipAddress: '192.168.1.101',
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-        sessionId: 'sess_12346',
-        severity: 'MEDIUM',
-        metadata: {
-          campaignId: 'camp_456',
-          rejectionReason: 'Contenu inapproprié',
-          moderatorId: 'admin-1',
-        },
-      },
-      {
-        id: '3',
-        timestamp: '2024-01-20T15:20:00Z',
-        level: 'ERROR',
-        category: 'SYSTEM',
-        action: 'DATABASE_CONNECTION_FAILED',
-        description: 'Échec de connexion à la base de données',
-        ipAddress: '192.168.1.1',
-        userAgent: 'System Service',
-        sessionId: 'sess_system',
-        severity: 'HIGH',
-        metadata: {
-          errorCode: 'DB_CONN_001',
-          retryAttempts: 3,
-          lastSuccessfulConnection: '2024-01-20T15:15:00Z',
-        },
-      },
-      {
-        id: '4',
-        timestamp: '2024-01-20T15:15:00Z',
-        level: 'INFO',
-        category: 'USER',
-        action: 'PROFILE_UPDATED',
-        description: 'Profil utilisateur mis à jour',
-        userId: 'user-456',
-        userName: 'Pierre Martin',
-        userEmail: 'pierre.martin@email.com',
-        ipAddress: '192.168.1.102',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        sessionId: 'sess_12347',
-        severity: 'LOW',
-        metadata: {
-          updatedFields: ['firstName', 'lastName', 'phone'],
-          previousValues: {
-            firstName: 'Pierre',
-            lastName: 'Martin',
-            phone: '+33123456789',
-          },
-        },
-      },
-      {
-        id: '5',
-        timestamp: '2024-01-20T15:10:00Z',
-        level: 'SECURITY',
-        category: 'AUTH',
-        action: 'LOGIN_FAILED',
-        description: 'Tentative de connexion échouée',
-        ipAddress: '192.168.1.103',
-        userAgent: 'Mozilla/5.0 (Linux x86_64) AppleWebKit/537.36',
-        sessionId: 'sess_failed',
-        severity: 'MEDIUM',
-        metadata: {
-          attemptedEmail: 'admin@hacker.com',
-          failureReason: 'Invalid credentials',
-          failedAttempts: 5,
-        },
-      },
-      {
-        id: '6',
-        timestamp: '2024-01-20T15:05:00Z',
-        level: 'DEBUG',
-        category: 'SYSTEM',
-        action: 'CACHE_REFRESH',
-        description: 'Mise à jour du cache système',
-        ipAddress: '192.168.1.1',
-        userAgent: 'System Service',
-        sessionId: 'sess_system',
-        severity: 'LOW',
-        metadata: {
-          cacheType: 'user_sessions',
-          itemsRefreshed: 1250,
-          duration: '45ms',
-        },
-      },
-      {
-        id: '7',
-        timestamp: '2024-01-20T15:00:00Z',
-        level: 'INFO',
-        category: 'REPORT',
-        action: 'REPORT_RESOLVED',
-        description: 'Signalement résolu par l\'administrateur',
-        userId: 'admin-1',
-        userName: 'Sawssen Yazidi',
-        userEmail: 'sawssen.yazidi@sesame.com.tn',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        sessionId: 'sess_12345',
-        severity: 'LOW',
-        metadata: {
-          reportId: 'rep_789',
-          resolution: 'Spam confirmé, campagne suspendue',
-          resolutionTime: '2h 15m',
-        },
-      },
-    ];
+    loadLogs();
+  }, [page, rowsPerPage, levelFilter, categoryFilter, dateRange, useDateFilter]);
 
-    setLogs(mockLogs);
-    setFilteredLogs(mockLogs);
-    setLoading(false);
-  }, []);
-
-  // 🔍 Filtrage des logs
+  // 🔍 Filtrage des logs (côté client pour la recherche)
   useEffect(() => {
     let filtered = logs;
 
@@ -250,30 +202,9 @@ const AdminLogs: React.FC = () => {
       );
     }
 
-    // Filtre par niveau
-    if (levelFilter !== 'ALL') {
-      filtered = filtered.filter(log => log.level === levelFilter);
-    }
-
-    // Filtre par catégorie
-    if (categoryFilter !== 'ALL') {
-      filtered = filtered.filter(log => log.category === categoryFilter);
-    }
-
-    // Filtre par sévérité
+    // Filtre par sévérité (côté client uniquement)
     if (severityFilter !== 'ALL') {
       filtered = filtered.filter(log => log.severity === severityFilter);
-    }
-
-    // Filtre par date
-    if (dateRange.start && dateRange.end) {
-      filtered = filtered.filter(log => {
-        const logDate = new Date(log.timestamp);
-        const startDate = new Date(dateRange.start);
-        const endDate = new Date(dateRange.end);
-        endDate.setHours(23, 59, 59, 999);
-        return logDate >= startDate && logDate <= endDate;
-      });
     }
 
     // Filtre les logs de debug si nécessaire
@@ -282,8 +213,7 @@ const AdminLogs: React.FC = () => {
     }
 
     setFilteredLogs(filtered);
-    setPage(0);
-  }, [logs, searchTerm, levelFilter, categoryFilter, severityFilter, dateRange, showDebugLogs]);
+  }, [logs, searchTerm, severityFilter, showDebugLogs]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -317,17 +247,57 @@ const AdminLogs: React.FC = () => {
 
   const handleActionClose = () => {
     setAnchorEl(null);
-    setSelectedLog(null);
+    // Ne pas réinitialiser selectedLog ici car il est utilisé par le dialog
   };
 
   const openLogDetail = () => {
+    console.log('📋 Ouverture du dialog de détails pour le log:', selectedLog?.id);
     setLogDetailDialog(true);
-    handleActionClose();
+    setAnchorEl(null); // Fermer le menu mais garder selectedLog
   };
 
   const closeLogDetail = () => {
     setLogDetailDialog(false);
     setSelectedLog(null);
+  };
+
+  const copyLogId = async () => {
+    if (selectedLog) {
+      const logId = selectedLog.id; // Sauvegarder l'ID avant de fermer
+      try {
+        await navigator.clipboard.writeText(logId);
+        console.log('✅ ID copié dans le presse-papiers:', logId);
+        // Optionnel: afficher une notification de succès
+      } catch (error) {
+        console.error('❌ Erreur lors de la copie:', error);
+        // Fallback pour les navigateurs qui ne supportent pas clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = logId;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setAnchorEl(null); // Fermer le menu
+    }
+  };
+
+  const toggleImportant = () => {
+    if (selectedLog) {
+      const logId = selectedLog.id; // Sauvegarder l'ID avant de fermer
+      setImportantLogs(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(logId)) {
+          newSet.delete(logId);
+          console.log('✅ Log retiré des importants');
+        } else {
+          newSet.add(logId);
+          console.log('✅ Log marqué comme important');
+        }
+        return newSet;
+      });
+      setAnchorEl(null); // Fermer le menu
+    }
   };
 
   const downloadLogs = () => {
@@ -434,7 +404,7 @@ const AdminLogs: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
-            onClick={() => window.location.reload()}
+            onClick={loadLogs}
           >
             Actualiser
           </Button>
@@ -569,37 +539,54 @@ const AdminLogs: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              type="date"
-              label="Du"
-              variant="outlined"
-              size="small"
-              value={dateRange.start}
-              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              InputLabelProps={{ shrink: true }}
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useDateFilter}
+                  onChange={(e) => setUseDateFilter(e.target.checked)}
+                  size="small"
+                />
+              }
+              label="Filtrer par date"
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              type="date"
-              label="Au"
-              variant="outlined"
-              size="small"
-              value={dateRange.end}
-              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
+          {useDateFilter && (
+            <>
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Du"
+                  variant="outlined"
+                  size="small"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Au"
+                  variant="outlined"
+                  size="small"
+                  value={dateRange.end}
+                  onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </>
+          )}
         </Grid>
       </Paper>
 
       {/* 📊 Statistiques des filtres */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          {filteredLogs.length} log(s) trouvé(s) sur {logs.length} total
+          {filteredLogs.length} log(s) affiché(s) sur {totalLogs} total
         </Typography>
       </Box>
 
@@ -621,14 +608,54 @@ const AdminLogs: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredLogs
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((log) => (
-                  <TableRow key={log.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                        {formatDate(log.timestamp)}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                    <CircularProgress />
+                    <Typography variant="body2" sx={{ mt: 2 }}>
+                      Chargement des logs...
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : filteredLogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                    <Alert severity="info" sx={{ maxWidth: 600, mx: 'auto' }}>
+                      <Typography variant="h6" sx={{ mb: 1 }}>
+                        Aucun log trouvé
                       </Typography>
+                      <Typography variant="body2">
+                        {searchTerm || levelFilter !== 'ALL' || categoryFilter !== 'ALL' || severityFilter !== 'ALL'
+                          ? 'Aucun log ne correspond aux filtres sélectionnés. Essayez de modifier vos critères de recherche.'
+                          : 'Il n\'y a actuellement aucun log dans la base de données. Les logs apparaîtront automatiquement lorsque des actions administratives seront effectuées.'}
+                      </Typography>
+                    </Alert>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                // Les logs sont déjà paginés côté serveur, pas besoin de slice
+                filteredLogs.map((log) => (
+                  <TableRow 
+                    key={log.id} 
+                    hover
+                    sx={{
+                      bgcolor: importantLogs.has(log.id) ? 'rgba(255, 193, 7, 0.1)' : 'inherit',
+                      '&:hover': {
+                        bgcolor: importantLogs.has(log.id) ? 'rgba(255, 193, 7, 0.15)' : undefined,
+                      }
+                    }}
+                  >
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {importantLogs.has(log.id) && (
+                          <Tooltip title="Log important">
+                            <WarningIcon sx={{ color: '#ff9800', fontSize: '1rem' }} />
+                          </Tooltip>
+                        )}
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                          {formatDate(log.timestamp)}
+                        </Typography>
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -702,7 +729,8 @@ const AdminLogs: React.FC = () => {
                       </Tooltip>
                     </TableCell>
                   </TableRow>
-                ))}
+                  ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -711,7 +739,7 @@ const AdminLogs: React.FC = () => {
         <TablePagination
           rowsPerPageOptions={[10, 25, 50, 100]}
           component="div"
-          count={filteredLogs.length}
+          count={searchTerm || severityFilter !== 'ALL' ? filteredLogs.length : totalLogs}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handlePageChange}
@@ -743,27 +771,47 @@ const AdminLogs: React.FC = () => {
           </ListItemIcon>
           <ListItemText>Voir les détails</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => console.log('Copier dans le presse-papiers')}>
+        <MenuItem onClick={copyLogId}>
           <ListItemIcon>
             <DownloadIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Copier l'ID</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => console.log('Marquer comme important')}>
+        <MenuItem onClick={toggleImportant}>
           <ListItemIcon>
             <WarningIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Marquer important</ListItemText>
+          <ListItemText>
+            {selectedLog && importantLogs.has(selectedLog.id) 
+              ? 'Retirer des importants' 
+              : 'Marquer important'}
+          </ListItemText>
         </MenuItem>
       </Menu>
 
       {/* 📋 Dialog de détails du log */}
-      <Dialog open={logDetailDialog} onClose={closeLogDetail} maxWidth="md" fullWidth>
+      <Dialog 
+        open={logDetailDialog} 
+        onClose={closeLogDetail} 
+        maxWidth="md" 
+        fullWidth
+        disableEscapeKeyDown={false}
+      >
         <DialogTitle>
-          📋 Détails du Log #{selectedLog?.id}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            📋 Détails du Log #{selectedLog?.id}
+            {selectedLog && importantLogs.has(selectedLog.id) && (
+              <Chip 
+                icon={<WarningIcon />} 
+                label="Important" 
+                color="warning" 
+                size="small" 
+              />
+            )}
+          </Box>
         </DialogTitle>
         <DialogContent>
-          {selectedLog && (
+          {selectedLog ? (
             <Box>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
@@ -871,6 +919,12 @@ const AdminLogs: React.FC = () => {
                   </Paper>
                 </>
               )}
+            </Box>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="body1" color="text.secondary">
+                Aucun log sélectionné
+              </Typography>
             </Box>
           )}
         </DialogContent>

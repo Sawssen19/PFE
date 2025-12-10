@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { ReportNotificationService } from '../../services/reportNotificationService';
-import { emailConfig } from '../../config/emailConfig';
+import { AdminLogService } from '../../services/adminLogService';
+import { emailConfig } from '../../config/email.config';
 
 const prisma = new PrismaClient();
 
@@ -351,6 +352,24 @@ export const rejectReport = async (req: Request, res: Response) => {
       }
     });
 
+    // Enregistrer le log
+    await AdminLogService.createLogFromRequest(req, {
+      action: 'REJECT_REPORT',
+      category: 'REPORT',
+      level: 'INFO',
+      severity: 'LOW',
+      description: `Signalement rejeté - Type: ${report.type}, Cagnotte: "${report.cagnotte.title}"`,
+      entityType: 'CagnotteReport',
+      entityId: id,
+      metadata: {
+        reportType: report.type,
+        reportReason: report.reason,
+        cagnotteId: report.cagnotteId,
+        cagnotteTitle: report.cagnotte.title,
+        adminNotes: adminNotes,
+      }
+    });
+
     // Envoyer notifications
     try {
       // Notification à l'utilisateur qui a signalé
@@ -456,6 +475,24 @@ export const blockCagnotte = async (req: Request, res: Response) => {
       data: { 
         status: 'SUSPENDED',
         updatedAt: new Date()
+      }
+    });
+
+    // Enregistrer le log
+    await AdminLogService.createLogFromRequest(req, {
+      action: 'BLOCK_CAGNOTTE_FROM_REPORT',
+      category: 'REPORT',
+      level: 'WARNING',
+      severity: 'HIGH',
+      description: `Cagnotte bloquée suite à signalement - Type: ${report.type}, Cagnotte: "${report.cagnotte.title}"`,
+      entityType: 'Cagnotte',
+      entityId: report.cagnotteId,
+      metadata: {
+        reportId: id,
+        reportType: report.type,
+        reportReason: report.reason,
+        cagnotteTitle: report.cagnotte.title,
+        adminNotes: adminNotes,
       }
     });
 
@@ -647,6 +684,24 @@ export const deleteReport = async (req: Request, res: Response) => {
         message: 'Signalement non trouvé'
       });
     }
+
+    // Enregistrer le log AVANT la suppression
+    await AdminLogService.createLogFromRequest(req, {
+      action: 'DELETE_REPORT',
+      category: 'REPORT',
+      level: 'WARNING',
+      severity: 'MEDIUM',
+      description: `Signalement supprimé - Type: ${report.type}, Cagnotte: "${report.cagnotte.title}"`,
+      entityType: 'CagnotteReport',
+      entityId: id,
+      metadata: {
+        reportType: report.type,
+        reportReason: report.reason,
+        cagnotteId: report.cagnotteId,
+        cagnotteTitle: report.cagnotte.title,
+        adminNotes: adminNotes,
+      }
+    });
 
     // Supprimer le signalement
     await prisma.cagnotteReport.delete({

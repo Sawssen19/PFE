@@ -65,6 +65,25 @@ const EditCagnotte: React.FC = () => {
     endDate: '',
   });
 
+  // Catégories synchronisées avec la base
+  const [categoriesFromAPI, setCategoriesFromAPI] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/categories');
+        if (res.ok) {
+          const result = await res.json();
+          const names: string[] = (result.data || []).map((c: any) => c.name);
+          setCategoriesFromAPI(names);
+        }
+      } catch (e) {
+        console.error('Erreur chargement catégories:', e);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   useEffect(() => {
     if (id && !dataLoaded) {
       loadCagnotte();
@@ -154,18 +173,8 @@ const EditCagnotte: React.FC = () => {
     }
   };
 
-  const categories = [
-    'Animaux',
-    'Culture',
-    'Éducation',
-    'Environnement',
-    'Santé',
-    'Solidarité',
-    'Sport',
-    'Sportif',
-    'Technologie',
-    'Test',
-    'Urgences'
+  const categories = categoriesFromAPI.length > 0 ? categoriesFromAPI : [
+    'Animaux', 'Culture', 'Éducation', 'Environnement', 'Santé', 'Solidarité', 'Sport', 'Sportif', 'Technologie', 'Urgences'
   ];
 
   const governorates = [

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert, Snackbar, Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box } from '@mui/material';
 import Step1FundsDestination from './steps/Step1FundsDestination';
 import Step2Beneficiary from './steps/Step2Beneficiary';
@@ -34,6 +34,9 @@ interface CagnotteData {
 
 const CreateCagnotteWizard: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isNewCagnotte = searchParams.get('new') === 'true';
+  const draftIdFromUrl = searchParams.get('draftId');
   const [currentStep, setCurrentStep] = useState(1);
   const [cagnotteData, setCagnotteData] = useState<CagnotteData>({
     country: 'Tunisie',
@@ -65,15 +68,88 @@ const CreateCagnotteWizard: React.FC = () => {
 
   // Charger les données sauvegardées au montage du composant
   useEffect(() => {
+    // Si c'est une nouvelle cagnotte, ne pas charger le brouillon
+    if (isNewCagnotte) {
+      // Réinitialiser tout pour une nouvelle cagnotte
+      setCurrentStep(1);
+      setDraftId(null);
+      setCagnotteData({
+        country: 'Tunisie',
+        postalCode: '',
+        category: '',
+        beneficiaryType: 'self',
+        title: '',
+        story: '',
+        goalAmount: 0,
+        currency: 'TND',
+        endDate: ''
+      });
+      // Nettoyer le localStorage pour cette nouvelle cagnotte
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      localStorage.removeItem(STEP_STORAGE_KEY);
+      localStorage.removeItem(DRAFT_ID_KEY);
+      console.log('🆕 Nouvelle cagnotte - démarrage à l\'étape 1');
+      return;
+    }
+    
+    // Si un draftId est spécifié dans l'URL, charger ce brouillon spécifique
+    if (draftIdFromUrl) {
+      loadSpecificDraft(draftIdFromUrl);
+      return;
+    }
+    
+    // Sinon, charger le brouillon existant (comportement par défaut)
     loadExistingDraft();
-  }, []);
+  }, [isNewCagnotte, draftIdFromUrl]);
+
+  // Charger un brouillon spécifique par ID
+  const loadSpecificDraft = async (draftIdToLoad: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/cagnottes/${draftIdToLoad}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const draft = result.data;
+        
+        if (draft && draft.status === 'DRAFT') {
+          setDraftId(draft.id);
+          localStorage.setItem(DRAFT_ID_KEY, draft.id);
+          const savedStep = draft.currentStep || 1;
+          setCurrentStep(savedStep);
+          
+          setCagnotteData({
+            country: draft.country || 'Tunisie',
+            postalCode: draft.postalCode || '',
+            category: draft.category?.name || '',
+            beneficiaryType: draft.beneficiaryType || 'self',
+            title: draft.title || '',
+            story: draft.description || '',
+            goalAmount: draft.goalAmount || 0,
+            currency: draft.currency || 'TND',
+            endDate: draft.endDate ? new Date(draft.endDate).toISOString().split('T')[0] : ''
+          });
+          
+          console.log('✅ Brouillon spécifique chargé:', draft);
+          console.log('✅ Reprise à l\'étape:', savedStep);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement du brouillon spécifique:', error);
+      // En cas d'erreur, charger le brouillon existant normalement
+      loadExistingDraft();
+    }
+  };
 
   const loadExistingDraft = async () => {
     const savedDraftId = localStorage.getItem(DRAFT_ID_KEY);
     
+    // ✅ PRIORITÉ 1: Charger depuis la base de données si on a un ID
     if (savedDraftId) {
       try {
-        // Charger le brouillon depuis la base de données
         const response = await fetch(`http://localhost:5000/api/cagnottes/${savedDraftId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -86,22 +162,25 @@ const CreateCagnotteWizard: React.FC = () => {
           
           if (draft && draft.status === 'DRAFT') {
             setDraftId(draft.id);
-            setCurrentStep(draft.currentStep || 1);
+            // ✅ IMPORTANT: Reprendre à l'étape sauvegardée
+            const savedStep = draft.currentStep || 1;
+            setCurrentStep(savedStep);
             
             // Charger les données du brouillon
             setCagnotteData({
-              country: 'Tunisie', // Valeur par défaut
-              postalCode: '',
+              country: draft.country || 'Tunisie',
+              postalCode: draft.postalCode || '',
               category: draft.category?.name || '',
-              beneficiaryType: 'self',
+              beneficiaryType: draft.beneficiaryType || 'self',
               title: draft.title || '',
               story: draft.description || '',
               goalAmount: draft.goalAmount || 0,
-              currency: 'TND',
+              currency: draft.currency || 'TND',
               endDate: draft.endDate ? new Date(draft.endDate).toISOString().split('T')[0] : ''
             });
             
             console.log('✅ Brouillon chargé depuis la base de données:', draft);
+            console.log('✅ Reprise à l\'étape:', savedStep);
             return;
           }
         }
@@ -110,7 +189,48 @@ const CreateCagnotteWizard: React.FC = () => {
       }
     }
     
-    // Fallback: charger depuis localStorage
+    // ✅ PRIORITÉ 2: Chercher un brouillon dans la base de données même sans ID dans localStorage
+    try {
+      const response = await fetch('http://localhost:5000/api/cagnottes/user/my-cagnottes', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const cagnottes = result.data?.cagnottes || [];
+        const draft = cagnottes.find((c: any) => c.status === 'DRAFT');
+        
+        if (draft) {
+          setDraftId(draft.id);
+          localStorage.setItem(DRAFT_ID_KEY, draft.id);
+          // ✅ IMPORTANT: Reprendre à l'étape sauvegardée
+          const savedStep = draft.currentStep || 1;
+          setCurrentStep(savedStep);
+          
+          setCagnotteData({
+            country: draft.country || 'Tunisie',
+            postalCode: draft.postalCode || '',
+            category: draft.category?.name || '',
+            beneficiaryType: draft.beneficiaryType || 'self',
+            title: draft.title || '',
+            story: draft.description || '',
+            goalAmount: draft.goalAmount || 0,
+            currency: draft.currency || 'TND',
+            endDate: draft.endDate ? new Date(draft.endDate).toISOString().split('T')[0] : ''
+          });
+          
+          console.log('✅ Brouillon trouvé dans la base de données:', draft);
+          console.log('✅ Reprise à l\'étape:', savedStep);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la recherche de brouillon:', error);
+    }
+    
+    // ✅ PRIORITÉ 3: Fallback - charger depuis localStorage
     const savedData = localStorage.getItem(DRAFT_STORAGE_KEY);
     const savedStep = localStorage.getItem(STEP_STORAGE_KEY);
     
@@ -266,11 +386,44 @@ const CreateCagnotteWizard: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
+      // ✅ TOUJOURS vérifier s'il y a un brouillon existant même si draftId n'est pas défini
+      if (!draftId) {
+        // Chercher un brouillon existant dans la base de données
+        try {
+          const response = await fetch('http://localhost:5000/api/cagnottes/user/my-cagnottes', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            const cagnottes = result.data?.cagnottes || [];
+            const existingDraft = cagnottes.find((c: any) => c.status === 'DRAFT');
+            
+            if (existingDraft) {
+              console.log('✅ Brouillon existant trouvé:', existingDraft.id);
+              setDraftId(existingDraft.id);
+              localStorage.setItem(DRAFT_ID_KEY, existingDraft.id);
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors de la recherche de brouillon:', error);
+        }
+      }
+
       if (draftId) {
-        // Finaliser le brouillon existant (DRAFT → PENDING)
+        // ✅ Finaliser le brouillon existant (DRAFT → PENDING) - METTRE À JOUR, PAS CRÉER
         console.log('🔄 Finalisation du brouillon existant:', draftId);
+        console.log('📋 Données à envoyer:', {
+          ...cagnotteData,
+          currentStep: currentStep,
+          status: 'PENDING'
+        });
+        
         await cagnottesService.updateDraft(draftId, {
           ...cagnotteData,
+          currentStep: currentStep,
           status: 'PENDING'
         });
         
@@ -286,8 +439,8 @@ const CreateCagnotteWizard: React.FC = () => {
           navigate('/dashboard');
         }, 3000);
       } else {
-        // Créer une nouvelle cagnotte (cas rare - pas de brouillon existant)
-        console.log('🆕 Création d\'une nouvelle cagnotte');
+        // ✅ Créer une nouvelle cagnotte seulement s'il n'y a vraiment aucun brouillon
+        console.log('🆕 Création d\'une nouvelle cagnotte (aucun brouillon trouvé)');
         const cagnotteDataToSend = {
           title: cagnotteData.title,
           story: cagnotteData.story,

@@ -46,6 +46,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import { selectUser } from '../../store/slices/authSlice';
+import adminService from '../../features/admin/adminService';
 import AdminUsersManagement from './AdminUsersManagement';
 import AdminCampaignsManagement from './AdminCampaignsManagement';
 import AdminReportsManagement from './AdminReportsManagement';
@@ -85,6 +86,8 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -100,6 +103,31 @@ const AdminDashboard: React.FC = () => {
       return;
     }
   }, [user, navigate]);
+
+  // 📊 Charger les statistiques du dashboard
+  useEffect(() => {
+    const loadDashboardStats = async () => {
+      if (!user || user.role !== 'ADMIN') return;
+      
+      try {
+        setStatsLoading(true);
+        const response = await adminService.getDashboardStats();
+        if (response.success) {
+          setDashboardStats(response.data);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des statistiques:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadDashboardStats();
+    
+    // Rafraîchir les statistiques toutes les 30 secondes
+    const interval = setInterval(loadDashboardStats, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -132,39 +160,77 @@ const AdminDashboard: React.FC = () => {
     { label: 'Paramètres', icon: <SettingsIcon />, component: <AdminSettings /> },
   ];
 
-  const statsCards = [
+  // 📊 Générer les cartes de statistiques avec les vraies données
+  const statsCards = dashboardStats ? [
     {
       title: 'Utilisateurs actifs',
-      value: '1,234',
-      change: '+12%',
-      changeType: 'positive',
+      value: dashboardStats.users.active.toLocaleString('fr-FR'),
+      change: dashboardStats.users.change !== 0 ? `${dashboardStats.users.change > 0 ? '+' : ''}${dashboardStats.users.change}%` : '—',
+      changeType: dashboardStats.users.changeType,
       icon: <PeopleIcon />,
       color: '#3b82f6',
       gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
     },
     {
       title: 'Cagnottes en cours',
-      value: '567',
-      change: '+8%',
-      changeType: 'positive',
+      value: dashboardStats.cagnottes.active.toLocaleString('fr-FR'),
+      change: dashboardStats.cagnottes.change !== 0 ? `${dashboardStats.cagnottes.change > 0 ? '+' : ''}${dashboardStats.cagnottes.change}%` : '—',
+      changeType: dashboardStats.cagnottes.changeType,
       icon: <CampaignIcon />,
       color: '#00b289',
       gradient: 'linear-gradient(135deg, #00b289 0%, #008f73 100%)',
     },
     {
       title: 'Signalements en attente',
-      value: '89',
-      change: '-5%',
-      changeType: 'negative',
+      value: dashboardStats.reports.pending.toLocaleString('fr-FR'),
+      change: dashboardStats.reports.change !== 0 ? `${dashboardStats.reports.change > 0 ? '+' : ''}${dashboardStats.reports.change}%` : '—',
+      changeType: dashboardStats.reports.changeType,
       icon: <ReportIcon />,
       color: '#f59e0b',
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
     },
     {
       title: 'Actions requises',
-      value: '23',
-      change: '+2',
-      changeType: 'neutral',
+      value: dashboardStats.actions.required.toLocaleString('fr-FR'),
+      change: dashboardStats.actions.change !== 0 ? `${dashboardStats.actions.change > 0 ? '+' : ''}${dashboardStats.actions.change}` : '—',
+      changeType: dashboardStats.actions.changeType,
+      icon: <WarningIcon />,
+      color: '#ef4444',
+      gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    },
+  ] : [
+    {
+      title: 'Utilisateurs actifs',
+      value: '—',
+      change: '—',
+      changeType: 'neutral' as const,
+      icon: <PeopleIcon />,
+      color: '#3b82f6',
+      gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    },
+    {
+      title: 'Cagnottes en cours',
+      value: '—',
+      change: '—',
+      changeType: 'neutral' as const,
+      icon: <CampaignIcon />,
+      color: '#00b289',
+      gradient: 'linear-gradient(135deg, #00b289 0%, #008f73 100%)',
+    },
+    {
+      title: 'Signalements en attente',
+      value: '—',
+      change: '—',
+      changeType: 'neutral' as const,
+      icon: <ReportIcon />,
+      color: '#f59e0b',
+      gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    },
+    {
+      title: 'Actions requises',
+      value: '—',
+      change: '—',
+      changeType: 'neutral' as const,
       icon: <WarningIcon />,
       color: '#ef4444',
       gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
@@ -388,8 +454,15 @@ const AdminDashboard: React.FC = () => {
 
         {/* 📊 Statistiques Rapides */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {statsCards.map((stat, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
+          {statsLoading ? (
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress />
+              </Box>
+            </Grid>
+          ) : (
+            statsCards.map((stat, index) => (
+              <Grid item xs={12} sm={6} md={3} key={index}>
               <Grow in={true} timeout={600 + index * 100}>
                 <Card
                   sx={{
@@ -448,10 +521,11 @@ const AdminDashboard: React.FC = () => {
                     background: 'rgba(255, 255, 255, 0.1)',
                     zIndex: 1,
                   }} />
-                </Card>
-              </Grow>
-            </Grid>
-          ))}
+                  </Card>
+                </Grow>
+              </Grid>
+            ))
+          )}
         </Grid>
 
         {/* 🎛️ Navigation par Onglets */}

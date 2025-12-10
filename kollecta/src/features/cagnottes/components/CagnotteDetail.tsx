@@ -1,6 +1,9 @@
-  import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../../../store/slices/authSlice';
 import { cagnottesService } from '../cagnottesService';
+import { promisesService } from '../../promises/promisesService';
 import './CagnotteDetail.css';
 
 interface Cagnotte {
@@ -24,6 +27,13 @@ interface Cagnotte {
     email: string;
     profilePicture?: string;
   };
+  beneficiary?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    profilePicture?: string;
+  };
   category: {
     name: string;
   };
@@ -32,15 +42,339 @@ interface Cagnotte {
 const CagnotteDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const user = useSelector(selectUser);
   const [cagnotte, setCagnotte] = useState<Cagnotte | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreator, setIsCreator] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const [donationAmount, setDonationAmount] = useState('');
+  const [donationMessage, setDonationMessage] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isDonating, setIsDonating] = useState(false);
+  const [promises, setPromises] = useState<any[]>([]);
+  const [donationSuccess, setDonationSuccess] = useState(false);
+  const [showDonorsModal, setShowDonorsModal] = useState(false);
+  const [donorsModalTab, setDonorsModalTab] = useState<'highest' | 'latest'>('highest');
+  const [showAnonymousTooltip, setShowAnonymousTooltip] = useState(false);
+
+  const goalAmountValue = cagnotte?.goalAmount ?? 0;
+
+  const topThreshold = useMemo(() => {
+    if (!goalAmountValue || Number.isNaN(goalAmountValue)) {
+      return 100;
+    }
+    const computed = goalAmountValue * 0.05;
+    const rounded = Math.round(computed / 10) * 10;
+    return Math.max(100, rounded || 100);
+  }, [goalAmountValue]);
+
+  const topPromises = useMemo(() => {
+    return promises.filter((promise) => {
+      if (!promise || promise.status === 'CANCELLED') {
+        return false;
+      }
+      return promise.amount >= topThreshold;
+    });
+  }, [promises, topThreshold]);
+
+  const topPromisesByAmount = useMemo(() => {
+    return [...topPromises].sort((a, b) => b.amount - a.amount);
+  }, [topPromises]);
+
+  const topPromisesByLatest = useMemo(() => {
+    return [...topPromises].sort((a, b) => {
+      const dateA = new Date(a.promisedAt).getTime();
+      const dateB = new Date(b.promisedAt).getTime();
+      return dateB - dateA;
+    });
+  }, [topPromises]);
+
+  const latestPromises = useMemo(() => {
+    // Filtrer les promesses annulées - elles ne doivent jamais être affichées publiquement
+    return [...promises]
+      .filter((promise) => promise.status !== 'CANCELLED')
+      .sort((a, b) => {
+        const dateA = new Date(a.promisedAt).getTime();
+        const dateB = new Date(b.promisedAt).getTime();
+        return dateB - dateA;
+      });
+  }, [promises]);
+
+  // Calculer le nombre de donateurs uniques (par contributorId)
+  const uniqueDonorsCount = useMemo(() => {
+    const uniqueContributorIds = new Set(
+      promises
+        .filter((promise) => promise.status !== 'CANCELLED')
+        .map((promise) => promise.contributor?.id)
+        .filter((id) => id) // Filtrer les undefined
+    );
+    return uniqueContributorIds.size;
+  }, [promises]);
+
+  const displayedTopPromises = useMemo(() => {
+    return donorsModalTab === 'highest' ? topPromisesByAmount : topPromisesByLatest;
+  }, [donorsModalTab, topPromisesByAmount, topPromisesByLatest]);
+
+  const topPromisesTotal = useMemo(() => {
+    if (topPromises.length === 0) {
+      return 0;
+    }
+    return topPromises.reduce((acc, promise) => acc + (promise.amount || 0), 0);
+  }, [topPromises]);
+
+  const latestPromisesTotal = useMemo(() => {
+    if (latestPromises.length === 0) {
+      return 0;
+    }
+    return latestPromises.reduce((acc, promise) => {
+      if (promise.status === 'CANCELLED') {
+        return acc;
+      }
+      return acc + (promise.amount || 0);
+    }, 0);
+  }, [latestPromises]);
+
+  const donorsModalList = useMemo(() => {
+    // Filtrer les promesses annulées - elles ne doivent jamais être affichées publiquement
+    const filterCancelled = (promises: any[]) => promises.filter((p) => p.status !== 'CANCELLED');
+    
+    if (donorsModalTab === 'highest') {
+      return filterCancelled(displayedTopPromises);
+    }
+    return filterCancelled(latestPromises);
+  }, [displayedTopPromises, donorsModalTab, latestPromises]);
+
+  const donorsModalTotal = donorsModalTab === 'highest' ? topPromisesTotal : latestPromisesTotal;
+
+  const roundToNearestTen = (value: number) => {
+    if (!value || Number.isNaN(value)) return 10;
+    return Math.max(10, Math.round(value / 10) * 10);
+  };
+
+  const anonymousInfoButtonRef = useRef<HTMLButtonElement | null>(null);
+  const anonymousTooltipRef = useRef<HTMLDivElement | null>(null);
+
+  const quickAmounts = useMemo(() => {
+    const baseThreshold = topThreshold || 100;
+    const dynamicValues = [
+      baseThreshold * 0.4,
+      baseThreshold * 0.6,
+      baseThreshold,
+      baseThreshold * 1.25,
+      baseThreshold * 1.5,
+      baseThreshold * 2,
+    ].map(roundToNearestTen);
+
+    const fallbackValues = [50, 100, 200, 300, 500];
+    const combined = [...fallbackValues, ...dynamicValues];
+
+    const uniqueSorted = Array.from(new Set(combined)).sort((a, b) => a - b);
+    const thresholdValue = roundToNearestTen(baseThreshold);
+
+    if (!uniqueSorted.includes(thresholdValue)) {
+      uniqueSorted.push(thresholdValue);
+      uniqueSorted.sort((a, b) => a - b);
+    }
+
+    if (uniqueSorted.length <= 5) {
+      return uniqueSorted;
+    }
+
+    const thresholdIndex = uniqueSorted.findIndex((value) => value >= thresholdValue);
+    let startIndex = Math.max(0, thresholdIndex - 2);
+    if (startIndex + 5 > uniqueSorted.length) {
+      startIndex = Math.max(0, uniqueSorted.length - 5);
+    }
+
+    return uniqueSorted.slice(startIndex, startIndex + 5);
+  }, [topThreshold]);
+
+  const suggestedAmount = useMemo(() => {
+    if (quickAmounts.length === 0) {
+      return roundToNearestTen(topThreshold);
+    }
+
+    const greaterOrEqual = quickAmounts.filter((amount) => amount >= topThreshold);
+    if (greaterOrEqual.length > 0) {
+      return greaterOrEqual[0];
+    }
+
+    return quickAmounts[quickAmounts.length - 1];
+  }, [quickAmounts, topThreshold]);
+
+  const formatAmount = (value: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'TND',
+      maximumFractionDigits: 0,
+    }).format(value || 0);
+  };
+
+  const formatCompactAmount = (value: number) => {
+    if (!value) {
+      return '0 TND';
+    }
+
+    const formatter = new Intl.NumberFormat('fr-FR', {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    });
+
+    return `${formatter.format(value)} TND`;
+  };
+
+  const donorsModalLead = useMemo(() => {
+    const title = cagnotte?.title ?? 'cette cagnotte';
+    if (donorsModalTab === 'highest') {
+      return `Soyez un donateur de premier plan pour ${title} avec un don de ${formatAmount(topThreshold)} ou plus.`;
+    }
+    return `Découvrez les engagements les plus récents qui soutiennent ${title}.`;
+  }, [cagnotte?.title, donorsModalTab, topThreshold]);
+
+  const formatRelativeTime = (dateString: string) => {
+    if (!dateString) {
+      return '';
+    }
+
+    const now = new Date().getTime();
+    const date = new Date(dateString).getTime();
+    if (Number.isNaN(date)) {
+      return '';
+    }
+    const diffMs = now - date;
+
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHours < 1) {
+      return 'quelques minutes';
+    }
+
+    if (diffHours < 24) {
+      return `${diffHours} ${diffHours === 1 ? 'heure' : 'heures'}`;
+    }
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) {
+      return `${diffDays} ${diffDays === 1 ? 'jour' : 'jours'}`;
+    }
+
+    const diffMonths = Math.floor(diffDays / 30);
+    return `${diffMonths} ${diffMonths === 1 ? 'mois' : 'mois'}`;
+  };
+
+  /**
+   * Détermine si l'utilisateur actuel peut voir les informations réelles d'un donateur anonyme
+   * Logique : Seuls le créateur, le bénéficiaire, les admins et le donateur lui-même peuvent voir les infos réelles
+   */
+  const shouldShowRealInfo = (promise: any): boolean => {
+    // Si la promesse n'est pas anonyme, on peut toujours voir les infos
+    if (!promise.isAnonymous) {
+      return true;
+    }
+
+    // Si l'utilisateur n'est pas connecté, on ne peut pas voir les infos réelles
+    if (!user || !cagnotte) {
+      return false;
+    }
+
+    // Le donateur lui-même peut toujours voir ses propres infos
+    if (promise.contributor?.id === user.id) {
+      return true;
+    }
+
+    // Le créateur de la cagnotte peut voir les infos réelles
+    if (cagnotte.creator?.id === user.id) {
+      return true;
+    }
+
+    // Le bénéficiaire de la cagnotte peut voir les infos réelles (si défini)
+    if (cagnotte.beneficiary && cagnotte.beneficiary.id === user.id) {
+      return true;
+    }
+
+    // Les administrateurs peuvent voir les infos réelles
+    if (user.role === 'ADMIN') {
+      return true;
+    }
+
+    // Sinon, on affiche "Anonyme"
+    return false;
+  };
+
+  const getContributorDisplayName = (promise: any) => {
+    // Si on peut voir les infos réelles, afficher le nom réel
+    if (shouldShowRealInfo(promise)) {
+      const firstName = promise?.contributor?.firstName || '';
+      const lastName = promise?.contributor?.lastName || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      if (!fullName) {
+        return 'Contributeur';
+      }
+      return fullName;
+    }
+
+    // Sinon, afficher "Anonyme"
+    return 'Anonyme';
+  };
+
+  const getContributorInitials = (name: string) => {
+    if (!name) {
+      return '?';
+    }
+    const words = name.split(' ').filter(Boolean);
+    if (words.length === 0) {
+      return '?';
+    }
+    return words
+      .slice(0, 2)
+      .map((word) => word.charAt(0).toUpperCase())
+      .join('');
+  };
+
+  const renderContributorAvatar = (promise: any) => {
+    // Si on peut voir les infos réelles, afficher l'avatar réel
+    if (shouldShowRealInfo(promise)) {
+      const picture = promise?.contributor?.profilePicture;
+      const name = getContributorDisplayName(promise);
+
+      if (picture) {
+        return (
+          <div className="donation-avatar">
+            <img src={picture} alt={name} />
+          </div>
+        );
+      }
+
+      const initials = getContributorInitials(name);
+      return (
+        <div className="donation-avatar placeholder">
+          {initials}
+        </div>
+      );
+    }
+
+    // Sinon, afficher l'icône anonyme
+    return <div className="donation-avatar anonymous">🤍</div>;
+  };
+
+  const getPromiseStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return '✅ Engagement honoré';
+      case 'PENDING':
+        return '⏳ Promesse en attente';
+      case 'CANCELLED':
+        return '❌ Annulée';
+      default:
+        return status;
+    }
+  };
 
   useEffect(() => {
     if (id) {
       loadCagnotte();
+      loadPromises();
     }
   }, [id]);
 
@@ -64,6 +398,61 @@ const CagnotteDetail: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const loadPromises = async () => {
+    if (!id) return;
+    try {
+      const response = await promisesService.getCagnottePromises(id);
+      const promisesData = (response as any)?.promises || response.promises || [];
+      setPromises(promisesData);
+    } catch (err) {
+      console.error('Erreur lors du chargement des promesses:', err);
+      // Ne pas afficher d'erreur si les promesses ne se chargent pas
+    }
+  };
+
+  const handleOpenDonorsModal = (initialTab: 'highest' | 'latest') => {
+    setDonorsModalTab(initialTab);
+    setShowDonorsModal(true);
+  };
+
+  const handleOpenDonationFromTop = () => {
+    const defaultAmount = suggestedAmount || roundToNearestTen(topThreshold);
+    setDonationAmount(defaultAmount.toString());
+    setShowDonorsModal(false);
+    setShowAnonymousTooltip(false);
+    handleDonate();
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!showAnonymousTooltip) {
+        return;
+      }
+
+      const target = event.target as Node;
+      if (
+        anonymousTooltipRef.current &&
+        anonymousTooltipRef.current.contains(target)
+      ) {
+        return;
+      }
+
+      if (
+        anonymousInfoButtonRef.current &&
+        anonymousInfoButtonRef.current.contains(target)
+      ) {
+        return;
+      }
+
+      setShowAnonymousTooltip(false);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showAnonymousTooltip]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -89,8 +478,77 @@ const CagnotteDetail: React.FC = () => {
       navigate('/login?message=connectez-vous pour faire un don');
       return;
     }
-    // TODO: Implémenter la fonctionnalité de don
-    alert('Fonctionnalité de don à implémenter');
+    
+    // Vérifier que la cagnotte est active
+    if (cagnotte?.status !== 'ACTIVE') {
+      alert('Cette cagnotte n\'est pas active. Vous ne pouvez pas faire de don.');
+      return;
+    }
+
+    // Ouvrir le modal de donation
+    setShowDonationModal(true);
+  };
+
+  const handleDonationSubmit = async () => {
+    if (!donationAmount || parseFloat(donationAmount) <= 0) {
+      alert('Veuillez entrer un montant valide');
+      return;
+    }
+
+    if (!cagnotte) return;
+
+    setIsDonating(true);
+
+    try {
+        // Vérifier que l'utilisateur est connecté
+        if (!user) {
+          alert('Vous devez être connecté pour faire une promesse de don. Veuillez vous connecter ou créer un compte.');
+          setShowDonationModal(false);
+          setShowAnonymousTooltip(false);
+          navigate('/login');
+          return;
+        }
+
+        // Créer la promesse de don
+        await promisesService.createPromise({
+          cagnotteId: cagnotte.id,
+          amount: parseFloat(donationAmount),
+          message: donationMessage || undefined,
+          isAnonymous: isAnonymous
+        });
+
+        // Réinitialiser le formulaire
+        setDonationAmount('');
+        setDonationMessage('');
+        setIsAnonymous(false);
+        setShowDonationModal(false);
+        setShowAnonymousTooltip(false);
+        setDonationSuccess(true);
+
+        // Recharger les données de la cagnotte et les promesses
+        await loadCagnotte();
+        await loadPromises();
+
+        // Masquer le message de succès après 4 secondes
+        setTimeout(() => {
+          setDonationSuccess(false);
+        }, 4000);
+
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la création de la promesse:', error);
+      
+      // Si la session a expiré, rediriger vers la page de connexion
+      if (error.message?.includes('session a expiré') || error.message?.toLowerCase().includes('token')) {
+        setShowDonationModal(false);
+        setShowAnonymousTooltip(false);
+        navigate('/login?message=Votre session a expiré. Veuillez vous reconnecter.');
+        return;
+      }
+      
+      alert(error.message || 'Erreur lors de la création de votre promesse de don');
+    } finally {
+      setIsDonating(false);
+    }
   };
 
   const handleShare = () => {
@@ -400,25 +858,319 @@ const CagnotteDetail: React.FC = () => {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
             </div>
-            <span className="donors-count">0 personnes viennent de faire un don</span>
+            <span className="donors-count">
+              {uniqueDonorsCount} {uniqueDonorsCount <= 1 ? 'personne vient' : 'personnes viennent'} de faire un don
+            </span>
           </div>
 
           {/* Derniers dons */}
           <div className="recent-donations">
             <h4>Derniers dons</h4>
-            <div className="no-donations">
-              <p>Soyez le premier à faire un don !</p>
-            </div>
+            {promises.length === 0 ? (
+              <div className="no-donations">
+                <p>Soyez le premier à faire un don !</p>
+              </div>
+            ) : (
+              <div className="donations-list">
+                {latestPromises.slice(0, 3).map((promise) => (
+                  <div key={promise.id} className="donation-item">
+                    <div className="donation-header">
+                      <span className="donor-name">
+                        {getContributorDisplayName(promise)}
+                      </span>
+                      <span className="donation-amount">{promise.amount} TND</span>
+                    </div>
+                    {promise.message && (
+                      <div className="donation-message">"{promise.message}"</div>
+                    )}
+                    <div className="donation-date">
+                      {new Date(promise.promisedAt).toLocaleDateString('fr-FR')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Navigation */}
           <div className="sidebar-navigation">
-            <button className="nav-btn">Tout voir</button>
-            <button className="nav-btn">Voir en haut</button>
+            <button
+              type="button"
+              className="nav-btn"
+              onClick={() => handleOpenDonorsModal('latest')}
+            >
+              Tout voir
+            </button>
+            <button
+              type="button"
+              className="nav-btn"
+              onClick={() => handleOpenDonorsModal('highest')}
+            >
+              Voir en haut
+            </button>
           </div>
                  </div>
        </div>
        
+      {/* Modal dons / promesses */}
+      {showDonorsModal && (
+        <div className="delete-modal-overlay">
+          <div className="delete-modal donation-modal top-donors-modal">
+            <button className="modal-close-btn" onClick={() => setShowDonorsModal(false)} aria-label="Fermer">
+              ×
+            </button>
+
+            <div className="top-donors-header">
+              <div className="top-donors-title">
+                <h3>Dons</h3>
+                <span className="top-donors-total">{formatCompactAmount(donorsModalTotal)}</span>
+              </div>
+              <div className="top-donors-tabs">
+                <button
+                  type="button"
+                  className={`top-donors-tab ${donorsModalTab === 'highest' ? 'active' : ''} ${topPromises.length === 0 ? 'disabled' : ''}`}
+                  onClick={() => setDonorsModalTab('highest')}
+                  aria-disabled={topPromises.length === 0}
+                >
+                  Haut
+                </button>
+                <button
+                  type="button"
+                  className={`top-donors-tab ${donorsModalTab === 'latest' ? 'active' : ''} ${promises.length === 0 ? 'disabled' : ''}`}
+                  onClick={() => setDonorsModalTab('latest')}
+                  aria-disabled={promises.length === 0}
+                >
+                  Nouveautés
+                </button>
+              </div>
+            </div>
+
+            <p className="top-donors-lead">
+              {donorsModalLead}
+            </p>
+
+            {donorsModalList.length === 0 ? (
+              <div className="no-donations top">
+                {donorsModalTab === 'highest' ? (
+                  <>
+                    <p>Aucun donateur à la une pour le moment.</p>
+                    <p>Faites un don de {formatAmount(topThreshold)} pour apparaître ici.</p>
+                  </>
+                ) : (
+                  <p>Aucune promesse enregistrée pour le moment.</p>
+                )}
+              </div>
+            ) : (
+              <div className="donations-list full modal">
+                {donorsModalList.map((promise) => (
+                  <div key={promise.id} className="donation-item modal-item">
+                    {renderContributorAvatar(promise)}
+                    <div className="donation-content">
+                      <div className="donation-header">
+                        <span className="donor-name">{getContributorDisplayName(promise)}</span>
+                        <span className="donation-amount">{formatAmount(promise.amount)}</span>
+                      </div>
+                      <div className="donation-meta">
+                        <span className="donation-time">{formatRelativeTime(promise.promisedAt)}</span>
+                      </div>
+                      {promise.message && (
+                        <div className="donation-message">"{promise.message}"</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="top-donors-footer">
+              <div className="top-donors-cta-text">
+                {donorsModalTab === 'highest' ? (
+                  <>Inscrivez-vous à cette liste. <button type="button" className="link-btn" onClick={handleOpenDonationFromTop}>Faites un don maintenant.</button></>
+                ) : (
+                  <>Renforcez cette collecte. <button type="button" className="link-btn" onClick={handleOpenDonationFromTop}>Faites un don maintenant.</button></>
+                )}
+              </div>
+              <button
+                type="button"
+                className="top-donors-action-btn"
+                onClick={handleOpenDonationFromTop}
+              >
+                Faites un don maintenant
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de donation */}
+       {showDonationModal && (
+         <div className="delete-modal-overlay">
+           <div className="delete-modal donation-modal">
+             <h3>🤝 Faire une promesse de don</h3>
+             <p className="promise-explanation">
+               En faisant une promesse, vous vous engagez moralement à soutenir <strong>{cagnotte?.creator.firstName} {cagnotte?.creator.lastName}</strong>. 
+               Votre promesse sera visible et comptera dans le montant collecté. Vous pourrez l'honorer le jour J !
+             </p>
+             
+             <div className="donation-form">
+               {/* Message si utilisateur non connecté */}
+               {!user && (
+                 <div className="login-required-box">
+                   <div className="info-icon">🔒</div>
+                   <div className="info-text">
+                     <strong>Connexion requise</strong>
+                     <p>Vous devez être connecté pour faire une promesse de don. <a href="/login" onClick={(e) => { e.preventDefault(); setShowDonationModal(false); setShowAnonymousTooltip(false); navigate('/login'); }}>Connectez-vous</a> ou <a href="/register" onClick={(e) => { e.preventDefault(); setShowDonationModal(false); setShowAnonymousTooltip(false); navigate('/register'); }}>créez un compte</a>.</p>
+                   </div>
+                 </div>
+               )}
+
+               {user && (
+                 <>
+                  <div className="top-donor-banner">
+                    <span className="banner-icon">🏅</span>
+                    <div className="banner-text">
+                      <strong>Envie de figurer parmi les donateurs à la une ?</strong>
+                      <p>Un don de <strong>{formatAmount(topThreshold)}</strong> ou plus vous permet de rejoindre la liste "Voir en haut".</p>
+                    </div>
+                  </div>
+
+                  <div className="quick-amounts">
+                    {quickAmounts.map((amount) => {
+                      const isSelected = donationAmount && parseFloat(donationAmount) === amount;
+                      const isSuggested = amount === suggestedAmount;
+                      return (
+                        <button
+                          type="button"
+                          key={amount}
+                          className={`quick-amount-btn ${isSelected ? 'selected' : ''} ${isSuggested ? 'suggested' : ''}`}
+                          onClick={() => setDonationAmount(amount.toString())}
+                        >
+                          <span className="quick-amount-value">{amount.toLocaleString('fr-FR')} TND</span>
+                          {isSuggested && <span className="quick-amount-tag">💚 Suggéré</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                   <div className="form-group">
+                     <label htmlFor="donation-amount">Montant de votre promesse (TND)</label>
+                 <input
+                   id="donation-amount"
+                   type="number"
+                   min="1"
+                   step="0.01"
+                   value={donationAmount}
+                   onChange={(e) => setDonationAmount(e.target.value)}
+                   placeholder="Entrez le montant"
+                   className="donation-input"
+                 />
+               </div>
+               
+                   <div className="form-group">
+                     <label htmlFor="donation-message">Message d'encouragement (optionnel)</label>
+                     <textarea
+                       id="donation-message"
+                       value={donationMessage}
+                       onChange={(e) => setDonationMessage(e.target.value)}
+                       placeholder="Laissez un message de soutien et d'encouragement..."
+                       className="donation-textarea"
+                       rows={3}
+                     />
+                   </div>
+
+                  <div className="form-group anonymous-group">
+                    <div className="anonymous-option">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={isAnonymous}
+                          onChange={(e) => setIsAnonymous(e.target.checked)}
+                          className="anonymous-checkbox"
+                        />
+                        <span className="checkbox-text">
+                          Ne pas publier mon nom sur la page de la cagnotte
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        ref={anonymousInfoButtonRef}
+                        className="anonymous-info-btn"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setShowAnonymousTooltip((prev) => !prev);
+                        }}
+                        aria-label="En savoir plus sur l'option anonyme"
+                        aria-expanded={showAnonymousTooltip}
+                      >
+                        i
+                      </button>
+                      {showAnonymousTooltip && (
+                        <div className="anonymous-tooltip" ref={anonymousTooltipRef}>
+                          <button
+                            type="button"
+                            className="anonymous-tooltip-close"
+                            onClick={() => setShowAnonymousTooltip(false)}
+                            aria-label="Fermer l'information"
+                          >
+                            ×
+                          </button>
+                          <p>
+                            En cochant cette case, vous serez visible comme « Anonyme » pour les autres donateurs Kollecta. Cependant, les organisateurs, les bénéficiaires, l'organisme sans but lucratif destinataire ou d'autres personnes pourront recevoir des informations vous concernant.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                   <div className="promise-info-box">
+                     <div className="info-icon">💡</div>
+                     <div className="info-text">
+                       <strong>Comment ça marche ?</strong>
+                       <p>Votre promesse sera enregistrée et visible publiquement. Elle comptera dans le montant collecté pour encourager la cagnotte. Vous pourrez la marquer comme "honorée" depuis votre espace personnel quand vous aurez effectué votre don.</p>
+                     </div>
+                   </div>
+                 </>
+               )}
+             </div>
+
+             <div className="delete-modal-actions">
+                   <button 
+                 className="cancel-btn" 
+                  onClick={() => {
+                    setShowDonationModal(false);
+                    setDonationAmount('');
+                    setDonationMessage('');
+                    setIsAnonymous(false);
+                    setShowAnonymousTooltip(false);
+                  }}
+                 disabled={isDonating}
+               >
+                 Annuler
+               </button>
+               <button 
+                 className="confirm-delete-btn donate-btn-modal" 
+                 onClick={handleDonationSubmit}
+                 disabled={isDonating || !user || !donationAmount || parseFloat(donationAmount) <= 0}
+               >
+                 {isDonating ? 'Enregistrement...' : '💚 Confirmer ma promesse'}
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
+
+       {/* Message de succès */}
+       {donationSuccess && (
+         <div className="success-message-overlay">
+           <div className="success-message">
+             <span className="success-icon">🤝</span>
+             <p className="success-title">Promesse enregistrée !</p>
+             <p className="success-subtitle">Merci pour votre engagement. N'oubliez pas d'honorer votre promesse le jour J !</p>
+           </div>
+         </div>
+       )}
+
        {/* Modal de confirmation de suppression */}
        {showDeleteModal && (
          <div className="delete-modal-overlay">

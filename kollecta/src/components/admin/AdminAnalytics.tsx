@@ -20,7 +20,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  CircularProgress,
 } from '@mui/material';
+import adminService from '../../features/admin/adminService';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -85,97 +87,33 @@ const AdminAnalytics: React.FC = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🎯 Données de démonstration (à remplacer par l'API)
+  // 📊 Charger les statistiques analytiques depuis l'API
   useEffect(() => {
-    const mockData: AnalyticsData = {
-      users: {
-        total: 1247,
-        active: 1189,
-        pending: 34,
-        suspended: 24,
-        growth: 12.5,
-      },
-      campaigns: {
-        total: 567,
-        active: 423,
-        pending: 23,
-        completed: 89,
-        rejected: 32,
-        totalAmount: 1250000,
-        averageAmount: 2204,
-      },
-      reports: {
-        total: 89,
-        pending: 23,
-        resolved: 54,
-        urgent: 8,
-        high: 15,
-      },
-      performance: {
-        responseTime: 2.3,
-        resolutionRate: 94.2,
-        userSatisfaction: 4.6,
-        platformUptime: 99.8,
-      },
-      topCategories: [
-        { name: 'Santé', count: 156, percentage: 27.5 },
-        { name: 'Éducation', count: 134, percentage: 23.6 },
-        { name: 'Solidarité', count: 98, percentage: 17.3 },
-        { name: 'Environnement', count: 76, percentage: 13.4 },
-        { name: 'Culture', count: 45, percentage: 7.9 },
-        { name: 'Autres', count: 58, percentage: 10.3 },
-      ],
-      recentActivity: [
-        {
-          id: '1',
-          type: 'CAMPAIGN_APPROVED',
-          description: 'Campagne "Aide médicale pour Sarah" approuvée',
-          timestamp: '2024-01-20T14:30:00Z',
-          user: 'Marie Dubois',
-          status: 'success',
-        },
-        {
-          id: '2',
-          type: 'USER_SUSPENDED',
-          description: 'Utilisateur "Jean Bernard" suspendu pour violation',
-          timestamp: '2024-01-20T13:15:00Z',
-          user: 'Admin System',
-          status: 'warning',
-        },
-        {
-          id: '3',
-          type: 'REPORT_RESOLVED',
-          description: 'Signalement #45 résolu - Spam confirmé',
-          timestamp: '2024-01-20T12:45:00Z',
-          user: 'Admin System',
-          status: 'success',
-        },
-        {
-          id: '4',
-          type: 'CAMPAIGN_REJECTED',
-          description: 'Campagne "Festival culturel" rejetée - Doublon',
-          timestamp: '2024-01-20T11:20:00Z',
-          user: 'Admin System',
-          status: 'error',
-        },
-        {
-          id: '5',
-          type: 'USER_ACTIVATED',
-          description: 'Compte utilisateur "Sophie Leroy" réactivé',
-          timestamp: '2024-01-20T10:10:00Z',
-          user: 'Admin System',
-          status: 'success',
-        },
-      ],
+    const loadAnalyticsData = async () => {
+      try {
+        setLoading(true);
+        const response = await adminService.getAnalyticsStats();
+        if (response.success) {
+          setAnalyticsData(response.data);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des statistiques analytiques:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setAnalyticsData(mockData);
-    setLoading(false);
+    loadAnalyticsData();
+    
+    // Rafraîchir toutes les 30 secondes
+    const interval = setInterval(loadAnalyticsData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading || !analyticsData) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+        <CircularProgress sx={{ mb: 2 }} />
         <Typography>Chargement des analytics...</Typography>
       </Box>
     );
@@ -183,11 +121,9 @@ const AdminAnalytics: React.FC = () => {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount) + ' DT';
   };
 
   const formatNumber = (num: number) => {
@@ -282,13 +218,13 @@ const AdminAnalytics: React.FC = () => {
                     {formatCurrency(analyticsData.campaigns.averageAmount)}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Montant moyen
+                    Montant moyen collecté
                   </Typography>
                 </Box>
                 <EuroIcon sx={{ fontSize: 40, opacity: 0.8 }} />
               </Box>
               <Typography variant="body2" sx={{ mt: 1, fontSize: '0.875rem' }}>
-                Par cagnotte
+                Par cagnotte active/terminée
               </Typography>
             </CardContent>
           </Card>

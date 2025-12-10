@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { EmailService } from '../../services/emailService';
-import { emailConfig } from '../../config/emailConfig';
+import { emailConfig } from '../../config/email.config';
 
 const prisma = new PrismaClient();
 
@@ -324,7 +324,14 @@ export class CagnottesService {
       }
       
       if (status) {
+        // Si un statut spécifique est demandé, l'utiliser
         where.status = status;
+      } else {
+        // Par défaut, afficher les cagnottes visibles publiquement : ACTIVE, CLOSED, SUCCESS
+        // (pas DRAFT, PENDING, REJECTED, SUSPENDED)
+        where.status = {
+          in: ['ACTIVE', 'CLOSED', 'SUCCESS']
+        };
       }
 
       const [cagnottes, total] = await Promise.all([
@@ -378,6 +385,15 @@ export class CagnottesService {
         where: { id },
         include: {
           creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          beneficiary: {
             select: {
               id: true,
               firstName: true,
@@ -598,12 +614,16 @@ export class CagnottesService {
   }
 
   // Mettre à jour le montant actuel d'une cagnotte
+  // LOGIQUE : On compte TOUTES les promesses (PENDING + PAID) car une promesse = engagement moral
+  // Les promesses PENDING montrent le soutien même si pas encore honorées
   async updateCagnotteAmount(cagnotteId: string) {
     try {
       const promises = await prisma.promise.findMany({
         where: {
           cagnotteId,
-          status: 'PAID'
+          status: {
+            in: ['PENDING', 'PAID'] // Compter toutes les promesses actives (en attente + payées)
+          }
         },
         select: {
           amount: true
@@ -627,27 +647,14 @@ export class CagnottesService {
   }
 
   // Vérifier et mettre à jour le statut des cagnottes expirées
+  // ⚠️ Cette méthode est maintenant dépréciée - utiliser CagnotteReminderService.checkAndHandleExpiredCagnottes()
+  // qui envoie aussi les notifications et emails
   async checkExpiredCagnottes() {
     try {
-      const expiredCagnottes = await prisma.cagnotte.findMany({
-        where: {
-          endDate: {
-            lt: new Date()
-          },
-          status: 'ACTIVE'
-        }
-      });
-
-      for (const cagnotte of expiredCagnottes) {
-        await prisma.cagnotte.update({
-          where: { id: cagnotte.id },
-          data: {
-            status: 'CLOSED'
-          }
-        });
-      }
-
-      return expiredCagnottes.length;
+      // Importer le service de rappels pour utiliser la nouvelle logique
+      const { CagnotteReminderService } = await import('../../services/cagnotteReminderService');
+      const result = await CagnotteReminderService.checkAndHandleExpiredCagnottes();
+      return result.processed;
     } catch (error) {
       console.error('Erreur vérification cagnottes expirées:', error);
       throw new Error('Erreur lors de la vérification des cagnottes expirées');
@@ -850,10 +857,17 @@ export class CagnottesService {
       const { query, category, status, minAmount, maxAmount, sortBy, page, limit } = params;
 
       // Construction de la clause WHERE dynamique
-      const where: any = {
-        // Ne chercher que les cagnottes actives par défaut (sauf si status spécifié)
-        status: status || 'ACTIVE',
-      };
+      const where: any = {};
+      
+      if (status) {
+        // Si un statut spécifique est demandé, l'utiliser
+        where.status = status;
+      } else {
+        // Par défaut, afficher les cagnottes visibles publiquement : ACTIVE, CLOSED, SUCCESS
+        where.status = {
+          in: ['ACTIVE', 'CLOSED', 'SUCCESS']
+        };
+      }
 
       // Recherche textuelle sur titre et description
       if (query && query.trim() !== '') {

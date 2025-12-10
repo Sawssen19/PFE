@@ -83,4 +83,40 @@ export const profileService = {
       }
     );
   },
+
+  getProfileStats: async (userId: string): Promise<{
+    cagnottesCreated: number;
+    cagnottesSupported: number;
+    totalGiven: number;
+  }> => {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(
+      `${API_URL}/profile/${userId}/stats`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data.data;
+  },
+
+  updateNotificationPreferences: async (preferences: {
+    emailNotifications: boolean;
+    donationUpdates: boolean;
+  }): Promise<{ notificationPreferences: any }> => {
+    const token = localStorage.getItem('token');
+    const response = await axios.put(
+      `${API_URL}/profile/notification-preferences`,
+      preferences,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data.data;
+  },
 };

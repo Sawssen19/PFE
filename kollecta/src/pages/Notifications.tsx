@@ -19,7 +19,8 @@ import {
   Settings, 
   Flag,
   Clock,
-  Trash2
+  Trash2,
+  Filter
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Notifications.css';
@@ -32,6 +33,7 @@ const Notifications: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'read' | 'unread'>('all');
 
   // Charger les notifications au montage du composant
   useEffect(() => {
@@ -130,6 +132,13 @@ const Notifications: React.FC = () => {
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
 
+  // Filtrer les notifications selon le filtre sélectionné
+  const filteredNotifications = notifications.filter((notification) => {
+    if (filter === 'read') return notification.read;
+    if (filter === 'unread') return !notification.read;
+    return true; // 'all'
+  });
+
   if (loading && notifications.length === 0) {
     return (
       <div className="notifications-page">
@@ -158,24 +167,66 @@ const Notifications: React.FC = () => {
             <button 
               className="mark-all-read-btn"
               onClick={handleMarkAllAsRead}
+              title="Tout marquer comme lu"
             >
-              <Check className="w-4 h-4" />
-              Tout marquer comme lu
+              <Check className="w-5 h-5" />
+              <span className="mark-all-read-text">Tout marquer comme lu</span>
             </button>
           )}
         </div>
 
+        {/* Filter Section */}
+        <div className="notifications-filters">
+          <Filter className="w-4 h-4" />
+          <div className="filter-buttons">
+            <button
+              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              Toutes ({notifications.length})
+            </button>
+            <button
+              className={`filter-btn ${filter === 'unread' ? 'active' : ''}`}
+              onClick={() => setFilter('unread')}
+            >
+              Non lues ({notifications.filter(n => !n.read).length})
+            </button>
+            <button
+              className={`filter-btn ${filter === 'read' ? 'active' : ''}`}
+              onClick={() => setFilter('read')}
+            >
+              Lues ({notifications.filter(n => n.read).length})
+            </button>
+          </div>
+        </div>
+
         {/* Notifications List */}
         <div className="notifications-list">
-          {notifications.length === 0 ? (
+          {filteredNotifications.length === 0 ? (
             <div className="empty-notifications">
               <Bell className="w-16 h-16 opacity-20" />
-              <h3>Aucune notification</h3>
-              <p>Vous n'avez pas encore de notifications.</p>
+              <h3>
+                {notifications.length === 0 
+                  ? 'Aucune notification' 
+                  : filter === 'read'
+                  ? 'Aucune notification lue'
+                  : filter === 'unread'
+                  ? 'Aucune notification non lue'
+                  : 'Aucune notification'}
+              </h3>
+              <p>
+                {notifications.length === 0
+                  ? 'Vous n\'avez pas encore de notifications.'
+                  : filter === 'read'
+                  ? 'Vous n\'avez pas encore de notifications lues.'
+                  : filter === 'unread'
+                  ? 'Toutes vos notifications ont été lues.'
+                  : 'Aucune notification ne correspond à votre filtre.'}
+              </p>
             </div>
           ) : (
             <>
-              {notifications.map((notification) => (
+              {filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={`notification-item ${!notification.read ? 'unread' : ''}`}

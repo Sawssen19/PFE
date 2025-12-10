@@ -377,4 +377,183 @@ export class ProfileController {
       res.status(500).json({ message: 'Erreur lors de la suppression de la photo' });
     }
   }
+
+  // 📊 Récupérer les statistiques du profil utilisateur
+  async getProfileStats(req: Request, res: Response) {
+    try {
+      // 🔐 SÉCURITÉ : Utiliser l'ID depuis le token JWT (utilisateur connecté)
+      const userIdFromToken = (req as any).user?.id;
+      const userIdFromParams = req.params.userId;
+      
+      // Priorité au token JWT pour la sécurité
+      const userId = userIdFromToken || userIdFromParams;
+      
+      if (!userId) {
+        console.error('❌ Aucun ID utilisateur trouvé (ni token, ni params)');
+        return res.status(401).json({ message: 'Non authentifié' });
+      }
+
+      // 🔐 Vérifier que l'utilisateur demande ses propres stats (sauf si admin)
+      if (userIdFromToken && userIdFromParams && userIdFromToken !== userIdFromParams) {
+        const userRole = (req as any).user?.role;
+        if (userRole !== 'ADMIN') {
+          console.error('❌ Tentative d\'accès aux stats d\'un autre utilisateur');
+          return res.status(403).json({ message: 'Accès refusé' });
+        }
+      }
+
+      console.log('📊 Récupération des statistiques pour l\'utilisateur:', userId);
+      console.log('📊 Source de l\'ID:', userIdFromToken ? 'Token JWT' : 'Paramètres URL');
+
+      // 1. Compter les cagnottes créées par l'utilisateur (tous statuts sauf DRAFT)
+      const cagnottesCreated = await prisma.cagnotte.count({
+        where: { 
+          creatorId: userId,
+          status: { not: 'DRAFT' } // Exclure les brouillons
+        }
+      });
+
+      console.log('📊 Cagnottes créées:', cagnottesCreated);
+
+      // 2. Récupérer TOUTES les promesses de l'utilisateur (PENDING, PAID, CANCELLED)
+      // pour pouvoir séparer les calculs
+      const allPromises = await prisma.promise.findMany({
+        where: { 
+          contributorId: userId
+        },
+        select: { 
+          cagnotteId: true,
+          amount: true,
+          status: true
+        }
+      });
+
+      console.log('📊 Toutes les promesses trouvées:', allPromises.length);
+
+      // 3. Séparer les promesses par statut
+      const paidPromises = allPromises.filter(p => p.status === 'PAID');
+      const pendingPromises = allPromises.filter(p => p.status === 'PENDING');
+      const activePromises = allPromises.filter(p => p.status !== 'CANCELLED'); // PENDING + PAID
+
+      console.log('📊 Promesses payées (PAID):', paidPromises.length);
+      console.log('📊 Promesses en attente (PENDING):', pendingPromises.length);
+      console.log('📊 Promesses actives (PENDING + PAID):', activePromises.length);
+
+      // 4. Compter les cagnottes uniques soutenues (PENDING + PAID uniquement)
+      // Une cagnotte est "soutenue" si l'utilisateur a fait au moins une promesse active
+      const uniqueCagnotteIds = new Set<string>();
+      activePromises.forEach(promise => {
+        uniqueCagnotteIds.add(promise.cagnotteId);
+      });
+      const cagnottesSupported = uniqueCagnotteIds.size;
+
+      console.log('📊 Cagnottes uniques soutenues:', cagnottesSupported);
+
+      // 5. Calculer le TOTAL DONNÉ (seulement les promesses PAYÉES)
+      // Le "total donné" représente l'argent réellement versé, pas les engagements
+      const totalGiven = paidPromises.reduce((sum, promise) => {
+        return sum + Number(promise.amount || 0);
+      }, 0);
+
+      console.log('📊 Total donné (PAID uniquement):', totalGiven);
+
+      const stats = {
+        cagnottesCreated,
+        cagnottesSupported,
+        totalGiven: Math.round(totalGiven * 100) / 100 // Arrondir à 2 décimales
+      };
+
+      console.log('✅ Statistiques finales récupérées:', stats);
+
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('❌ Erreur lors de la récupération des statistiques:', error);
+      console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'N/A');
+      res.status(500).json({ 
+        message: 'Erreur interne du serveur',
+        error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      });
+    }
+  }
+
+  /**
+   * 🔔 Mettre à jour les préférences de notifications
+   */
+  async updateNotificationPreferences(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      const { emailNotifications, donationUpdates } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Utilisateur non authentifié' });
+      }
+
+      // Valider les données
+      if (typeof emailNotifications !== 'boolean' || typeof donationUpdates !== 'boolean') {
+        return res.status(400).json({ 
+          message: 'Les préférences doivent être des booléens' 
+        });
+      }
+
+      // Mettre à jour les préférences
+      // Note: Si le champ n'existe pas encore dans la base, on ignore l'erreur
+      // Les préférences seront quand même sauvegardées dans localStorage côté frontend
+      let updatedUser;
+      try {
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            notificationPreferences: {
+              emailNotifications,
+              donationUpdates
+            }
+          },
+          select: {
+            id: true,
+            notificationPreferences: true
+          }
+        });
+
+        console.log('✅ Préférences de notifications mises à jour pour l\'utilisateur:', userId);
+        console.log('📋 Nouvelles préférences:', updatedUser.notificationPreferences);
+      } catch (error: any) {
+        // Si le champ n'existe pas encore dans la base, on logue un avertissement
+        // mais on ne bloque pas - les préférences sont sauvegardées dans localStorage
+        if (error?.code === 'P2002' || error?.message?.includes('Unknown column') || error?.message?.includes('column') || error?.code === 'P2025') {
+          console.log('⚠️ Champ notificationPreferences pas encore disponible dans la base de données');
+          console.log('⚠️ Les préférences sont sauvegardées dans localStorage uniquement');
+          console.log('⚠️ Pour activer la vérification côté backend, exécutez la migration Prisma');
+          // Retourner quand même un succès car localStorage est sauvegardé
+          return res.json({
+            success: true,
+            data: {
+              notificationPreferences: {
+                emailNotifications,
+                donationUpdates
+              },
+              warning: 'Préférences sauvegardées dans localStorage uniquement. Migration nécessaire pour le backend.'
+            }
+          });
+        } else {
+          throw error;
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          notificationPreferences: updatedUser.notificationPreferences
+        }
+      });
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour des préférences:', error);
+      res.status(500).json({ 
+        message: 'Erreur interne du serveur',
+        error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      });
+    }
+  }
 } 

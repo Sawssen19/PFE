@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store';
+import { Box } from '@mui/material';
+import {
+  CheckCircle,
+  Pending,
+  Cancel,
+  Block,
+  Warning,
+  HelpOutline,
+  Description,
+  Assessment,
+  CalendarToday,
+  Refresh,
+  Security,
+  VerifiedUser,
+  Info,
+} from '@mui/icons-material';
 import './KYCStatus.css';
 
 interface KYCStatusData {
@@ -13,6 +30,7 @@ interface KYCStatusData {
 }
 
 export const KYCStatus: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const [kycStatus, setKycStatus] = useState<KYCStatusData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,42 +71,43 @@ export const KYCStatus: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'VERIFIED':
-        return '#27ae60';
+        return '#00b289';
       case 'PENDING':
-        return '#f39c12';
+        return '#f59e0b';
       case 'REJECTED':
-        return '#e74c3c';
+        return '#ef4444';
       case 'BLOCKED':
-        return '#c0392b';
+        return '#dc2626';
       case 'EXPIRED':
-        return '#e67e22';
+        return '#f97316';
       default:
-        return '#7f8c8d';
+        return '#64748b';
     }
   };
 
   const getStatusIcon = (status: string) => {
+    const iconStyle = { fontSize: '3rem', color: getStatusColor(status) };
     switch (status) {
       case 'VERIFIED':
-        return '✅';
+        return <CheckCircle sx={iconStyle} />;
       case 'PENDING':
-        return '⏳';
+        return <Pending sx={iconStyle} />;
       case 'REJECTED':
-        return '❌';
+        return <Cancel sx={iconStyle} />;
       case 'BLOCKED':
-        return '🚫';
+        return <Block sx={iconStyle} />;
       case 'EXPIRED':
-        return '⚠️';
+        return <Warning sx={iconStyle} />;
       default:
-        return '❓';
+        return <HelpOutline sx={iconStyle} />;
     }
   };
 
   const getRiskLevel = (score: number) => {
-    if (score <= 20) return { level: 'FAIBLE', color: '#27ae60' };
-    if (score <= 50) return { level: 'MOYEN', color: '#f39c12' };
-    if (score <= 80) return { level: 'ÉLEVÉ', color: '#e67e22' };
-    return { level: 'CRITIQUE', color: '#e74c3c' };
+    if (score <= 20) return { level: 'FAIBLE', color: '#00b289' };
+    if (score <= 50) return { level: 'MOYEN', color: '#f59e0b' };
+    if (score <= 80) return { level: 'ÉLEVÉ', color: '#f97316' };
+    return { level: 'CRITIQUE', color: '#ef4444' };
   };
 
   const formatDate = (dateString: string) => {
@@ -124,7 +143,7 @@ export const KYCStatus: React.FC = () => {
   if (error) {
     return (
       <div className="kyc-status-error">
-        <div className="error-icon">❌</div>
+        <Cancel sx={{ fontSize: '4rem', color: '#ef4444', mb: 2 }} />
         <h3>Erreur</h3>
         <p>{error}</p>
         <button onClick={fetchKYCStatus} className="btn-retry">
@@ -137,13 +156,13 @@ export const KYCStatus: React.FC = () => {
   if (!kycStatus) {
     return (
       <div className="kyc-status-empty">
-        <div className="empty-icon">📋</div>
+        <Description sx={{ fontSize: '4rem', color: '#00b289', mb: 2 }} />
         <h3>Aucune vérification KYC</h3>
         <p>Vous n'avez pas encore effectué de vérification d'identité.</p>
         <p>La vérification KYC est obligatoire pour l'ouverture de cagnottes et les paiements.</p>
-        <a href="/kyc/verify" className="btn-verify">
+        <button onClick={() => navigate('/kyc/verify')} className="btn-verify">
           Commencer la vérification KYC
-        </a>
+        </button>
       </div>
     );
   }
@@ -154,12 +173,14 @@ export const KYCStatus: React.FC = () => {
     <div className="kyc-status-container">
       <div className="kyc-status">
         <div className="status-header">
-          <h2>🔐 Statut de votre vérification KYC</h2>
+          <VerifiedUser sx={{ fontSize: '4rem', color: 'white', mb: 2 }} />
+          <h1>Statut de votre vérification KYC</h1>
+          <p className="header-subtitle">Consultez l'état de votre vérification d'identité</p>
         </div>
 
         <div className="status-cards">
           <div className="status-card main-status">
-            <div className="status-icon" style={{ color: getStatusColor(kycStatus.verificationStatus) }}>
+            <div className="status-icon">
               {getStatusIcon(kycStatus.verificationStatus)}
             </div>
             <div className="status-info">
@@ -174,7 +195,9 @@ export const KYCStatus: React.FC = () => {
           </div>
 
           <div className="status-card">
-            <div className="card-icon">📄</div>
+            <div className="card-icon">
+              <Description sx={{ fontSize: '2.5rem', color: '#00b289' }} />
+            </div>
             <div className="card-info">
               <h4>Type de document</h4>
               <p>{getDocumentTypeLabel(kycStatus.documentType)}</p>
@@ -182,7 +205,9 @@ export const KYCStatus: React.FC = () => {
           </div>
 
           <div className="status-card">
-            <div className="card-icon">🎯</div>
+            <div className="card-icon">
+              <Assessment sx={{ fontSize: '2.5rem', color: '#00b289' }} />
+            </div>
             <div className="card-info">
               <h4>Score de risque</h4>
               <p className="risk-score" style={{ color: riskLevel.color }}>
@@ -196,7 +221,9 @@ export const KYCStatus: React.FC = () => {
 
           {kycStatus.expiryDate && (
             <div className="status-card">
-              <div className="card-icon">📅</div>
+              <div className="card-icon">
+                <CalendarToday sx={{ fontSize: '2.5rem', color: '#00b289' }} />
+              </div>
               <div className="card-info">
                 <h4>Date d'expiration</h4>
                 <p>{formatDate(kycStatus.expiryDate)}</p>
@@ -207,30 +234,42 @@ export const KYCStatus: React.FC = () => {
 
         {kycStatus.rejectionReason && (
           <div className="rejection-info">
-            <h4>❌ Raison du rejet</h4>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <Cancel sx={{ color: '#ef4444', fontSize: '1.5rem' }} />
+              <h4>Raison du rejet</h4>
+            </Box>
             <p>{kycStatus.rejectionReason}</p>
-            <a href="/kyc/verify" className="btn-retry-verification">
+            <button onClick={() => navigate('/kyc/verify')} className="btn-retry-verification">
               Réessayer la vérification
-            </a>
+            </button>
           </div>
         )}
 
         {kycStatus.verificationStatus === 'VERIFIED' && (
           <div className="verification-success">
-            <div className="success-icon">🎉</div>
+            <CheckCircle sx={{ fontSize: '4rem', color: '#00b289', mb: 2 }} />
             <h3>Vérification réussie !</h3>
             <p>Votre identité a été vérifiée avec succès. Vous pouvez maintenant :</p>
             <ul>
-              <li>✅ Créer des cagnottes</li>
-              <li>✅ Effectuer des paiements</li>
-              <li>✅ Accéder à toutes les fonctionnalités</li>
+              <li>
+                <CheckCircle sx={{ fontSize: '1.2rem', color: '#00b289', mr: 1, verticalAlign: 'middle' }} />
+                Créer des cagnottes
+              </li>
+              <li>
+                <CheckCircle sx={{ fontSize: '1.2rem', color: '#00b289', mr: 1, verticalAlign: 'middle' }} />
+                Effectuer des paiements
+              </li>
+              <li>
+                <CheckCircle sx={{ fontSize: '1.2rem', color: '#00b289', mr: 1, verticalAlign: 'middle' }} />
+                Accéder à toutes les fonctionnalités
+              </li>
             </ul>
           </div>
         )}
 
         {kycStatus.verificationStatus === 'PENDING' && (
           <div className="verification-pending">
-            <div className="pending-icon">⏳</div>
+            <Pending sx={{ fontSize: '4rem', color: '#f59e0b', mb: 2 }} />
             <h3>Vérification en cours</h3>
             <p>Vos documents sont en cours de vérification. Ce processus peut prendre 24-48 heures.</p>
             <p>Vous recevrez une notification une fois la vérification terminée.</p>
@@ -239,33 +278,41 @@ export const KYCStatus: React.FC = () => {
 
         {kycStatus.verificationStatus === 'EXPIRED' && (
           <div className="verification-expired">
-            <div className="expired-icon">⚠️</div>
+            <Warning sx={{ fontSize: '4rem', color: '#f97316', mb: 2 }} />
             <h3>Document expiré</h3>
             <p>Votre document d'identité a expiré. Vous devez fournir un document valide.</p>
-            <a href="/kyc/verify" className="btn-update-document">
+            <button onClick={() => navigate('/kyc/verify')} className="btn-update-document">
               Mettre à jour le document
-            </a>
+            </button>
           </div>
         )}
 
         <div className="status-actions">
           <button onClick={fetchKYCStatus} className="btn-refresh">
-            🔄 Actualiser le statut
+            <Refresh sx={{ fontSize: '1.2rem', mr: 1 }} />
+            Actualiser le statut
           </button>
           {kycStatus.verificationStatus !== 'VERIFIED' && (
-            <a href="/kyc/verify" className="btn-verify-now">
-              🔐 Vérifier maintenant
-            </a>
+            <button onClick={() => navigate('/kyc/verify')} className="btn-verify-now">
+              <Security sx={{ fontSize: '1.2rem', mr: 1 }} />
+              Vérifier maintenant
+            </button>
           )}
         </div>
 
         <div className="status-footer">
-          <p>
-            <strong>💡 Conseil :</strong> Gardez vos documents d'identité à jour pour éviter les interruptions de service.
-          </p>
-          <p>
-            <strong>📞 Support :</strong> En cas de problème, contactez notre équipe support.
-          </p>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 1.5 }}>
+            <Info sx={{ color: '#00b289', fontSize: '1.5rem', mt: 0.5, flexShrink: 0 }} />
+            <p>
+              <strong>Conseil :</strong> Gardez vos documents d'identité à jour pour éviter les interruptions de service.
+            </p>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+            <Info sx={{ color: '#00b289', fontSize: '1.5rem', mt: 0.5, flexShrink: 0 }} />
+            <p>
+              <strong>Support :</strong> En cas de problème, contactez notre équipe support.
+            </p>
+          </Box>
         </div>
       </div>
     </div>

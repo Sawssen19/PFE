@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { EmailService } from '../../services/emailService';
-import { emailConfig } from '../../config/emailConfig';
+import { emailConfig } from '../../config/email.config';
 import crypto from 'crypto';
 import { SmsService } from '../../services/smsService';
 import dotenv from 'dotenv';
@@ -225,7 +225,7 @@ export class AuthController {
         console.error('❌ Erreur lors de la vérification de désactivation:', error);
       }
 
-      res.json({
+      const responseData = {
         success: true,
         data: {
           user: {
@@ -245,7 +245,9 @@ export class AuthController {
           // 🎯 MESSAGE SPÉCIAL POUR LES COMPTES DÉSACTIVÉS
           deactivationMessage
         }
-      });
+      };
+
+      res.json(responseData);
     } catch (error) {
       console.error('Erreur lors de la connexion:', error);
       res.status(500).json({ message: 'Erreur lors de la connexion' });
@@ -564,6 +566,61 @@ export class AuthController {
         valid: false,
         message: 'Erreur lors de la vérification du token' 
       });
+    }
+  }
+
+  // 🔐 Changer le mot de passe (utilisateur connecté)
+  async changePassword(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      const { oldPassword, newPassword } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Non authentifié' });
+      }
+
+      if (!oldPassword || !newPassword) {
+        return res.status(400).json({ message: 'Ancien et nouveau mot de passe requis' });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'Le nouveau mot de passe doit contenir au moins 8 caractères' });
+      }
+
+      // Récupérer l'utilisateur
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { password: true }
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      }
+
+      // Vérifier l'ancien mot de passe
+      const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+      if (!isOldPasswordValid) {
+        return res.status(400).json({ message: 'Ancien mot de passe incorrect' });
+      }
+
+      // Hasher le nouveau mot de passe
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+      // Mettre à jour le mot de passe
+      await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedNewPassword }
+      });
+
+      console.log('✅ Mot de passe changé avec succès pour:', userId);
+
+      res.json({
+        success: true,
+        message: 'Mot de passe modifié avec succès'
+      });
+    } catch (error) {
+      console.error('❌ Erreur lors du changement de mot de passe:', error);
+      res.status(500).json({ message: 'Erreur lors du changement de mot de passe' });
     }
   }
 }

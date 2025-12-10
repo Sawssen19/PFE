@@ -1,7 +1,7 @@
 /* Styles pour le composant EditCagnotte */
 .edit-cagnotte-container {
   max-width: 1000px;
-  margin: 0 auto;
+  margin: 120px auto 0 auto;
   padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f8f9fa;

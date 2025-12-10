@@ -69,9 +69,26 @@ class AuthService {
   }
 
   async register(data: RegisterInput): Promise<AuthResponse> {
-    // 🧹 DÉCONTAMINATION COMPLÈTE : Vider TOUT le localStorage
-    console.log('🧹 DÉCONTAMINATION COMPLÈTE avant inscription...');
-    localStorage.clear(); // Supprime TOUT le localStorage
+    // 🧹 DÉCONTAMINATION : Sauvegarder les préférences de notifications avant de nettoyer
+    console.log('🧹 Nettoyage du localStorage avant inscription...');
+    
+    // Sauvegarder les préférences de notifications de tous les utilisateurs
+    const savedPreferences: { [key: string]: string } = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('notificationPreferences_')) {
+        savedPreferences[key] = localStorage.getItem(key) || '';
+      }
+    }
+    
+    // Nettoyer le localStorage (sauf les préférences)
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Restaurer les préférences de notifications
+    Object.keys(savedPreferences).forEach(key => {
+      localStorage.setItem(key, savedPreferences[key]);
+    });
     
     console.log('✅ DÉCONTAMINATION complète effectuée');
     
@@ -108,11 +125,28 @@ class AuthService {
   }
 
   async login(data: LoginInput): Promise<AuthResponse> {
-    // 🧹 DÉCONTAMINATION COMPLÈTE : Vider TOUT le localStorage
-    console.log('🧹 DÉCONTAMINATION COMPLÈTE avant connexion...');
-    localStorage.clear(); // Supprime TOUT le localStorage
+    // 🧹 DÉCONTAMINATION : Sauvegarder les préférences de notifications avant de nettoyer
+    console.log('🧹 Nettoyage du localStorage avant connexion...');
     
-    console.log('✅ DÉCONTAMINATION complète effectuée');
+    // Sauvegarder les préférences de notifications de tous les utilisateurs
+    const savedPreferences: { [key: string]: string } = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('notificationPreferences_')) {
+        savedPreferences[key] = localStorage.getItem(key) || '';
+      }
+    }
+    
+    // Nettoyer le localStorage (sauf les préférences)
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Restaurer les préférences de notifications
+    Object.keys(savedPreferences).forEach(key => {
+      localStorage.setItem(key, savedPreferences[key]);
+    });
+    
+    console.log('✅ Nettoyage effectué (préférences préservées)');
     
     const response = await this.request<ApiResponse>('POST', 'login', data);
     // Extraire les données de la réponse API

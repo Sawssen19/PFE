@@ -171,7 +171,7 @@ const Dashboard: React.FC = () => {
                   '&:hover': { bgcolor: '#008C44' },
                   height: '48px'
                 }}
-                onClick={() => navigate('/cagnottes/new')}
+                onClick={() => navigate('/create/fundraiser?new=true')}
               >
                 Créer une cagnotte
               </Button>

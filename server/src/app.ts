@@ -9,9 +9,17 @@ import profileRoutes from './modules/auth/profile.routes';
 import kycRoutes from './modules/kyc/kyc.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import cagnottesRoutes from './modules/cagnottes/cagnottes.routes';
+import categoriesRoutes from './modules/categories/categories.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import reportActionsRoutes from './modules/reports/reportActions.routes';
 import notificationsRoutes from './modules/notifications/notifications.routes';
+import promisesRoutes from './modules/promises/promises.routes';
+import aiRoutes from './modules/ai/ai.routes';
+
+// Import du scheduler de rappels
+import { ReminderScheduler } from './services/reminderScheduler';
+// Import du middleware de maintenance
+import { maintenanceMiddleware } from './middleware/maintenance.middleware';
 
 dotenv.config();
 
@@ -23,6 +31,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware de maintenance (doit être avant les routes)
+app.use(maintenanceMiddleware);
+
 // Servir les fichiers statiques
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -32,9 +43,12 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cagnottes', cagnottesRoutes);
+app.use('/api/categories', categoriesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/reports/actions', reportActionsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/promises', promisesRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
@@ -51,4 +65,9 @@ app.listen(PORT, () => {
   console.log(`🚀 Serveur KOLLECTA démarré sur le port ${PORT}`);
   console.log(`📋 API KYC/AML disponible sur /api/kyc`);
   console.log(`💰 API Cagnottes disponible sur /api/cagnottes`);
+  console.log(`🤝 API Promesses disponible sur /api/promises`);
+  console.log(`🤖 API IA Gemini disponible sur /api/ai`);
+  
+  // Démarrer le scheduler automatique des rappels
+  ReminderScheduler.start();
 });

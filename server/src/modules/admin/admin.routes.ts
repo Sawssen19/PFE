@@ -20,6 +20,11 @@ router.delete('/users/:id', (req, res) => adminController.deleteUser(req, res));
 
 // Routes de statistiques
 router.get('/stats', (req, res) => adminController.getUserStats(req, res));
+router.get('/dashboard-stats', (req, res) => adminController.getDashboardStats(req, res));
+router.get('/analytics', (req, res) => adminController.getAnalyticsStats(req, res));
+
+// Routes de logs
+router.get('/logs', (req, res) => adminController.getLogs(req, res));
 
 // Routes de gestion des cagnottes
 router.get('/cagnottes', (req, res) => adminController.getAllCagnottes(req, res));
@@ -29,5 +34,9 @@ router.post('/cagnottes/:id/reject', (req, res) => adminController.rejectCagnott
 router.post('/cagnottes/:id/suspend', (req, res) => adminController.suspendCagnotte(req, res));
 router.put('/cagnottes/:id', (req, res) => adminController.updateCagnotte(req, res));
 router.delete('/cagnottes/:id', (req, res) => adminController.deleteCagnotte(req, res));
+
+// Routes de gestion des paramètres système
+router.get('/settings', (req, res) => adminController.getSystemSettings(req, res));
+router.put('/settings', (req, res) => adminController.updateSystemSettings(req, res));
 
 export default router; 

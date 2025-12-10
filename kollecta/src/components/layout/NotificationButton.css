@@ -2,15 +2,15 @@
 @keyframes pulse {
   0% {
     transform: scale(1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px rgba(239, 68, 68, 0.2);
   }
   50% {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+    transform: scale(1.15);
+    box-shadow: 0 5px 12px rgba(239, 68, 68, 0.7), 0 0 0 3px rgba(239, 68, 68, 0.3);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px rgba(239, 68, 68, 0.2);
   }
 }
 
@@ -26,37 +26,127 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  color: #6b7280;
+  color: #6b7280 !important;
+  z-index: 1000;
+  overflow: visible !important;
+  opacity: 1 !important;
+}
+
+.notification-button svg,
+.notification-button > svg,
+.notification-button * {
+  opacity: 1 !important;
+  color: #6b7280 !important;
+  stroke: #6b7280 !important;
+  stroke-width: 2 !important;
+  fill: none !important;
 }
 
 .notification-button:hover {
   background: #f3f4f6;
-  color: var(--kollecta-primary);
+  color: var(--kollecta-primary) !important;
+  opacity: 1 !important;
+}
+
+.notification-button:hover svg,
+.notification-button:hover > svg,
+.notification-button:hover * {
+  opacity: 1 !important;
+  color: var(--kollecta-primary) !important;
+  stroke: var(--kollecta-primary) !important;
 }
 
 .notification-button.active {
-  color: var(--kollecta-primary);
+  color: var(--kollecta-primary) !important;
+  opacity: 1 !important;
+}
+
+.notification-button.active svg,
+.notification-button.active > svg,
+.notification-button.active * {
+  opacity: 1 !important;
+  color: var(--kollecta-primary) !important;
+  stroke: var(--kollecta-primary) !important;
 }
 
 /* Badge de notification */
 .notification-badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: flex;
+  position: absolute !important;
+  top: -6px !important;
+  right: -6px !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 700;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  background: #ef4444 !important;
+  color: #FFFFFF !important;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 3px solid white;
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px rgba(239, 68, 68, 0.2);
   animation: pulse 2s infinite;
+  line-height: 1;
+  white-space: nowrap;
+  z-index: 10001 !important;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Forcer le texte du badge en blanc pour tous les éléments enfants - OVERRIDE TOUT */
+.notification-badge,
+.notification-badge *,
+.notification-badge::before,
+.notification-badge::after,
+.notification-badge span,
+.notification-badge div,
+.notification-badge p,
+.notification-badge text,
+.notification-badge tspan {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  fill: #FFFFFF !important;
+  stroke: none !important;
+}
+
+/* Forcer le texte en blanc même si hérité d'autres styles - PRIORITÉ MAXIMALE */
+.notification-badge {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+/* S'assurer que le contenu textuel est blanc */
+.notification-badge::first-line,
+.notification-badge::first-letter {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+/* Override spécifique pour les styles hérités de l'app (couleur verte) */
+.hrt-header .notification-badge,
+.hrt-header-right .notification-badge,
+.default-header_shared-default-header__Nebuq .notification-badge,
+.header_homepage-header-fixed__JbfMx .notification-badge {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+.hrt-header .notification-badge *,
+.hrt-header-right .notification-badge *,
+.default-header_shared-default-header__Nebuq .notification-badge *,
+.header_homepage-header-fixed__JbfMx .notification-badge * {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+/* Container pour le bouton de notification */
+.notification-container {
+  position: relative;
+  display: inline-block;
+  z-index: 1000;
+  overflow: visible !important;
 }
 
 /* Responsive design */
@@ -66,11 +156,13 @@
   }
   
   .notification-badge {
-    top: 4px;
-    right: 4px;
-    min-width: 18px;
-    height: 18px;
-    font-size: 10px;
+    top: -5px !important;
+    right: -5px !important;
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
+    padding: 0 6px;
+    border-width: 2.5px;
   }
 }
 
@@ -80,11 +172,13 @@
   }
   
   .notification-badge {
-    top: 2px;
-    right: 2px;
-    min-width: 16px;
-    height: 16px;
-    font-size: 9px;
+    top: -4px !important;
+    right: -4px !important;
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    padding: 0 5px;
+    border-width: 2px;
   }
 }
 

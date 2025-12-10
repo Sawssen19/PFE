@@ -25,6 +25,7 @@ import CampaignsList from '../components/donation/CampaignsList';
 import CampaignDetail from '../components/donation/CampaignDetail';
 import CreateCampaign from '../components/donation/CreateCampaign';
 import DiscoverPage from '../components/discover/DiscoverPage';
+import CategoryPage from '../components/discover/CategoryPage';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import CreateCagnotteWizard from '../features/cagnottes/components/CreateCagnotteWizard';
 import MyCagnottes from '../features/cagnottes/components/MyCagnottes';
@@ -33,6 +34,8 @@ import EditCagnotte from '../features/cagnottes/components/EditCagnotte';
 import ReportCagnotte from '../components/report/ReportCagnotte';
 import Notifications from '../pages/Notifications';
 import SearchPage from '../pages/SearchPage';
+import MyPromises from '../pages/MyPromises';
+import MaintenanceGuard from '../components/maintenance/MaintenanceGuard';
 
 // 🆕 NOUVEAUX : Composants KYC
 import { KYCVerification } from '../components/kyc';
@@ -40,16 +43,36 @@ import { KYCStatus } from '../components/kyc';
 import { KYCSuccess } from '../components/kyc';
 import { KYCError } from '../components/kyc';
 
+// 📄 NOUVEAUX : Pages d'information
+import {
+  HowToStart,
+  TeamFundraising,
+  Blog,
+  BlogDetail,
+  FundraisingTips,
+  HowItWorks,
+  Guarantee,
+  SupportedCountries,
+  Support,
+  About,
+  Terms,
+  Privacy,
+  Legal,
+  Cookies,
+  PrivacyChoices
+} from '../pages/info';
+
 // Protected route wrapper
 const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
-// Public route wrapper (redirects to home if already authenticated)
+// Public route wrapper - accessible à tous (connectés ou non)
+// Pour les pages comme login/register qui doivent rediriger si déjà connecté, utilisez PrivateRoute avec logique inverse
 const PublicRoute = ({ children }: { children: React.ReactElement }) => {
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  return isAuthenticated ? <Navigate to="/" /> : children;
+  // Ne pas rediriger - laisser tous les utilisateurs (connectés ou non) accéder
+  return children;
 };
 
 // Simple Layout
@@ -66,9 +89,16 @@ const Layout = () => (
 // Route configuration using JSX syntax
 export const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<ConditionalLayout><Outlet /></ConditionalLayout>}>
+    <Route path="/" element={
+      <MaintenanceGuard>
+        <ConditionalLayout>
+          <Outlet />
+        </ConditionalLayout>
+      </MaintenanceGuard>
+    }>
       <Route index element={<Home />} />
       <Route path="discover" element={<DiscoverPage />} />
+      <Route path="discover/:categorySlug" element={<CategoryPage />} />
       <Route path="search" element={<SearchPage />} />
       <Route
         path="login"
@@ -143,6 +173,14 @@ export const router = createBrowserRouter(
         }
       />
       <Route
+        path="promises"
+        element={
+          <PrivateRoute>
+            <MyPromises />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="campaigns"
         element={
           <PrivateRoute>
@@ -177,9 +215,9 @@ export const router = createBrowserRouter(
             <Route
               path="cagnottes/:id"
               element={
-                <PrivateRoute>
+                <PublicRoute>
                   <CagnotteDetail />
-                </PrivateRoute>
+                </PublicRoute>
               }
             />
             <Route
@@ -193,9 +231,9 @@ export const router = createBrowserRouter(
             <Route
               path="report/cagnotte/:id"
               element={
-                <PrivateRoute>
+                <PublicRoute>
                   <ReportCagnotte />
-                </PrivateRoute>
+                </PublicRoute>
               }
             />
       <Route
@@ -246,6 +284,133 @@ export const router = createBrowserRouter(
           <PrivateRoute>
             <KYCError />
           </PrivateRoute>
+        }
+      />
+
+      {/* 📄 NOUVELLES ROUTES : Pages d'information */}
+      {/* Menu "Collecter des fonds" */}
+      <Route
+        path="start"
+        element={
+          <PublicRoute>
+            <HowToStart />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="team-fundraising"
+        element={
+          <PublicRoute>
+            <TeamFundraising />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="blog"
+        element={
+          <PublicRoute>
+            <Blog />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="blog/:id"
+        element={
+          <PublicRoute>
+            <BlogDetail />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="fundraising-tips"
+        element={
+          <PublicRoute>
+            <FundraisingTips />
+          </PublicRoute>
+        }
+      />
+      
+      {/* Menu "À propos de" */}
+      <Route
+        path="how-it-works"
+        element={
+          <PublicRoute>
+            <HowItWorks />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="guarantee"
+        element={
+          <PublicRoute>
+            <Guarantee />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="supported-countries"
+        element={
+          <PublicRoute>
+            <SupportedCountries />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="support"
+        element={
+          <PublicRoute>
+            <Support />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="about"
+        element={
+          <PublicRoute>
+            <About />
+          </PublicRoute>
+        }
+      />
+
+      {/* Pages légales */}
+      <Route
+        path="terms"
+        element={
+          <PublicRoute>
+            <Terms />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="privacy"
+        element={
+          <PublicRoute>
+            <Privacy />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="legal"
+        element={
+          <PublicRoute>
+            <Legal />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="cookies"
+        element={
+          <PublicRoute>
+            <Cookies />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="privacy-choices"
+        element={
+          <PublicRoute>
+            <PrivacyChoices />
+          </PublicRoute>
         }
       />
 

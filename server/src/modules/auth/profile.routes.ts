@@ -17,4 +17,10 @@ router.post('/:userId/profile-picture', authMiddleware, profileController.upload
 // Route pour supprimer une photo de profil
 router.delete('/:userId/profile-picture', authMiddleware, profileController.deleteProfilePicture.bind(profileController));
 
+// Route pour récupérer les statistiques du profil
+router.get('/:userId/stats', authMiddleware, profileController.getProfileStats.bind(profileController));
+
+// Route pour mettre à jour les préférences de notifications
+router.put('/notification-preferences', authMiddleware, profileController.updateNotificationPreferences.bind(profileController));
+
 export default router; 

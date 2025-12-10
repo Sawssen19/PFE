@@ -2,7 +2,7 @@
 
 ## 📋 **Description**
 
-Kollecta est une plateforme moderne de crowdfunding inspirée de GoFundMe, développée avec React, Node.js, et PostgreSQL. La plateforme permet aux utilisateurs de créer des campagnes de financement, faire des dons, et gérer leurs comptes avec des fonctionnalités avancées de sécurité.
+Kollecta est une plateforme moderne de crowdfunding inspirée de KOLLECTA, développée avec React, Node.js, et PostgreSQL. La plateforme permet aux utilisateurs de créer des campagnes de financement, faire des dons, et gérer leurs comptes avec des fonctionnalités avancées de sécurité.
 
 ## 🏗️ **Architecture**
 
@@ -50,7 +50,7 @@ Kollecta est une plateforme moderne de crowdfunding inspirée de GoFundMe, déve
 - ✅ Confirmations de demandes de compte
 
 ### **🎨 Interface Utilisateur**
-- ✅ Design moderne inspiré de GoFundMe
+- ✅ Design moderne de KOLLECTA
 - ✅ Interface responsive (mobile-first)
 - ✅ Animations et transitions fluides
 - ✅ Thème personnalisable

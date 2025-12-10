@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectUser, selectIsAuthenticated, logout } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
@@ -10,15 +10,19 @@ import { notificationsService } from '../../features/notifications/notifications
 import { setNotifications, setUnreadCount } from '../../store/slices/notificationsSlice';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import './NotificationButton.css';
+import './MobileMenu.css';
+import './HeaderButtons.css';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const profileData = useSelector((state: RootState) => state.profile.data);
   const unreadCount = useSelector((state: RootState) => state.notifications.unreadCount);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -61,12 +65,34 @@ const Header: React.FC = () => {
       }
     };
 
+    // Charger immédiatement
     loadNotifications();
     
     // Recharger les notifications toutes les 60 secondes (sauf pour les admins)
     const interval = setInterval(loadNotifications, 60000);
     return () => clearInterval(interval);
   }, [isAuthenticated, user?.id, user?.role, dispatch]);
+
+  // Recharger les notifications lors des changements de page
+  useEffect(() => {
+    if (isAuthenticated && user?.id && user?.role !== 'ADMIN') {
+      const loadNotifications = async () => {
+        try {
+          const response = await notificationsService.getNotifications(1, 20);
+          if (response.success) {
+            dispatch(setNotifications(response.data.notifications));
+            dispatch(setUnreadCount(response.data.unreadCount));
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des notifications:', error);
+        }
+      };
+      
+      // Délai court pour éviter les appels multiples lors de la navigation rapide
+      const timer = setTimeout(loadNotifications, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, isAuthenticated, user?.id, user?.role, dispatch]);
 
   // Gestion du scroll pour la transparence
   useEffect(() => {
@@ -110,12 +136,17 @@ const Header: React.FC = () => {
 
   const openMobileMenu = () => {
     setIsMobileMenuOpen(true);
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('menu-open');
   };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-    document.body.style.overflow = '';
+    setExpandedMenu(null);
+    document.body.classList.remove('menu-open');
+  };
+
+  const toggleSubMenu = (menu: string) => {
+    setExpandedMenu(expandedMenu === menu ? null : menu);
   };
 
   return (
@@ -130,12 +161,11 @@ const Header: React.FC = () => {
             {/* Partie gauche */}
             <div className="hrt-header-left">
               <button 
-                className="hrt-hide-min-md hrt-tertiary-icon-button hrt-tertiary-icon-button--medium hrt-tertiary-icon-button--default hrt-base-button" 
+                className={`hrt-hide-min-md header-icon-button ${isMobileMenuOpen ? 'hidden' : ''}`}
                 aria-label="Rechercher" 
                 onClick={() => navigate('/search')}
-                style={{ cursor: 'pointer' }}
               >
-                <Search className="hrt-icon hrt-icon--default" />
+                <Search size={22} />
               </button>
               
               <button 
@@ -222,14 +252,6 @@ const Header: React.FC = () => {
                         </div>
                       </a>
                     </li>
-                    <li>
-                      <a className="hrt-base-list-item--body-size hrt-base-list-item" href="/fundraising-ideas">
-                        <div className="hrt-base-list-item-copy">
-                          <span className="hrt-base-list-item-title">Idées de collecte de fonds</span>
-                          <div className="hrt-base-list-item-description">Idées pour stimuler votre créativité</div>
-                        </div>
-                      </a>
-                    </li>
                   </ul>
                 </div>
               </div>
@@ -283,13 +305,6 @@ const Header: React.FC = () => {
                       </a>
                     </li>
                     <li>
-                      <a className="hrt-base-list-item--body-size hrt-base-list-item" href="/pricing">
-                        <div className="hrt-base-list-item-copy">
-                          <span className="hrt-base-list-item-title">Tarifs</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li>
                       <a className="hrt-base-list-item--body-size hrt-base-list-item" href="/support">
                         <div className="hrt-base-list-item-copy">
                           <span className="hrt-base-list-item-title">Centre d'assistance</span>
@@ -303,20 +318,6 @@ const Header: React.FC = () => {
                         </div>
                       </a>
                     </li>
-                    <li>
-                      <a className="hrt-base-list-item--body-size hrt-base-list-item" href="/press">
-                        <div className="hrt-base-list-item-copy">
-                          <span className="hrt-base-list-item-title">Centre de presse</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li>
-                      <a className="hrt-base-list-item--body-size hrt-base-list-item" href="/careers">
-                        <div className="hrt-base-list-item-copy">
-                          <span className="hrt-base-list-item-title">Emplois</span>
-                        </div>
-                      </a>
-                    </li>
                   </ul>
                 </div>
               </div>
@@ -326,42 +327,65 @@ const Header: React.FC = () => {
                 <>
                   {/* Icône de notification améliorée - Masquée pour les admins car ils ont leur dashboard */}
                   {user?.role !== 'ADMIN' && (
-                    <div className="notification-container" style={{ position: 'relative', marginLeft: '8px' }}>
+                    <div className="notification-container" style={{ position: 'relative', marginLeft: '8px', zIndex: 10000, overflow: 'visible' }}>
                       <button 
                         className={`notification-button ${showNotifications ? 'active' : ''}`}
                         onClick={() => setShowNotifications(!showNotifications)}
                         aria-label="Notifications"
+                        style={{ 
+                          position: 'relative', 
+                          zIndex: 10000, 
+                          overflow: 'visible',
+                          opacity: 1,
+                          color: '#FFFFFF'
+                        }}
                       >
                         <Bell 
                           size={22} 
                           style={{
                             strokeWidth: showNotifications ? 2.5 : 2,
-                            transition: 'all 0.2s ease'
+                            transition: 'all 0.2s ease',
+                            position: 'relative',
+                            zIndex: 1,
+                            opacity: 1,
+                            color: '#6b7280',
+                            stroke: '#6b7280',
+                            fill: 'none'
                           }}
                         />
                         
                         {/* Badge de notification non lues */}
                         {unreadCount > 0 && (
-                          <span className="notification-badge" style={{
-                            position: 'absolute',
-                            top: '6px',
-                            right: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '20px',
-                            height: '20px',
-                            padding: '0 6px',
-                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                            color: 'white',
-                            borderRadius: '10px',
-                            fontSize: '11px',
-                            fontWeight: '700',
-                            border: '2px solid white',
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                            animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none'
-                          }}>
-                            {unreadCount > 9 ? '9+' : unreadCount}
+                          <span 
+                            className="notification-badge" 
+                            style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: unreadCount > 9 ? '26px' : '22px',
+                              height: '22px',
+                              padding: unreadCount > 9 ? '0 6px' : '0 7px',
+                              background: '#ef4444',
+                              color: '#FFFFFF',
+                              WebkitTextFillColor: '#FFFFFF',
+                              borderRadius: '11px',
+                              fontSize: '12px',
+                              fontWeight: '800',
+                              border: '3px solid white',
+                              boxShadow: '0 3px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px rgba(239, 68, 68, 0.2)',
+                              animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
+                              lineHeight: '1',
+                              whiteSpace: 'nowrap',
+                              zIndex: 10001,
+                              textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                            }}
+                          >
+                            <span style={{ color: '#FFFFFF', WebkitTextFillColor: '#FFFFFF' }}>
+                              {unreadCount > 9 ? '+9' : unreadCount}
+                            </span>
                           </span>
                         )}
                       </button>
@@ -443,7 +467,14 @@ const Header: React.FC = () => {
                       <li>
                         <a className="hrt-base-list-item--body-size hrt-base-list-item" onClick={() => navigate('/my-cagnottes')}>
                           <div className="hrt-base-list-item-copy">
-                            <span className="hrt-base-list-item-title">Vos cagnottes</span>
+                            <span className="hrt-base-list-item-title">Mes cagnottes</span>
+                          </div>
+                        </a>
+                      </li>
+                      <li>
+                        <a className="hrt-base-list-item--body-size hrt-base-list-item" onClick={() => navigate('/promises')}>
+                          <div className="hrt-base-list-item-copy">
+                            <span className="hrt-base-list-item-title">Mes promesses</span>
                           </div>
                         </a>
                       </li>
@@ -481,12 +512,12 @@ const Header: React.FC = () => {
             {/* Menu mobile */}
             <div className="hrt-hide-min-lg hrt-header-right">
               <button 
-                className="hrt-tertiary-icon-button hrt-tertiary-icon-button--medium hrt-tertiary-icon-button--default hrt-base-button" 
+                className="header-icon-button header-menu-button"
                 type="button" 
                 aria-label="menu"
                 onClick={openMobileMenu}
               >
-                <Menu className="hrt-icon hrt-icon--default" />
+                <Menu size={22} />
               </button>
             </div>
           </nav>
@@ -497,79 +528,341 @@ const Header: React.FC = () => {
       <div className={`hrt-overlay ${isMobileMenuOpen ? 'show' : ''}`} onClick={closeMobileMenu}></div>
 
       {/* Menu mobile */}
-      <div className={`hrt-rounded-0 hrt-side-modal hrt-side-modal-right ${isMobileMenuOpen ? 'show' : ''}`} style={{ width: '326px' }}>
-        <div className="menu_menuContentContainer__2iG9n">
-          <div className="menu_menuContent__uwNGY menu_menuContentActive__ovt8p">
-            <div className="hrt-modal-header">
-              <button 
-                className="hrt-modal-header-button--close hrt-tertiary-icon-button hrt-tertiary-icon-button--medium hrt-tertiary-icon-button--default hrt-base-button" 
-                type="button" 
-                aria-label="Fermer la boîte de dialogue"
-                onClick={closeMobileMenu}
-              >
-                <X className="hrt-icon hrt-icon--large" />
-              </button>
-            </div>
-            <div className="hrt-modal-body">
+      <div className={`hrt-rounded-0 hrt-side-modal hrt-side-modal-right mobile-menu-container ${isMobileMenuOpen ? 'show' : ''}`}>
+        <div className="hrt-modal-header">
+          <button 
+            className="hrt-modal-header-button--close hrt-tertiary-icon-button hrt-tertiary-icon-button--medium hrt-tertiary-icon-button--default hrt-base-button" 
+            type="button" 
+            aria-label="Fermer la boîte de dialogue"
+            onClick={closeMobileMenu}
+          >
+            <X className="hrt-icon hrt-icon--large" />
+          </button>
+        </div>
+        <div className="hrt-modal-body mobile-menu-body">
               <nav aria-labelledby="dh-mobile-menu-us">
-                <ul className="hrt-list-unstyled">
-                  <li>
-                    <a className="hrt-base-list-item" href="#">
-                      <div className="hrt-base-list-item-copy">
-                        <span className="hrt-base-list-item-title">Je soutiens</span>
-                        <span className="hrt-base-list-item-description">Découvrez les cagnottes que vous pouvez soutenir</span>
+                <ul className="mobile-menu-list">
+                  {/* Je soutiens */}
+                  <li className="mobile-menu-item">
+                    <a 
+                      className="mobile-menu-link" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate('/discover');
+                        closeMobileMenu();
+                      }}
+                    >
+                      <div className="mobile-menu-link-content">
+                        <span className="mobile-menu-link-title">Je soutiens</span>
+                        <span className="mobile-menu-link-description">Découvrez les cagnottes que vous pouvez soutenir</span>
                       </div>
-                      <svg aria-hidden="true" className="hrt-icon hrt-icon--small" width="16" height="16" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" className="mobile-menu-arrow" width="16" height="16" viewBox="0 0 24 24">
                         <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
                       </svg>
                     </a>
                   </li>
-                  <li>
-                    <a className="hrt-base-list-item" href="#">
-                      <div className="hrt-base-list-item-copy">
-                        <span className="hrt-base-list-item-title">Collecter des fonds</span>
-                        <span className="hrt-base-list-item-description">Démarrez une cagnotte, conseils et ressources</span>
+
+                  {/* Collecter des fonds - avec sous-menu */}
+                  <li className="mobile-menu-item">
+                    <button 
+                      className={`mobile-menu-link mobile-menu-toggle ${expandedMenu === 'fundraising' ? 'expanded' : ''}`}
+                      onClick={() => toggleSubMenu('fundraising')}
+                    >
+                      <div className="mobile-menu-link-content">
+                        <span className="mobile-menu-link-title">Collecter des fonds</span>
+                        <span className="mobile-menu-link-description">Démarrez une cagnotte, conseils et ressources</span>
                       </div>
-                      <svg aria-hidden="true" className="hrt-icon hrt-icon--small" width="16" height="16" viewBox="0 0 24 24">
+                      <svg 
+                        aria-hidden="true" 
+                        className={`mobile-menu-arrow ${expandedMenu === 'fundraising' ? 'rotated' : ''}`} 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                      </svg>
+                    </button>
+                    {expandedMenu === 'fundraising' && (
+                      <ul className="mobile-submenu">
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/start');
+                              closeMobileMenu();
+                            }}
+                          >
+                            Comment démarrer une cagnotte
+                          </a>
+                        </li>
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/team-fundraising');
+                              closeMobileMenu();
+                            }}
+                          >
+                            Collecte de fonds en équipe
+                          </a>
+                        </li>
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/blog');
+                              closeMobileMenu();
+                            }}
+                          >
+                            Blog sur la collecte de fonds
+                          </a>
+                        </li>
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/fundraising-tips');
+                              closeMobileMenu();
+                            }}
+                          >
+                            Conseils pour collecter des fonds
+                          </a>
+                        </li>
+                      </ul>
+                    )}
+                  </li>
+
+                  {/* À propos de - avec sous-menu */}
+                  <li className="mobile-menu-item">
+                    <button 
+                      className={`mobile-menu-link mobile-menu-toggle ${expandedMenu === 'about' ? 'expanded' : ''}`}
+                      onClick={() => toggleSubMenu('about')}
+                    >
+                      <div className="mobile-menu-link-content">
+                        <span className="mobile-menu-link-title">À propos de</span>
+                        <span className="mobile-menu-link-description">Comment ça marche, et plus encore</span>
+                      </div>
+                      <svg 
+                        aria-hidden="true" 
+                        className={`mobile-menu-arrow ${expandedMenu === 'about' ? 'rotated' : ''}`} 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                      </svg>
+                    </button>
+                    {expandedMenu === 'about' && (
+                      <ul className="mobile-submenu">
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/how-it-works');
+                              closeMobileMenu();
+                            }}
+                          >
+                            Comment fonctionne Kollecta
+                          </a>
+                        </li>
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/guarantee');
+                              closeMobileMenu();
+                            }}
+                          >
+                            Garantie des dons Kollecta
+                          </a>
+                        </li>
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/supported-countries');
+                              closeMobileMenu();
+                            }}
+                          >
+                            Pays couverts
+                          </a>
+                        </li>
+                        <li>
+                          <a 
+                            className="mobile-submenu-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/about');
+                              closeMobileMenu();
+                            }}
+                          >
+                            À propos de Kollecta
+                          </a>
+                        </li>
+                      </ul>
+                    )}
+                  </li>
+
+                  {/* Centre d'assistance */}
+                  <li className="mobile-menu-item">
+                    <a 
+                      className="mobile-menu-link" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate('/support');
+                        closeMobileMenu();
+                      }}
+                    >
+                      <div className="mobile-menu-link-content">
+                        <span className="mobile-menu-link-title">Centre d'assistance</span>
+                        <span className="mobile-menu-link-description">Support technique et aide</span>
+                      </div>
+                      <svg aria-hidden="true" className="mobile-menu-arrow" width="16" height="16" viewBox="0 0 24 24">
                         <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
                       </svg>
                     </a>
                   </li>
-                  <li>
-                    <a className="hrt-base-list-item" href="#">
-                      <div className="hrt-base-list-item-copy">
-                        <span className="hrt-base-list-item-title">À propos de</span>
-                        <span className="hrt-base-list-item-description">Comment ça marche, les tarifs, et plus encore</span>
-                      </div>
-                      <svg aria-hidden="true" className="hrt-icon hrt-icon--small" width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
-                      </svg>
-                    </a>
-                  </li>
-                  <li>
-                    <a className="hrt-base-list-item" href="/support">
-                      <div className="hrt-base-list-item-copy">
-                        <span className="hrt-base-list-item-title">Centre d'assistance</span>
-                        <span className="hrt-base-list-item-description">Support technique et aide</span>
-                      </div>
-                      <svg aria-hidden="true" className="hrt-icon hrt-icon--small" width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
-                      </svg>
-                    </a>
-                  </li>
+
+                  {/* Menu utilisateur connecté */}
+                  {isAuthenticated && (
+                    <>
+                      <li className="mobile-menu-divider"></li>
+                      {user?.role === 'ADMIN' && (
+                        <li className="mobile-menu-item">
+                          <a 
+                            className="mobile-menu-link" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/admin');
+                              closeMobileMenu();
+                            }}
+                          >
+                            <div className="mobile-menu-link-content">
+                              <span className="mobile-menu-link-title">🛡️ Dashboard Admin</span>
+                            </div>
+                            <svg aria-hidden="true" className="mobile-menu-arrow" width="16" height="16" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                            </svg>
+                          </a>
+                        </li>
+                      )}
+                      {user?.role !== 'ADMIN' && (
+                        <li className="mobile-menu-item">
+                          <a 
+                            className="mobile-menu-link" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleProfileClick();
+                              closeMobileMenu();
+                            }}
+                          >
+                            <div className="mobile-menu-link-content">
+                              <span className="mobile-menu-link-title">Profil</span>
+                            </div>
+                            <svg aria-hidden="true" className="mobile-menu-arrow" width="16" height="16" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                            </svg>
+                          </a>
+                        </li>
+                      )}
+                      <li className="mobile-menu-item">
+                        <a 
+                          className="mobile-menu-link" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate('/my-cagnottes');
+                            closeMobileMenu();
+                          }}
+                        >
+                          <div className="mobile-menu-link-content">
+                            <span className="mobile-menu-link-title">Mes cagnottes</span>
+                          </div>
+                          <svg aria-hidden="true" className="mobile-menu-arrow" width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                          </svg>
+                        </a>
+                      </li>
+                      <li className="mobile-menu-item">
+                        <a 
+                          className="mobile-menu-link" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate('/promises');
+                            closeMobileMenu();
+                          }}
+                        >
+                          <div className="mobile-menu-link-content">
+                            <span className="mobile-menu-link-title">Mes promesses</span>
+                          </div>
+                          <svg aria-hidden="true" className="mobile-menu-arrow" width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                          </svg>
+                        </a>
+                      </li>
+                      <li className="mobile-menu-item">
+                        <a 
+                          className="mobile-menu-link" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate('/parametres');
+                            closeMobileMenu();
+                          }}
+                        >
+                          <div className="mobile-menu-link-content">
+                            <span className="mobile-menu-link-title">Paramètres</span>
+                          </div>
+                          <svg aria-hidden="true" className="mobile-menu-arrow" width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                          </svg>
+                        </a>
+                      </li>
+                    </>
+                  )}
                 </ul>
                 
-                <div className="menu-bottom-buttons">
-                  <a href="#" className="hrt-ml-2 hrt-rounded-full hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--small hrt-secondary-button--default hrt-base-button" onClick={handleSignUpClick}>Démarrer une cagnotte</a>
+                <div className="mobile-menu-buttons">
+                  <button 
+                    className="mobile-menu-button-primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSignUpClick();
+                      closeMobileMenu();
+                    }}
+                  >
+                    Démarrer une cagnotte
+                  </button>
                   {isAuthenticated ? (
-                    <a href="#" className="hrt-secondary-button" onClick={handleLogout}>Se déconnecter</a>
+                    <button 
+                      className="mobile-menu-button-secondary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLogout();
+                        closeMobileMenu();
+                      }}
+                    >
+                      Se déconnecter
+                    </button>
                   ) : (
-                    <a href="#" className="hrt-secondary-button" onClick={handleLoginClick}>Se connecter</a>
+                    <button 
+                      className="mobile-menu-button-secondary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLoginClick();
+                        closeMobileMenu();
+                      }}
+                    >
+                      Se connecter
+                    </button>
                   )}
                 </div>
               </nav>
-            </div>
-          </div>
         </div>
       </div>
     </>

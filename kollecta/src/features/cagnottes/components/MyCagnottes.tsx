@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert, CircularProgress } from '@mui/material';
 import { cagnottesService } from '../cagnottesService';
 import './MyCagnottes.css';
 
@@ -49,6 +50,9 @@ const MyCagnottes: React.FC = () => {
     completed: false,
     suspended: false
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cagnotteToDelete, setCagnotteToDelete] = useState<Cagnotte | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadCagnottes();
@@ -89,7 +93,7 @@ const MyCagnottes: React.FC = () => {
   };
 
   const getCompletedCagnottes = () => {
-    return cagnottes.filter(cagnotte => cagnotte.status === 'COMPLETED' || cagnotte.status === 'CLOSED');
+    return cagnottes.filter(cagnotte => cagnotte.status === 'COMPLETED' || cagnotte.status === 'CLOSED' || cagnotte.status === 'SUCCESS');
   };
 
   const getSuspendedCagnottes = () => {
@@ -144,7 +148,65 @@ const MyCagnottes: React.FC = () => {
   };
 
   const handleCreateNew = () => {
-    navigate('/create/fundraiser');
+    navigate('/create/fundraiser?new=true');
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, cagnotte: Cagnotte) => {
+    e.stopPropagation(); // Empêcher le clic sur la carte
+    setCagnotteToDelete(cagnotte);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!cagnotteToDelete) return;
+
+    try {
+      setDeleting(true);
+      await cagnottesService.deleteCagnotte(cagnotteToDelete.id);
+      
+      // Supprimer la cagnotte de l'état local immédiatement
+      setCagnottes(prevCagnottes => 
+        prevCagnottes.filter(c => c.id !== cagnotteToDelete.id)
+      );
+      
+      // Fermer la modal et réinitialiser les états
+      setDeleteDialogOpen(false);
+      setCagnotteToDelete(null);
+      setDeleting(false);
+      
+      // Rafraîchir la liste en arrière-plan pour s'assurer de la synchronisation
+      loadCagnottes().catch(err => {
+        console.error('Erreur lors du rafraîchissement:', err);
+      });
+    } catch (err: any) {
+      console.error('Erreur lors de la suppression:', err);
+      setError(err.message || 'Erreur lors de la suppression de la cagnotte');
+      setDeleting(false);
+      // Ne pas fermer la modal en cas d'erreur pour que l'utilisateur puisse réessayer
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setCagnotteToDelete(null);
+  };
+
+  const canDelete = (cagnotte: Cagnotte): boolean => {
+    // Tous les statuts peuvent être supprimés
+    return true;
+  };
+
+  const getDeleteWarning = (cagnotte: Cagnotte): string => {
+    if (cagnotte.currentAmount > 0) {
+      return `⚠️ Attention : Cette cagnotte a reçu ${cagnotte.currentAmount.toLocaleString()} TND en dons. La suppression est irréversible.`;
+    }
+    if (cagnotte.status === 'ACTIVE') {
+      return '⚠️ Cette cagnotte est actuellement active. La suppression est irréversible.';
+    }
+    if (cagnotte.status === 'COMPLETED' || cagnotte.status === 'CLOSED') {
+      return '⚠️ Cette cagnotte est terminée. La suppression est irréversible.';
+    }
+    return '⚠️ Cette action est irréversible et supprimera définitivement la cagnotte.';
   };
 
   if (loading) {
@@ -271,6 +333,17 @@ const MyCagnottes: React.FC = () => {
                   <div className="status-badge draft">
                     Brouillon
                   </div>
+                  {canDelete(cagnotte) && (
+                    <button 
+                      className="delete-cagnotte-btn"
+                      onClick={(e) => handleDeleteClick(e, cagnotte)}
+                      title="Supprimer cette cagnotte"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <div className="cagnotte-content">
                   <h3>{cagnotte.title || 'Sans titre'}</h3>
@@ -278,15 +351,18 @@ const MyCagnottes: React.FC = () => {
                   <p className="cagnotte-date">
                     Créée {formatDate(cagnotte.createdAt)}
                   </p>
-                  <button 
-                    className="finish-draft-btn"
-                    onClick={() => handleFinishDraft(cagnotte.id)}
-                  >
-                    <svg style={{ width: '16px', height: '16px', marginRight: '8px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 13l4 4L19 7"/>
-                    </svg>
-                    Terminer le brouillon
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                    <button 
+                      className="finish-draft-btn"
+                      onClick={() => handleFinishDraft(cagnotte.id)}
+                      style={{ flex: 1 }}
+                    >
+                      <svg style={{ width: '16px', height: '16px', marginRight: '8px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      Terminer
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -343,6 +419,17 @@ const MyCagnottes: React.FC = () => {
                          <path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                        </svg>
                      </div>
+                   )}
+                   {canDelete(cagnotte) && (
+                     <button 
+                       className="delete-cagnotte-btn"
+                       onClick={(e) => handleDeleteClick(e, cagnotte)}
+                       title="Supprimer cette cagnotte"
+                     >
+                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                         <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                       </svg>
+                     </button>
                    )}
                  </div>
                  <div className="cagnotte-content">
@@ -423,6 +510,17 @@ const MyCagnottes: React.FC = () => {
                    <div className="status-badge pending">
                      En attente
                    </div>
+                   {canDelete(cagnotte) && (
+                     <button 
+                       className="delete-cagnotte-btn"
+                       onClick={(e) => handleDeleteClick(e, cagnotte)}
+                       title="Supprimer cette cagnotte"
+                     >
+                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                         <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                       </svg>
+                     </button>
+                   )}
                  </div>
                  <div className="cagnotte-content">
                    <h3>{cagnotte.title}</h3>
@@ -502,6 +600,17 @@ const MyCagnottes: React.FC = () => {
                    <div className="status-badge rejected">
                      Rejetée
                    </div>
+                   {canDelete(cagnotte) && (
+                     <button 
+                       className="delete-cagnotte-btn"
+                       onClick={(e) => handleDeleteClick(e, cagnotte)}
+                       title="Supprimer cette cagnotte"
+                     >
+                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                         <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                       </svg>
+                     </button>
+                   )}
                  </div>
                  <div className="cagnotte-content">
                    <h3>{cagnotte.title}</h3>
@@ -581,6 +690,17 @@ const MyCagnottes: React.FC = () => {
                   <div className="status-badge completed">
                     {cagnotte.status === 'COMPLETED' ? 'Terminée' : 'Fermée'}
                   </div>
+                  {canDelete(cagnotte) && (
+                    <button 
+                      className="delete-cagnotte-btn"
+                      onClick={(e) => handleDeleteClick(e, cagnotte)}
+                      title="Supprimer cette cagnotte"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <div className="cagnotte-content">
                   <h3>{cagnotte.title}</h3>
@@ -652,6 +772,17 @@ const MyCagnottes: React.FC = () => {
                   <div className="status-badge suspended">
                     Suspendue
                   </div>
+                  {canDelete(cagnotte) && (
+                    <button 
+                      className="delete-cagnotte-btn"
+                      onClick={(e) => handleDeleteClick(e, cagnotte)}
+                      title="Supprimer cette cagnotte"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <div className="cagnotte-content">
                   <h3>{cagnotte.title}</h3>
@@ -725,6 +856,49 @@ const MyCagnottes: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Supprimer la cagnotte
+        </DialogTitle>
+        <DialogContent>
+          {cagnotteToDelete && (
+            <div>
+              <p style={{ marginBottom: '16px', fontSize: '1rem' }}>
+                Êtes-vous sûr de vouloir supprimer la cagnotte :
+              </p>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <strong>{cagnotteToDelete.title}</strong><br />
+                Catégorie: {cagnotteToDelete.category?.name || 'Non définie'}<br />
+                Statut: {cagnotteToDelete.status}
+              </Alert>
+              <Alert severity="warning">
+                {getDeleteWarning(cagnotteToDelete)}
+              </Alert>
+            </div>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} disabled={deleting}>
+            Annuler
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            color="error"
+            disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={20} /> : null}
+          >
+            {deleting ? 'Suppression...' : 'Supprimer'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

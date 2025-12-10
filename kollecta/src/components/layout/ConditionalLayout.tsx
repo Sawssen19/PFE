@@ -28,7 +28,8 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
     '/cagnottes',
     '/notifications',
     '/reports',
-    '/kyc'
+    '/kyc',
+    '/promises'
   ];
   
   // Déterminer si la page a besoin de padding
