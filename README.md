@@ -1,67 +1,138 @@
-# 🚀 **KOLLECTA - Plateforme de Crowdfunding**
+# 🎯 **KOLLECTA - Plateforme de Cagnottes Collaboratives**
 
 ## 📋 **Description**
 
-Kollecta est une plateforme moderne de crowdfunding inspirée de KOLLECTA, développée avec React, Node.js, et PostgreSQL. La plateforme permet aux utilisateurs de créer des campagnes de financement, faire des dons, et gérer leurs comptes avec des fonctionnalités avancées de sécurité.
+**KOLLECTA** est une plateforme moderne de financement participatif basée sur le système de **promesses de don**. Développée avec React, Node.js et PostgreSQL, la plateforme permet aux utilisateurs de créer des campagnes de financement (cagnottes), de s'engager via des promesses de don, et de gérer leurs comptes avec des fonctionnalités avancées de sécurité et de vérification d'identité.
 
-## 🏗️ **Architecture**
+### **Concept Innovant : Les Promesses de Don**
+
+Contrairement aux plateformes traditionnelles, KOLLECTA fonctionne sur un système de **promesses de don** où les contributeurs s'engagent moralement à soutenir une cause. Les promesses sont comptabilisées dans le montant total de la cagnotte, créant ainsi un engagement communautaire fort avant même la réalisation effective des dons.
+
+## 🏗️ **Architecture Technique**
 
 ### **Frontend (React + Vite)**
 - **Framework** : React 18 avec TypeScript
-- **Build Tool** : Vite
+- **Build Tool** : Vite pour un développement rapide
 - **Styling** : Tailwind CSS + CSS Modules
 - **State Management** : Redux Toolkit
 - **UI Components** : Material-UI (MUI)
 - **Icons** : Lucide React
+- **Routing** : React Router v7
 
 ### **Backend (Node.js + Express)**
 - **Runtime** : Node.js
-- **Framework** : Express.js
-- **Language** : TypeScript
+- **Framework** : Express.js avec TypeScript
 - **Database** : PostgreSQL avec Prisma ORM
 - **Authentication** : JWT (JSON Web Tokens)
 - **Email Service** : SendGrid
+- **OCR & IA** : Tesseract.js, Google Gemini AI
+- **File Upload** : Multer avec Sharp pour l'optimisation d'images
 
 ### **Base de Données**
 - **SGBD** : PostgreSQL
 - **ORM** : Prisma
 - **Migrations** : Prisma Migrate
+- **Schéma** : Modèles relationnels pour Users, Cagnottes, Promises, KYC, Reports, Notifications
 
 ## 🚀 **Fonctionnalités Principales**
 
-### **👤 Gestion des Comptes**
+### **💝 Système de Promesses de Don**
+- ✅ Création de promesses de don pour soutenir des cagnottes
+- ✅ Gestion des statuts : PENDING, PAID, CANCELLED
+- ✅ Suivi personnel de toutes les promesses
+- ✅ Possibilité de marquer une promesse comme honorée
+- ✅ Messages personnalisés avec chaque promesse
+- ✅ Option d'anonymat pour les contributeurs
+- ✅ Les promesses comptent dans le montant total de la cagnotte
+
+### **🎁 Gestion des Cagnottes**
+- ✅ Création de cagnottes avec workflow en plusieurs étapes
+- ✅ 17 catégories disponibles (Santé, Éducation, Urgences, Animaux, etc.)
+- ✅ Upload d'images et vidéos de couverture
+- ✅ Gestion des bénédiciaires (soi-même ou tiers)
+- ✅ Suivi en temps réel du montant collecté
+- ✅ Statuts : DRAFT, PENDING, ACTIVE, CLOSED, SUCCESS, FAILED, SUSPENDED
+- ✅ Système de brouillons pour finaliser avant publication
+- ✅ Découverte par catégories avec pages dédiées
+
+### **👤 Gestion des Comptes Utilisateurs**
 - ✅ Inscription et connexion sécurisées
-- ✅ Profils personnalisables
+- ✅ Profils personnalisables avec photo et description
 - ✅ Gestion des paramètres de sécurité
-- ✅ **Désactivation temporaire de compte** (récupérable)
-- ✅ **Suppression définitive de compte** (irréversible)
-
-### **🔐 Sécurité Avancée**
-- ✅ Authentification JWT
-- ✅ Hachage des mots de passe (bcrypt)
-- ✅ Validation des emails
-- ✅ Gestion des sessions sécurisées
-- ✅ Blocage des comptes en cours de suppression
-
-### **📧 Système de Notifications**
-- ✅ Emails automatiques via SendGrid
-- ✅ Notifications en temps réel
-- ✅ Alertes pour l'équipe Kollecta
-- ✅ Confirmations de demandes de compte
-
-### **🎨 Interface Utilisateur**
-- ✅ Design moderne de KOLLECTA
-- ✅ Interface responsive (mobile-first)
-- ✅ Animations et transitions fluides
-- ✅ Thème personnalisable
+- ✅ Vérification d'email
+- ✅ Désactivation temporaire de compte (récupérable)
+- ✅ Suppression définitive de compte (irréversible)
+- ✅ Gestion des préférences de notifications
 - ✅ Support multilingue (FR/EN/AR)
 
-## 🛠️ **Installation et Configuration**
+### **🔐 Vérification d'Identité (KYC)**
+- ✅ Système de vérification KYC complet
+- ✅ Upload de documents d'identité (Carte d'identité, Passeport)
+- ✅ Analyse OCR avec Tesseract.js (support FR/EN/AR)
+- ✅ Détection de faux documents avec Google Gemini AI
+- ✅ Calcul de score de risque
+- ✅ Vérification AML (Anti-Money Laundering)
+- ✅ Audit trail complet des vérifications
+- ✅ Statuts : PENDING, VERIFIED, REJECTED, BLOCKED, EXPIRED
+
+### **🛡️ Modération et Signalements**
+- ✅ Système de signalement de cagnottes
+- ✅ Analyse automatique des signalements avec IA
+- ✅ Classification par type : FRAUD, INAPPROPRIATE, SPAM, DUPLICATE, COMMENT, OTHER
+- ✅ Priorisation automatique : LOW, MEDIUM, HIGH, URGENT
+- ✅ Gestion des signalements par les administrateurs
+- ✅ Actions disponibles : Investigation, Résolution, Rejet, Blocage, Suppression
+
+### **👨‍💼 Tableau de Bord Administrateur**
+- ✅ Dashboard avec statistiques en temps réel
+- ✅ Gestion des utilisateurs (approbation, suspension, activation)
+- ✅ Gestion des cagnottes (approbation, modification, suspension)
+- ✅ Gestion des signalements avec workflow complet
+- ✅ Analytics et rapports détaillés
+- ✅ Logs d'administration pour traçabilité
+- ✅ Paramètres système (maintenance, sécurité, notifications)
+
+### **📧 Système de Notifications**
+- ✅ Notifications en temps réel
+- ✅ Emails automatiques via SendGrid
+- ✅ Notifications pour nouvelles promesses
+- ✅ Rappels automatiques pour promesses en attente
+- ✅ Alertes pour l'équipe KOLLECTA
+- ✅ Préférences de notifications personnalisables
+- ✅ Historique complet des notifications
+
+### **🔍 Recherche et Découverte**
+- ✅ Recherche de cagnottes par mots-clés
+- ✅ Filtrage par catégories
+- ✅ Pages de découverte par catégorie
+- ✅ Affichage des cagnottes populaires
+- ✅ Navigation intuitive avec menu catégories
+
+### **🎨 Interface Utilisateur**
+- ✅ Design moderne et élégant
+- ✅ Interface responsive (mobile-first)
+- ✅ Animations et transitions fluides
+- ✅ Thème cohérent avec la charte graphique KOLLECTA
+- ✅ Support multilingue
+- ✅ Accessibilité optimisée
+
+### **🔒 Sécurité Avancée**
+- ✅ Authentification JWT sécurisée
+- ✅ Hachage des mots de passe avec bcrypt
+- ✅ Validation des emails
+- ✅ Gestion des sessions sécurisées
+- ✅ Protection CSRF
+- ✅ Rate limiting
+- ✅ Blocage des comptes en cours de suppression
+- ✅ Vérification KYC obligatoire pour certaines actions
+
+## 📦 **Installation et Configuration**
 
 ### **Prérequis**
 - Node.js 18+ 
 - PostgreSQL 14+
 - npm ou yarn
+- Git
 
 ### **1. Cloner le Repository**
 ```bash
@@ -70,104 +141,228 @@ cd PFE
 ```
 
 ### **2. Installer les Dépendances**
+
+#### **Frontend**
 ```bash
-# Frontend
 cd kollecta
 npm install
+```
 
-# Backend
+#### **Backend**
+```bash
 cd ../server
 npm install
 ```
 
 ### **3. Configuration de la Base de Données**
+
+#### **Initialiser Prisma**
 ```bash
 cd server
 npx prisma generate
 npx prisma db push
 ```
 
+#### **Optionnel : Seed de la base de données**
+```bash
+npm run seed
+```
+
 ### **4. Variables d'Environnement**
+
 Créer un fichier `.env` dans le dossier `server` :
+
 ```env
+# Base de données
 DATABASE_URL="postgresql://username:password@localhost:5432/kollecta"
-JWT_SECRET="your-secret-key"
+
+# JWT
+JWT_SECRET="your-secret-key-change-in-production"
+
+# SendGrid (Email)
 SENDGRID_API_KEY="your-sendgrid-api-key"
+SENDGRID_FROM_EMAIL="noreply@kollecta.com"
+
+# Google Gemini AI (pour KYC)
+GEMINI_API_KEY="your-gemini-api-key"
+
+# Serveur
+PORT=5000
+NODE_ENV=development
+
+# URLs
+FRONTEND_URL="http://localhost:3000"
+BACKEND_URL="http://localhost:5000"
 ```
 
 ### **5. Démarrer l'Application**
+
+#### **Terminal 1 - Backend**
 ```bash
-# Terminal 1 - Backend
 cd server
 npm run dev
+```
 
-# Terminal 2 - Frontend
+#### **Terminal 2 - Frontend**
+```bash
 cd kollecta
 npm run dev
 ```
 
 ## 🌐 **URLs d'Accès**
 - **Frontend** : http://localhost:3000
-- **Backend** : http://localhost:5000
+- **Backend API** : http://localhost:5000
 - **Base de Données** : localhost:5432
+- **Prisma Studio** : `npx prisma studio` (dans le dossier server)
 
-## 📱 **Fonctionnalités de Compte**
-
-### **Désactivation Temporaire**
-- ✅ L'utilisateur peut désactiver son compte temporairement
-- ✅ Déconnexion automatique après désactivation
-- ✅ Possibilité de se reconnecter à tout moment
-- ✅ Message de bienvenue lors de la reconnexion
-- ✅ Notification à l'équipe Kollecta
-
-### **Suppression Définitive**
-- ✅ Processus de suppression sécurisé
-- ✅ Confirmation en deux étapes (texte + mot de passe)
-- ✅ Blocage immédiat de la connexion
-- ✅ Notification à l'équipe Kollecta
-- ✅ Processus irréversible
-
-## 🔧 **Structure du Projet**
+## 📁 **Structure du Projet**
 
 ```
 PFE/
 ├── kollecta/                 # Frontend React
 │   ├── src/
-│   │   ├── components/       # Composants React
-│   │   ├── services/         # Services API
+│   │   ├── components/       # Composants React réutilisables
+│   │   │   ├── admin/        # Composants admin
+│   │   │   ├── auth/         # Authentification
+│   │   │   ├── cagnotte/     # Affichage cagnottes
+│   │   │   ├── discover/     # Découverte par catégories
+│   │   │   ├── donation/     # Gestion des dons
+│   │   │   ├── kyc/          # Vérification KYC
+│   │   │   ├── layout/       # Layout principal
+│   │   │   ├── notifications/# Notifications
+│   │   │   ├── profile/      # Profil utilisateur
+│   │   │   └── report/       # Signalements
+│   │   ├── features/         # Services et logique métier
+│   │   │   ├── auth/         # Service authentification
+│   │   │   ├── cagnottes/    # Service cagnottes
+│   │   │   ├── promises/     # Service promesses
+│   │   │   ├── admin/        # Service admin
+│   │   │   └── ...
+│   │   ├── pages/            # Pages de l'application
+│   │   ├── router/           # Configuration routing
 │   │   ├── store/           # Redux store
-│   │   └── styles/          # Fichiers CSS
+│   │   └── styles/          # Styles globaux
 │   └── package.json
+│
 ├── server/                   # Backend Node.js
 │   ├── src/
-│   │   ├── modules/         # Modules de l'application
-│   │   ├── services/        # Services (email, etc.)
-│   │   ├── middleware/      # Middleware Express
-│   │   └── app.ts          # Point d'entrée
-│   ├── prisma/              # Schéma et migrations DB
+│   │   ├── modules/          # Modules de l'application
+│   │   │   ├── auth/         # Authentification
+│   │   │   ├── admin/        # Administration
+│   │   │   ├── cagnottes/    # Gestion cagnottes
+│   │   │   ├── kyc/          # Vérification KYC
+│   │   │   ├── promises/     # Gestion promesses
+│   │   │   ├── reports/      # Signalements
+│   │   │   └── notifications/# Notifications
+│   │   ├── services/        # Services métier
+│   │   │   ├── emailService.ts
+│   │   │   ├── kycService.ts
+│   │   │   ├── localKYCService.ts
+│   │   │   └── reminderScheduler.ts
+│   │   ├── middleware/       # Middleware Express
+│   │   └── app.ts           # Point d'entrée
+│   ├── prisma/
+│   │   ├── schema.prisma    # Schéma de base de données
+│   │   └── migrations/      # Migrations Prisma
 │   └── package.json
+│
 └── README.md
 ```
 
-## 🧪 **Tests**
+## 🎯 **Développement en 5 Sprints**
 
-### **Scripts de Test Disponibles**
-- `test-deactivation.js` - Test de désactivation de compte
-- `test-login-logic.js` - Test de la logique de connexion
-- `emergency-unblock.js` - Déblocage d'urgence d'un compte
+Le développement de KOLLECTA a été organisé en **5 sprints** itératifs :
 
-## 🚨 **Gestion des Erreurs**
+### **Sprint 1 : Gestion des comptes**
+- Architecture frontend/backend
+- Authentification et gestion des utilisateurs
+- Structure de base de données
+- Interface de base
 
-### **Comptes Bloqués**
-- ✅ Détection automatique des demandes en cours
-- ✅ Messages d'erreur clairs et informatifs
-- ✅ Redirection appropriée selon le type de demande
-- ✅ Logs détaillés pour le débogage
+### **Sprint 2 : Gestion des Cagnottes**
+- Création et gestion des cagnottes
+- Workflow multi-étapes
+- Upload de médias
+- Catégorisation
 
-### **Récupération d'Urgence**
-- ✅ Scripts de déblocage automatique
-- ✅ Nettoyage des demandes orphelines
-- ✅ Restauration de l'accès utilisateur
+### **Sprint 3 : Promesses de Don**
+- Système de promesses de don
+- Suivi des promesses
+- Gestion des statuts
+- Interface de contribution
+
+### **Sprint 4 : Notifications**
+- Notifications avancées
+- Emails via SendGrid
+
+### **Sprint 5 : Administration**
+- Dashboard administrateur
+- Analytics et statistiques
+- Optimisations et polish
+
+## 🧪 **Scripts Disponibles**
+
+### **Backend**
+```bash
+npm run dev          # Démarrer en mode développement
+npm run build        # Compiler TypeScript
+npm start            # Démarrer en production
+npm run seed         # Peupler la base de données
+npm run prisma:generate  # Générer Prisma Client
+npm run prisma:migrate   # Exécuter les migrations
+npm run reminders:check  # Vérifier les rappels de promesses
+```
+
+### **Frontend**
+```bash
+npm run dev          # Démarrer le serveur de développement
+npm run build        # Build de production
+npm run preview      # Prévisualiser le build
+npm run lint         # Linter le code
+```
+
+## 🔧 **Technologies Utilisées**
+
+### **Frontend**
+- React 18
+- TypeScript
+- Vite
+- Redux Toolkit
+- Material-UI
+- React Router
+- Axios
+- Lucide React
+
+### **Backend**
+- Node.js
+- Express.js
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- JWT
+- SendGrid
+- Tesseract.js
+- Google Gemini AI
+- Multer
+- Sharp
+- Node-cron
+
+## 📊 **Fonctionnalités Avancées**
+
+### **Système de Rappels Automatiques**
+- Rappels automatiques pour promesses en attente
+- Configuration via cron jobs
+- Emails personnalisés
+
+### **Mode Maintenance**
+- Activation/désactivation du mode maintenance
+- Page de maintenance personnalisable
+- Bypass pour administrateurs
+
+### **Analytics et Reporting**
+- Statistiques en temps réel
+- Suivi des performances
+- Rapports détaillés pour administrateurs
 
 ## 🤝 **Contribution**
 
@@ -193,4 +388,4 @@ Pour toute question ou problème :
 
 ---
 
-**⭐ N'oubliez pas de donner une étoile au projet si vous l'aimez !** 
+**⭐ N'oubliez pas de donner une étoile au projet si vous l'aimez !**
