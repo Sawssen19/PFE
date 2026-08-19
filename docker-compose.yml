@@ -1,0 +1,53 @@
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kollecta-db
+    restart: always
+    environment:
+      POSTGRES_DB: kollecta_db
+      POSTGRES_USER: kollecta_user
+      POSTGRES_PASSWORD: kollecta_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - kollecta-net
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: kollecta-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: "postgresql://kollecta_user:kollecta_secure_password@postgres:5432/kollecta_db?schema=public"
+    depends_on:
+      - postgres
+    networks:
+      - kollecta-net
+
+  kollecta:
+    build:
+      context: ./kollecta
+      dockerfile: Dockerfile
+    container_name: kollecta-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - kollecta-net
+
+volumes:
+  pgdata:
+
+networks:
+  kollecta-net:
+    driver: bridge
