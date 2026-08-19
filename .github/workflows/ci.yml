@@ -7,7 +7,24 @@ on:
     branches: [ master, dev ]
 
 jobs:
+  sonarcloud:
+    name: Code Quality Analysis (SonarCloud)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Desactiver le shallow clone pour une meilleure analyse SonarCloud
+
+      - name: 2. Analyse SonarCloud
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   build-and-test:
+    needs: sonarcloud
+    name: Build & Test (Docker Compose)
     runs-on: ubuntu-latest
 
     steps:
@@ -43,6 +60,7 @@ jobs:
 
   publish-images:
     needs: build-and-test
+    name: Publish Docker Images (Docker Hub)
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
