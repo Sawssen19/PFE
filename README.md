@@ -11,6 +11,8 @@
 
 Ce dépôt contient l'application complète ainsi qu'une **infrastructure cloud-native d'entreprise**, intégrant une chaîne d'intégration et de livraison continues (**GitHub Actions**), une stratégie DevSecOps (**SonarCloud**, `npm audit`) et un cluster d'orchestration **Kubernetes** avec monitoring avancé (**Prometheus / Grafana**).
 
+![Interface Frontend KOLLECTA](docs/screenshots/frontend-app.png)
+
 ### Concept Innovant : Les Promesses de Don
 
 Contrairement aux plateformes traditionnelles, KOLLECTA fonctionne sur un système de **promesses de don** où les contributeurs s'engagent moralement à soutenir une cause. Les promesses sont comptabilisées dans le montant total de la cagnotte, créant ainsi un engagement communautaire fort avant même la réalisation effective des dons.
@@ -422,6 +424,8 @@ Le workflow GitHub Actions (`.github/workflows/ci-cd.yml`) automatise le cycle d
 3. **Build & Push Docker** : Génération des images multi-stage et push sur Docker Hub (tags SemVer).
 4. **Deploy to Kubernetes** : Application automatique des manifests déclaratifs K8s.
 
+![GitHub Actions CI/CD Pipeline](docs/screenshots/github-actions.png)
+
 ---
 
 ## 🛡️ DevSecOps & Sécurité
@@ -430,6 +434,8 @@ Le workflow GitHub Actions (`.github/workflows/ci-cd.yml`) automatise le cycle d
 - **Dependency Scan** : Détection automatique des failles via `npm audit` et le script `security-scan.sh`.
 - **Kubernetes Secrets** : Chiffrement et isolation des identifiants sensibles et clés d'API dans K8s.
 - **Principe du moindre privilège** : Conteneurs exécutés sans privilèges root.
+
+![SonarCloud Quality Gate](docs/screenshots/sonarcloud.png)
 
 ---
 
@@ -454,6 +460,8 @@ Structure des manifests (`k8s/`) :
 - `03-backend.yaml` : Deployment Backend Express + Service ClusterIP
 - `04-frontend.yaml` : Deployment Frontend Nginx + Service NodePort
 
+![Pods & Services Kubernetes](docs/screenshots/kubernetes-pods.png)
+
 ---
 
 ## 📊 Monitoring & Observabilité
@@ -475,6 +483,8 @@ Métriques suivies dans Grafana :
 - Taux de requêtes et latence HTTP du Backend.
 - Santé et performances de la base de données PostgreSQL.
 
+![Grafana Monitoring Dashboard](docs/screenshots/grafana-dashboard.png)
+
 ---
 
 ## 🔄 CI/CD Pipeline Summary
@@ -487,33 +497,6 @@ Métriques suivies dans Grafana :
 | Registry | Docker Hub | Tagging SemVer et stockage des images conteneurisées |
 | CD / Orchestration | Kubernetes | Déploiement sans interruption de service (Rolling Update) |
 | Observabilité | Prometheus / Grafana | Collecte de métriques et alertes en temps réel |
-
----
-
-## 📸 Screenshots
-
-1. Interface Frontend KOLLECTA
-2. GitHub Actions CI/CD Pipeline
-3. SonarCloud Quality Gate
-4. Pods & Services Kubernetes
-5. Grafana Monitoring Dashboard
-
-### 📂 Les 5 captures à placer dans `docs/screenshots/`
-
-1. `frontend-app.png` : Capture de l'application (http://localhost:8080)
-2. `github-actions.png` : Onglet **Actions** sur GitHub avec les workflows verts
-3. `sonarcloud.png` : Capture du projet sur **SonarCloud**
-4. `kubernetes-pods.png` : Terminal avec `kubectl get pods -n kollecta`
-5. `grafana-dashboard.png` : Dashboard Grafana
-
-```bash
-mkdir -p docs/screenshots
-```
-
-Référence-les ensuite dans ce README avec, par exemple :
-```markdown
-![GitHub Actions](docs/screenshots/github-actions.png)
-```
 
 ---
 
@@ -558,3 +541,11 @@ Pour toute question ou problème :
 ⭐ N'oubliez pas de donner une étoile au projet si vous l'aimez !
 
 ---
+
+## 💻 Mettre à jour ce README sur ton dépôt
+
+```bash
+git add README.md docs/screenshots
+git commit -m "docs: README final avec captures d'écran CI/CD et monitoring"
+git push origin master
+```
