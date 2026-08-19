@@ -23,25 +23,49 @@ jobs:
             server/package-lock.json
             kollecta/package-lock.json
 
-      - name: 3. Test de build des images Docker
-        run: |
-          docker compose build
+      - name: 3. Test de build avec Docker Compose
+        run: docker compose build
 
-      - name: 4. Démarrage des services avec Docker Compose
-        run: |
-          docker compose up -d
+      - name: 4. Démarrage des services
+        run: docker compose up -d
 
-      - name: 5. Vérification du statut des conteneurs
+      - name: 5. Vérification du statut
         run: |
           sleep 10
           docker compose ps
-          docker logs kollecta-backend
 
-      - name: 6. Application des migrations Prisma dans le CI
-        run: |
-          docker compose exec -T server npx prisma db push
+      - name: 6. Application des migrations Prisma
+        run: docker compose exec -T server npx prisma db push
 
-      - name: 7. Extinction propre des services
+      - name: 7. Extinction des services
         if: always()
-        run: |
-          docker compose down
+        run: docker compose down
+
+  publish-images:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Connexion à Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build et Push de l'image Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kollecta-backend:latest
+
+      - name: Build et Push de l'image Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./kollecta
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kollecta-frontend:latest
