@@ -1,0 +1,47 @@
+name: CI/CD Pipeline - Kollecta
+
+on:
+  push:
+    branches: [ main, dev, feature/* ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 2. Configuration de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            server/package-lock.json
+            kollecta/package-lock.json
+
+      - name: 3. Test de build des images Docker
+        run: |
+          docker compose build
+
+      - name: 4. Démarrage des services avec Docker Compose
+        run: |
+          docker compose up -d
+
+      - name: 5. Vérification du statut des conteneurs
+        run: |
+          sleep 10
+          docker compose ps
+          docker logs kollecta-backend
+
+      - name: 6. Application des migrations Prisma dans le CI
+        run: |
+          docker compose exec -T server npx prisma db push
+
+      - name: 7. Extinction propre des services
+        if: always()
+        run: |
+          docker compose down
