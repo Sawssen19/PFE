@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "nodemon",
     "dev:frontend": "vite",
-    "build": "npm run build:frontend && npm run build:backend",
+    "build": "vite build",
     "build:frontend": "vite build",
     "build:backend": "tsc -p tsconfig.server.json",
     "start": "node dist/backend/server.js",

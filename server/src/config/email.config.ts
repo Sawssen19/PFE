@@ -3,7 +3,7 @@ export const emailConfig = {
   // 📧 Configuration SendGrid
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || 'your-sendgrid-api-key',
   FROM_EMAIL: process.env.FROM_EMAIL || 'noreply@kollecta.com',
-  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'kollecta19@gmail.com',
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'kollectapfe@gmail.com',
   
   // 🌐 URLs de l'application
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
