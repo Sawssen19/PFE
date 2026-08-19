@@ -3,6 +3,7 @@ name: CI/CD Pipeline - Kollecta
 on:
   push:
     branches: [ master, dev, feature/* ]
+    tags: [ 'v*.*.*' ] # Déclenche aussi la publication lors de la création d'un tag Git (ex: v1.0.0)
   pull_request:
     branches: [ master, dev ]
 
@@ -14,7 +15,7 @@ jobs:
       - name: 1. Checkout du code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Desactiver le shallow clone pour une meilleure analyse SonarCloud
+          fetch-depth: 0
 
       - name: 2. Analyse SonarCloud
         uses: SonarSource/sonarcloud-github-action@master
@@ -26,7 +27,6 @@ jobs:
     needs: sonarcloud
     name: Build & Test (Docker Compose)
     runs-on: ubuntu-latest
-
     steps:
       - name: 1. Checkout du code
         uses: actions/checkout@v4
@@ -60,8 +60,9 @@ jobs:
 
   publish-images:
     needs: build-and-test
-    name: Publish Docker Images (Docker Hub)
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    name: Publish Docker Images with Versioning
+    # Publie sur master OU lors d'une release officielle (tag v1.0.0...)
+    if: (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
@@ -74,16 +75,44 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 3. Build et Push de l'image Backend
+      # Génération intelligente des métadonnées et tags pour le Backend
+      - name: 3. Génération des tags Docker (Backend)
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/kollecta-backend
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+
+      # Build et Push Backend
+      - name: 4. Build et Push de l'image Backend
         uses: docker/build-push-action@v5
         with:
           context: ./server
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kollecta-backend:latest
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
 
-      - name: 4. Build et Push de l'image Frontend
+      # Génération intelligente des métadonnées et tags pour le Frontend
+      - name: 5. Génération des tags Docker (Frontend)
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/kollecta-frontend
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+
+      # Build et Push Frontend
+      - name: 6. Build et Push de l'image Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./kollecta
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kollecta-frontend:latest
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
