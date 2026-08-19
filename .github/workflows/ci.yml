@@ -2,9 +2,9 @@ name: CI/CD Pipeline - Kollecta
 
 on:
   push:
-    branches: [ main, dev, feature/* ]
+    branches: [ master, dev, feature/* ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ master, dev ]
 
 jobs:
   build-and-test:
@@ -43,27 +43,27 @@ jobs:
 
   publish-images:
     needs: build-and-test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout du code
+      - name: 1. Checkout du code
         uses: actions/checkout@v4
 
-      - name: Connexion à Docker Hub
+      - name: 2. Connexion à Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build et Push de l'image Backend
+      - name: 3. Build et Push de l'image Backend
         uses: docker/build-push-action@v5
         with:
           context: ./server
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/kollecta-backend:latest
 
-      - name: Build et Push de l'image Frontend
+      - name: 4. Build et Push de l'image Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./kollecta
