@@ -1,8 +1,15 @@
-# 🎯 KOLLECTA - Plateforme de Cagnottes Collaboratives
+# 🎯 KOLLECTA — Plateforme Fullstack & DevOps CI/CD
+
+[![CI/CD Pipeline](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-blue?logo=githubactions)](https://github.com/Sawssen19/PFE/actions)
+[![SonarCloud Quality Gate](https://img.shields.io/badge/SonarCloud-Passed-brightgreen?logo=sonarcloud)](https://sonarcloud.io)
+[![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)](https://hub.docker.com)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-Cluster-326CE5?logo=kubernetes)](http://localhost:8080)
 
 ## 📋 Description
 
-**KOLLECTA** est une plateforme moderne de financement participatif basée sur le système de **promesses de don**. Développée avec React, Node.js et PostgreSQL, la plateforme permet aux utilisateurs de créer des campagnes de financement (cagnottes), de s'engager via des promesses de don, et de gérer leurs comptes avec des fonctionnalités avancées de sécurité et de vérification d'identité.
+**KOLLECTA** est une plateforme moderne de financement participatif basée sur un système innovant de **promesses de don**. Développée avec React, Node.js et PostgreSQL, la plateforme permet aux utilisateurs de créer des campagnes de financement (cagnottes), de s'engager via des promesses morales de don, et de gérer leurs comptes avec des fonctionnalités avancées de sécurité et de vérification d'identité (KYC).
+
+Ce dépôt contient l'application complète ainsi qu'une **infrastructure cloud-native d'entreprise**, intégrant une chaîne d'intégration et de livraison continues (**GitHub Actions**), une stratégie DevSecOps (**SonarCloud**, `npm audit`) et un cluster d'orchestration **Kubernetes** avec monitoring avancé (**Prometheus / Grafana**).
 
 ### Concept Innovant : Les Promesses de Don
 
@@ -10,7 +17,7 @@ Contrairement aux plateformes traditionnelles, KOLLECTA fonctionne sur un systè
 
 ---
 
-## 🏗️ Architecture Technique
+## 🏗️ Architecture Technique (Application)
 
 ### Frontend (React + Vite)
 - **Framework** : React 18 avec TypeScript
@@ -35,6 +42,22 @@ Contrairement aux plateformes traditionnelles, KOLLECTA fonctionne sur un systè
 - **ORM** : Prisma
 - **Migrations** : Prisma Migrate
 - **Schéma** : Modèles relationnels pour Users, Cagnottes, Promises, KYC, Reports, Notifications
+
+---
+
+## 🏗️ Architecture DevOps
+
+```text
+       +-------------------+       +--------------------+       +--------------------+
+       |  GitHub / Git     | ----> | GitHub Actions CI  | ----> |  SonarCloud SAST   |
+       +-------------------+       +--------------------+       +--------------------+
+                                             |
+                                             v
+       +-------------------+       +--------------------+       +--------------------+
+       | Prometheus/Grafana| <---- | Minikube / K8s     | <---- |  Docker Hub (SemVer)
+       |   (Monitoring)    |       | (Deploy & Secrets) |       |   Registry         |
+       +-------------------+       +--------------------+       +--------------------+
+```
 
 ---
 
@@ -120,7 +143,7 @@ Contrairement aux plateformes traditionnelles, KOLLECTA fonctionne sur un systè
 - ✅ Support multilingue
 - ✅ Accessibilité optimisée
 
-### 🔒 Sécurité Avancée
+### 🔒 Sécurité Avancée (Application)
 - ✅ Authentification JWT sécurisée
 - ✅ Hachage des mots de passe avec bcrypt
 - ✅ Validation des emails
@@ -130,15 +153,60 @@ Contrairement aux plateformes traditionnelles, KOLLECTA fonctionne sur un systè
 - ✅ Blocage des comptes en cours de suppression
 - ✅ Vérification KYC obligatoire pour certaines actions
 
+### 📊 Fonctionnalités Avancées
+
+**Système de Rappels Automatiques**
+- Rappels automatiques pour promesses en attente
+- Configuration via cron jobs
+- Emails personnalisés
+
+**Mode Maintenance**
+- Activation/désactivation du mode maintenance
+- Page de maintenance personnalisable
+- Bypass pour administrateurs
+
+**Analytics et Reporting**
+- Statistiques en temps réel
+- Suivi des performances
+- Rapports détaillés pour administrateurs
+
 ---
 
-## 📦 Installation et Configuration
+## 🔧 Technologies Utilisées
 
-### Prérequis
-- Node.js 18+
+### Application Fullstack
+**Frontend** : React 18, TypeScript, Vite, Redux Toolkit, Material-UI, Tailwind CSS, React Router, Axios, Lucide React
+**Backend** : Node.js, Express.js, TypeScript, Prisma ORM, PostgreSQL, JWT, Multer, Sharp, Node-cron
+**Services IA/OCR** : Tesseract.js (OCR KYC), Google Gemini AI (détection de fraude)
+**Emailing** : SendGrid
+
+### DevOps, CI/CD & Cloud Native
+- **CI/CD Orchestration** : GitHub Actions (`.github/workflows/ci-cd.yml`)
+- **Code Quality & Security (SAST/SCA)** : SonarCloud, `npm audit`, `security-scan.sh`
+- **Conteneurisation** : Docker, Builds Multi-stage, Docker Compose
+- **Registre d'images** : Docker Hub (tags SemVer)
+- **Orchestration** : Kubernetes (Minikube), Manifests déclaratifs (`k8s/`), PVC, Services (ClusterIP, NodePort)
+- **Gestionnaire de Paquets** : Helm v3
+- **Monitoring & Observabilité** : Prometheus, Grafana, Node Exporter, Kube-State-Metrics
+
+---
+
+## ⚡ Prérequis
+
+Avant de démarrer le projet, assure-toi d'avoir installé :
+
+- Node.js 18+ & npm / yarn
 - PostgreSQL 14+
-- npm ou yarn
 - Git
+- Docker Engine v24+ & Docker Compose
+- Un compte GitHub (pour déclencher les workflows GitHub Actions)
+- Un compte SonarCloud lié au dépôt (pour l'analyse SAST)
+- Kubernetes (Minikube ou cluster K8s) & kubectl
+- Helm v3+
+
+---
+
+## 🚀 Installation & Configuration
 
 ### 1. Cloner le Repository
 
@@ -147,35 +215,7 @@ git clone https://github.com/Sawssen19/PFE.git
 cd PFE
 ```
 
-### 2. Installer les Dépendances
-
-Frontend :
-```bash
-cd kollecta
-npm install
-```
-
-Backend :
-```bash
-cd ../server
-npm install
-```
-
-### 3. Configuration de la Base de Données
-
-Initialiser Prisma :
-```bash
-cd server
-npx prisma generate
-npx prisma db push
-```
-
-Optionnel — Seed de la base de données :
-```bash
-npm run seed
-```
-
-### 4. Variables d'Environnement
+### 2. Variables d'Environnement
 
 Créer un fichier `.env` dans le dossier `server` :
 
@@ -184,7 +224,7 @@ Créer un fichier `.env` dans le dossier `server` :
 DATABASE_URL="postgresql://username:password@localhost:5432/kollecta"
 
 # JWT
-JWT_SECRET="your-secret-key-change-in-production"
+JWT_SECRET="your-super-secret-jwt-key"
 
 # SendGrid (Email)
 SENDGRID_API_KEY="your-sendgrid-api-key"
@@ -202,30 +242,59 @@ FRONTEND_URL="http://localhost:3000"
 BACKEND_URL="http://localhost:5000"
 ```
 
-### 5. Démarrer l'Application
+### 3. Installation Locale (sans Docker)
 
-Terminal 1 — Backend :
+Backend :
 ```bash
 cd server
+npm install
+npx prisma generate
+npx prisma db push
 npm run dev
 ```
 
-Terminal 2 — Frontend :
+Optionnel — Seed de la base de données :
+```bash
+npm run seed
+```
+
+Frontend (dans un autre terminal) :
 ```bash
 cd kollecta
+npm install
 npm run dev
+```
+
+### 4. Démarrage rapide avec Docker Compose
+
+```bash
+docker-compose up --build -d
+```
+
+### 5. Déploiement sur le cluster Kubernetes (Minikube)
+
+```bash
+# Application des manifests K8s
+kubectl apply -f k8s/00-namespace.yaml
+kubectl apply -f k8s/
+
+# Migration de la base de données PostgreSQL
+kubectl exec -it deployment/backend -n kollecta -- npx prisma db push
 ```
 
 ---
 
 ## 🌐 URLs d'Accès
 
-| Service | URL |
+| Service | URL / Commande |
 |---|---|
-| Frontend | http://localhost:3000 |
+| Frontend Web | http://localhost:8080 (ou http://localhost:3000) |
 | Backend API | http://localhost:5000 |
-| Base de Données | localhost:5432 |
-| Prisma Studio | `npx prisma studio` (dans le dossier `server`) |
+| Database | localhost:5432 (PostgreSQL) |
+| Prisma Studio | `npx prisma studio` (dans `/server`) |
+| GitHub Actions | https://github.com/Sawssen19/PFE/actions |
+| SonarCloud | https://sonarcloud.io |
+| Grafana Dashboard | `kubectl port-forward service/prometheus-grafana 3000:80 -n monitoring` |
 
 ---
 
@@ -238,9 +307,10 @@ PFE/
 │       └── ci-cd.yml
 ├── k8s/                      # Manifests Kubernetes Déclaratifs
 │   ├── 00-namespace.yaml
-│   ├── postgres.yaml
-│   ├── backend.yaml
-│   └── frontend.yaml
+│   ├── 01-config-secrets.yaml
+│   ├── 02-postgres.yaml
+│   ├── 03-backend.yaml
+│   └── 04-frontend.yaml
 ├── kollecta/                 # Frontend React
 │   ├── src/
 │   │   ├── components/       # Composants React réutilisables
@@ -262,6 +332,9 @@ PFE/
 │   │   └── migrations/       # Migrations
 │   ├── Dockerfile            # Multi-stage build Node
 │   └── package.json
+├── docs/
+│   └── screenshots/          # Captures d'écran (Actions, SonarCloud, Grafana...)
+├── security-scan.sh          # Script de scan de dépendances (SCA)
 ├── docker-compose.yml        # Orchestration locale
 └── README.md
 ```
@@ -324,103 +397,134 @@ npm run lint      # Linter le code
 
 ---
 
-## 🔧 Technologies Utilisées
+## 🐳 Docker
 
-**Frontend**
-- React 18
-- TypeScript
-- Vite
-- Redux Toolkit
-- Material-UI
-- React Router
-- Axios
-- Lucide React
+L'application utilise des builds multi-stage pour optimiser la taille des images et la sécurité en production.
 
-**Backend**
-- Node.js
-- Express.js
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- JWT
-- SendGrid
-- Tesseract.js
-- Google Gemini AI
-- Multer
-- Sharp
-- Node-cron
+Commandes utiles :
+```bash
+# Voir les conteneurs en cours d'exécution
+docker ps
+
+# Consulter les logs backend / frontend
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
 
 ---
 
-## 📊 Fonctionnalités Avancées
+## ⚙️ CI/CD Pipeline (GitHub Actions)
 
-### Système de Rappels Automatiques
-- Rappels automatiques pour promesses en attente
-- Configuration via cron jobs
-- Emails personnalisés
+Le workflow GitHub Actions (`.github/workflows/ci-cd.yml`) automatise le cycle de vie applicatif :
 
-### Mode Maintenance
-- Activation/désactivation du mode maintenance
-- Page de maintenance personnalisable
-- Bypass pour administrateurs
-
-### Analytics et Reporting
-- Statistiques en temps réel
-- Suivi des performances
-- Rapports détaillés pour administrateurs
+1. **Lint & Test** : Validation du code React et Node.js.
+2. **Security Scan (SAST & SCA)** : Analyse du code sur SonarCloud et scan de vulnérabilités des dépendances.
+3. **Build & Push Docker** : Génération des images multi-stage et push sur Docker Hub (tags SemVer).
+4. **Deploy to Kubernetes** : Application automatique des manifests déclaratifs K8s.
 
 ---
 
-## 🚀 DevOps & Infrastructure Cloud-Native
+## 🛡️ DevSecOps & Sécurité
 
-En complément du développement applicatif, KOLLECTA intègre une chaîne d'intégration et de livraison continues (CI/CD), une stratégie DevSecOps et une infrastructure d'orchestration et de monitoring de niveau entreprise.
+- **SonarCloud** : Analyse statique continue (SAST) pour détecter bugs, Smells et vulnérabilités.
+- **Dependency Scan** : Détection automatique des failles via `npm audit` et le script `security-scan.sh`.
+- **Kubernetes Secrets** : Chiffrement et isolation des identifiants sensibles et clés d'API dans K8s.
+- **Principe du moindre privilège** : Conteneurs exécutés sans privilèges root.
 
-### 🛠️ Architecture & Stack DevOps
+---
 
-```
- GitHub / Git  --->  GitHub Actions CI  --->  SonarCloud SAST
-                                                     |
-                                                     v
- Prometheus/Grafana <--- Minikube / K8s <--- Docker Hub (SemVer)
-   (Monitoring)          (Deploy & Secrets)      Registry
-```
+## 📦 Docker Hub
 
-### Outils & Technologies
+Docker Hub sert de registre public/privé d'images pour l'application :
 
-- **Conteneurisation** : Docker, Builds Multi-stage, Docker Compose
-- **CI/CD Pipeline** : GitHub Actions (Build, Test, Release SemVer v1.0.0)
-- **DevSecOps** : SonarCloud (Analyse statique SAST), npm audit (Scan de dépendances SCA), Kubernetes Secrets
-- **Orchestration** : Kubernetes (Minikube), Manifests déclaratifs (`k8s/`), PVC, Services (ClusterIP, NodePort)
-- **Gestionnaire de Paquets** : Helm v3
-- **Supervision & Observabilité** : Prometheus, Grafana, Node Exporter, Kube-State-Metrics
+- Images Frontend et Backend taguées par version (SemVer) à chaque build validé.
+- Pull automatique par Kubernetes lors du déploiement (`Deploy to Kubernetes`).
 
-### ⚡ Déploiement DevOps Rapide
+---
 
-**1. Démarrage local avec Docker Compose**
-```bash
-docker-compose up --build -d
-```
+## ☸️ Kubernetes
 
-**2. Déploiement sur le cluster Kubernetes**
-```bash
-# Application des manifests Kubernetes
-kubectl apply -f k8s/00-namespace.yaml
-kubectl apply -f k8s/
+La stack est déployée dans un namespace isolé `kollecta` à l'aide de manifests Kubernetes déclaratifs.
 
-# Migration de la base de données PostgreSQL
-kubectl exec -it deployment/backend -n kollecta -- npx prisma db push
-```
+Structure des manifests (`k8s/`) :
 
-**3. Déploiement de la stack de Supervision (Prometheus & Grafana)**
+- `00-namespace.yaml` : Isolation du cluster
+- `01-config-secrets.yaml` : ConfigMaps & Secrets (base de données, JWT, clés API)
+- `02-postgres.yaml` : StatefulSet / Deployment PostgreSQL avec PVC (Persistent Volume Claim)
+- `03-backend.yaml` : Deployment Backend Express + Service ClusterIP
+- `04-frontend.yaml` : Deployment Frontend Nginx + Service NodePort
+
+---
+
+## 📊 Monitoring & Observabilité
+
+Monitoring du cluster via la stack Prometheus & Grafana installée par Helm :
+
 ```bash
 # Installation via Helm
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring
 
-# Redirection de port pour accéder à Grafana
+# Accéder à Grafana
 kubectl port-forward service/prometheus-grafana 3000:80 -n monitoring
 ```
+
+Métriques suivies dans Grafana :
+- Utilisation CPU / RAM des Pods Kubernetes.
+- Taux de requêtes et latence HTTP du Backend.
+- Santé et performances de la base de données PostgreSQL.
+
+---
+
+## 🔄 CI/CD Pipeline Summary
+
+| Étape | Outil | Action |
+|---|---|---|
+| Source | GitHub | Déclenchement automatique sur push/commit |
+| Build & Test | GitHub Actions / npm | Compilation TypeScript & exécution des tests |
+| Quality Gate | SonarCloud | Scan de sécurité SAST/SCA & validation des seuils |
+| Registry | Docker Hub | Tagging SemVer et stockage des images conteneurisées |
+| CD / Orchestration | Kubernetes | Déploiement sans interruption de service (Rolling Update) |
+| Observabilité | Prometheus / Grafana | Collecte de métriques et alertes en temps réel |
+
+---
+
+## 📸 Screenshots
+
+1. Interface Frontend KOLLECTA
+2. GitHub Actions CI/CD Pipeline
+3. SonarCloud Quality Gate
+4. Pods & Services Kubernetes
+5. Grafana Monitoring Dashboard
+
+### 📂 Les 5 captures à placer dans `docs/screenshots/`
+
+1. `frontend-app.png` : Capture de l'application (http://localhost:8080)
+2. `github-actions.png` : Onglet **Actions** sur GitHub avec les workflows verts
+3. `sonarcloud.png` : Capture du projet sur **SonarCloud**
+4. `kubernetes-pods.png` : Terminal avec `kubectl get pods -n kollecta`
+5. `grafana-dashboard.png` : Dashboard Grafana
+
+```bash
+mkdir -p docs/screenshots
+```
+
+Référence-les ensuite dans ce README avec, par exemple :
+```markdown
+![GitHub Actions](docs/screenshots/github-actions.png)
+```
+
+---
+
+## 💡 Lessons Learned
+
+Durant la réalisation et l'implémentation de ce projet DevOps fullstack, plusieurs compétences et retours d'expérience majeurs ont été acquis :
+
+- **Automation CI/CD** : Mise en place d'une chaîne CI/CD fluide avec GitHub Actions, de la validation du code au déploiement.
+- **DevSecOps** : Intégration de la sécurité dès le début de la chaîne avec SonarCloud et des scans automatiques de dépendances.
+- **Conteneurisation & Kubernetes** : Maîtrise du déploiement conteneurisé multi-services (Frontend, Backend, PostgreSQL) et orchestration déclarative avec K8s.
+- **Supervision** : Mise en place d'une observabilité complète du cluster avec Prometheus et Grafana.
 
 ---
 
@@ -446,9 +550,11 @@ Ce projet est développé dans le cadre du Projet de Fin d'Études (PFE).
 
 Pour toute question ou problème :
 
-- 📧 Email : sawssen.yazidi@hotmail.com
+- 📧 Email : sawssen.yazidi@sesame.com.tn
 - 🐛 Issues : GitHub Issues
 
 ---
 
 ⭐ N'oubliez pas de donner une étoile au projet si vous l'aimez !
+
+---
